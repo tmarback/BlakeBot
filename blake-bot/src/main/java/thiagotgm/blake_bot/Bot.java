@@ -12,89 +12,79 @@ import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.Image;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
+import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Bot {
-    
+
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
 
     private volatile IDiscordClient client;
     private String token;
-    private final AtomicBoolean reconnect = new AtomicBoolean( true );
+    private final AtomicBoolean reconnect;  
+    private boolean connected;
 
     public Bot( String token ) {
-        
+
         this.token = token;
-        
+        this.reconnect = new AtomicBoolean( true );
+        this.connected = false;
+
     }
 
     public void login() throws DiscordException {
-        
+
         client = new ClientBuilder().withToken( token ).login();
         client.getDispatcher().registerListener( this );
-        
+
     }
 
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
-        
+
         try {
 
-            this.client.changeUsername( "BlakeBot" ); // Changes the bot's username
-            //this.client.changeAvatar(Image.forFile(new File("picture.png"))); // Changes the bot's profile picture
-            this.client.changePresence(true); // Changes the bot's presence to idle
-            this.client.changeStatus( Status.game( "Bot Dev" ) ); // Changes the bot's status
+            this.client.changeUsername( "BlakeBot" ); // Changes the bot's
+                                                      // username
+            this.client
+                    .changeAvatar( Image.forFile( new File( "Blake.png" ) ) ); // Changes
+                                                                               // the
+                                                                               // bot's
+                                                                               // profile
+                                                                               // picture
+            this.client.changePresence( true ); // Changes the bot's presence to
+                                                // idle
+            this.client.changeStatus( Status.game( "Bot Dev" ) ); // Changes the
+                                                                  // bot's
+                                                                  // status
 
-        } catch (RateLimitException | DiscordException e) { // An error occurred
+        } catch ( RateLimitException | DiscordException e ) { // An error
+                                                              // occurred
 
             e.printStackTrace();
 
         }
+        connected = true;
         log.info( "*** Discord bot armed ***" );
-        
-    }
-    
-    @EventSubscriber
-    public void onMessageReceivedEvent( MessageReceivedEvent event ) {
-
-        IMessage message = event.getMessage(); // Gets the message from the event object NOTE: This is not the content of the message, but the object itself
-        IChannel channel = message.getChannel(); // Gets the channel in which this message was sent.
-
-        if ( message.getContent().equals( "!exit" ) ) {
-            terminate();
-            return;
-        }
-        
-        try {
-            // Builds (sends) and new message in the channel that the original message was sent with the content of the original message.
-            new MessageBuilder(this.client).withChannel(channel).withContent(message.getContent()).build();
-        } catch (RateLimitException e) { // RateLimitException thrown. The bot is sending messages too quickly!
-            System.err.print("Sending messages too quickly!");
-            e.printStackTrace();
-        } catch (DiscordException e) { // DiscordException thrown. Many possibilities. Use getErrorMessage() to see what went wrong.
-            System.err.print(e.getErrorMessage()); // Print the error message sent by Discord
-            e.printStackTrace();
-        } catch (MissingPermissionsException e) { // MissingPermissionsException thrown. The bot doesn't have permission to send the message!
-            System.err.print("Missing permissions for channel!");
-            e.printStackTrace();
-        }
 
     }
 
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
-        
+
+        connected = false;
         CompletableFuture.runAsync( new Runnable() {
-            
+
             @Override
             public void run() {
-                
-                if (reconnect.get()) {
+
+                if ( reconnect.get() ) {
                     log.info( "Reconnecting bot" );
                     try {
                         login();
@@ -102,28 +92,73 @@ public class Bot {
                         log.warn( "Failed to reconnect bot", e );
                     }
                 }
-                
+
             }
-            
+
         } );
-        
+
     }
 
     @EventSubscriber
-    public void onMessage(MessageReceivedEvent e) {
-        
-        log.debug("Got message");
-        
+    public void onMessage( MessageReceivedEvent event ) {
+
+        log.debug( "Got message" );
+
+        IMessage message = event.getMessage(); // Gets the message from the event
+                                           // object NOTE: This is not the
+                                           // content of the message, but the
+                                           // object itself
+        IChannel channel = message.getChannel(); // Gets the channel in which
+                                                 // this message was sent.
+
+        String newMessage;
+        if ( message.getContent().equals( "!exit" ) ) {
+            terminate();
+            return;
+        } else if ( message.getContent().equalsIgnoreCase( "hi" ) ) {
+            newMessage = "Hi, I am a bot!";
+        } else {
+            newMessage = message.getContent();
+        }
+        try {
+            // Builds (sends) and new message in the channel that the original
+            // message was sent with the content of the original message.
+            new MessageBuilder( this.client ).withChannel( channel )
+                    .withContent( newMessage ).build();
+        } catch ( RateLimitException e ) { // RateLimitException thrown. The bot
+                                           // is sending messages too quickly!
+            System.err.print( "Sending messages too quickly!" );
+            e.printStackTrace();
+        } catch ( DiscordException e ) { // DiscordException thrown. Many
+                                         // possibilities. Use getErrorMessage()
+                                         // to see what went wrong.
+            System.err.print( e.getErrorMessage() ); // Print the error message
+                                                     // sent by Discord
+            e.printStackTrace();
+        } catch ( MissingPermissionsException e ) { // MissingPermissionsException
+                                                    // thrown. The bot doesn't
+                                                    // have permission to send
+                                                    // the message!
+            System.err.print( "Missing permissions for channel!" );
+            e.printStackTrace();
+        }
+
     }
 
     public void terminate() {
-        
-        reconnect.set(false);
+
+        reconnect.set( false );
         try {
             client.logout();
         } catch ( DiscordException e ) {
             log.warn( "Logout failed", e );
         }
+
+    }
+    
+    public boolean isConnected() {
+        
+        return connected;
         
     }
 

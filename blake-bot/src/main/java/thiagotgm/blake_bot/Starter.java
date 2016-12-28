@@ -3,6 +3,7 @@ package thiagotgm.blake_bot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sx.blah.discord.util.DiscordException;
+import thiagotgm.blake_bot.console.ConsoleGUI;
 
 /**
  * Starts up the bot.
@@ -23,6 +24,7 @@ public class Starter {
         } else {
             throw new IllegalArgumentException( "Please enter token as argument" );
         }
+        new ConsoleGUI( bot );
         try {
             bot.login();
         } catch ( DiscordException e ) {
