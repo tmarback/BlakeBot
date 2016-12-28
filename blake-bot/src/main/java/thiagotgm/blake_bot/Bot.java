@@ -21,6 +21,13 @@ import java.io.File;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * Main bot runner that manages log in/out and bot state.
+ * 
+ * @author ThiagoTGM
+ * @version 0.2
+ * @since 2016-12-27
+ */
 public class Bot {
 
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
@@ -30,6 +37,11 @@ public class Bot {
     private final AtomicBoolean reconnect;  
     private boolean connected;
 
+    /**
+     * Creates a new bot that uses a given login token.
+     * 
+     * @param token Login token to be used by the bot.
+     */
     public Bot( String token ) {
 
         this.token = token;
@@ -38,6 +50,9 @@ public class Bot {
 
     }
 
+    /**
+     * Logs in to Discord.
+     */
     public void login() throws DiscordException {
 
         client = new ClientBuilder().withToken( token ).login();
@@ -45,6 +60,11 @@ public class Bot {
 
     }
 
+    /**
+     * Method triggered when the bot is connected to Discord and ready to use.
+     * 
+     * @param event Event fired.
+     */
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
@@ -63,27 +83,32 @@ public class Bot {
             this.client.changeStatus( Status.game( "Bot Dev" ) ); // Changes the
                                                                   // bot's
                                                                   // status
-
         } catch ( RateLimitException | DiscordException e ) { // An error
                                                               // occurred
-
             e.printStackTrace();
 
         }
         connected = true;
-        log.info( "*** Discord bot armed ***" );
+        log.info( "=== Bot READY! ===" );
 
     }
 
+    /**
+     * Method triggered when the bot is diconnected from Discord.
+     * 
+     * @param event Event fired.
+     */
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
 
         connected = false;
+        log.debug( "Bot disconnected." );
         CompletableFuture.runAsync( new Runnable() {
 
             @Override
             public void run() {
 
+                // If not requested disconnect, attempts to reconnect.
                 if ( reconnect.get() ) {
                     log.info( "Reconnecting bot" );
                     try {
@@ -99,6 +124,12 @@ public class Bot {
 
     }
 
+    /**
+     * Method triggered when a message is received in one of the channels
+     * the bot is reading from.
+     * 
+     * @param event Event triggered.
+     */
     @EventSubscriber
     public void onMessage( MessageReceivedEvent event ) {
 
@@ -139,26 +170,36 @@ public class Bot {
                                                     // thrown. The bot doesn't
                                                     // have permission to send
                                                     // the message!
-            System.err.print( "Missing permissions for channel!" );
+            System.err.println( "Missing permissions for channel!" );
             e.printStackTrace();
         }
 
     }
 
+    /**
+     * Stops the bot, disconnecting it from Discord.
+     */
     public void terminate() {
 
         reconnect.set( false );
         try {
             client.logout();
+            log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
             log.warn( "Logout failed", e );
         }
 
     }
     
+    /**
+     * Retrieves whether the bot is currently connected to Discord.
+     * 
+     * @return true if the bot is currently connected.
+     *         false otherwise.
+     */
     public boolean isConnected() {
         
-        return connected;
+        return this.connected;
         
     }
 

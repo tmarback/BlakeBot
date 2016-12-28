@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import thiagotgm.blake_bot.Bot;
 
 /**
- * GUI for managing the bot.
+ * GUI used for server-side management of the bot.
  * 
  * @author ThiagoTGM
  * @version 0.1
@@ -33,13 +33,20 @@ public class ConsoleGUI extends JFrame {
 
     private final Bot bot;
 
+    /**
+     * Creates a GUI that manages a given bot instance.
+     * 
+     * @param bot Bot to be managed by the GUI instance.
+     */
     public ConsoleGUI( Bot bot ) {
 
+        // Initializes the console.
         super( "BlakeBot Console" );
         this.bot = bot;
         setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         log.info( "Console started." );
 
+        // Creates the output terminal.
         JTextPane output = new JTextPane();
         DefaultCaret caret = (DefaultCaret) output.getCaret();
         caret.setUpdatePolicy( DefaultCaret.ALWAYS_UPDATE );
@@ -48,15 +55,16 @@ public class ConsoleGUI extends JFrame {
         redirectOutStream( output );
         redirectErrStream( output );
 
+        // Creates the command buttons.
         JButton exitButton = new JButton( "Terminate" );
         exitButton.addActionListener( new ActionListener() {
 
             @Override
             public void actionPerformed( ActionEvent ev ) {
 
+                // Shuts down the bot.
                 if ( bot.isConnected() ) {
                     bot.terminate();
-                    log.info( "Bot terminated." );
                 }
 
             }
@@ -67,11 +75,18 @@ public class ConsoleGUI extends JFrame {
         buttons.add( exitButton );
         getContentPane().add( buttons, BorderLayout.SOUTH );
 
+        // Displays the console.
         setSize( 1000, 800 );
         setVisible( true );
 
     } 
 
+    /**
+     * Redirects stdout to a given JTextPane, using black for the text
+     * color.
+     * 
+     * @param output Pane where stdout should be redirected to.
+     */
     private void redirectOutStream( JTextPane output ) {
         
         OutputStream out = new TerminalStream( output, Color.BLACK );
@@ -79,6 +94,12 @@ public class ConsoleGUI extends JFrame {
         
     }
     
+    /**
+     * Redirects stderr to a given JTextPane, using red for the text
+     * color.
+     * 
+     * @param output Pane where stderr should be redirected to.
+     */
     private void redirectErrStream( JTextPane output ) {
         
         OutputStream out = new TerminalStream( output, Color.RED );

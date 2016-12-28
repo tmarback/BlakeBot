@@ -16,6 +16,13 @@ public class Starter {
 
     private static final Logger log = LoggerFactory.getLogger( Starter.class );
 
+    /**
+     * On program startup, creates and starts a new instance of the bot
+     * with a login key given as argument, and a console to manage it.
+     * 
+     * @param args Command line arguments. Must be only one, the bot login
+     *             key.
+     */
     public static void main( String[] args ) {
         
         Bot bot;
