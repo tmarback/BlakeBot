@@ -45,7 +45,7 @@
         <dependency>
             <groupId>com.github.austinv11</groupId>
             <artifactId>Discord4J</artifactId>
-            <version>2.4.8</version>
+            <version>2.7.0</version>
         </dependency>
         
         <!-- Allows you to log events from Discord4J -->
@@ -80,7 +80,7 @@
                             
                                 <transformer
                                     implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>thiagotgm.blake_bot.App</mainClass>
+                                    <mainClass>thiagotgm.blake_bot.Starter</mainClass>
                                 </transformer>
                                 
                             </transformers>
