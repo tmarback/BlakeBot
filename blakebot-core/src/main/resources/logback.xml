@@ -30,7 +30,6 @@
 
     <root level="debug">
         <appender-ref ref="CONSOLE"/>
-        <!-- Uncomment the next line to also log to a file -->
-        <!-- <appender-ref ref="FILE"/> -->
+        <appender-ref ref="FILE"/>
     </root>
 </configuration>
