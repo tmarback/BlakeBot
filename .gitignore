@@ -1,1 +1,4 @@
 *.jar
+.project
+.settings/
+target/
