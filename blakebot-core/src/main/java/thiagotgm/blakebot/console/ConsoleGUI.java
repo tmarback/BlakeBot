@@ -141,6 +141,7 @@ public class ConsoleGUI extends JFrame {
             @Override
             public void actionPerformed( ActionEvent ev ) {
 
+                // Changes name of the bot.
                 String newName = (String) JOptionPane.showInputDialog( 
                         ConsoleGUI.this,
                         "Please input a new username.",
@@ -165,10 +166,72 @@ public class ConsoleGUI extends JFrame {
             }
             
         });
+        JButton statusButton = new JButton( "Change status" );
+        statusButton.addActionListener( new ActionListener() {
 
+            @Override
+            public void actionPerformed( ActionEvent ev ) {
+
+                // Changes status of the bot.
+                String newStatus = (String) JOptionPane.showInputDialog( 
+                        ConsoleGUI.this,
+                        "Please input a new status.",
+                        "New Status",
+                        JOptionPane.QUESTION_MESSAGE );
+                while ( ( bot.getStatus() != null ) && ( bot.getStatus().equals( newStatus ) ) ) {
+                    
+                    newStatus = (String) JOptionPane.showInputDialog( 
+                            ConsoleGUI.this,
+                            "That is the current status!\n" +
+                            "Please input a new status.",
+                            "New Status",
+                            JOptionPane.QUESTION_MESSAGE );
+                    
+                }
+                if ( ( newStatus != null ) && ( newStatus.length() > 0 ) ) {
+                    bot.setStatus( newStatus );
+                } else {
+                    log.debug( "Status change cancelled." );
+                }
+                
+            }
+            
+        });
+        JButton presenceButton = new JButton( "Change presence" );
+        presenceButton.addActionListener( new ActionListener() {
+
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+
+                // Changes presence of the bot.
+                String[] options = { "Online", "Idle" };
+                int choice = JOptionPane.showOptionDialog(
+                        ConsoleGUI.this,
+                        "Please choose a presence.",
+                        "Presence Picker",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0] );
+                if ( choice == JOptionPane.YES_OPTION ) {
+                    bot.setIdle( false );
+                } else if ( choice == JOptionPane.NO_OPTION ) {
+                    bot.setIdle( true );
+                } else {
+                    log.debug( "Presence change cancelled." );
+                }
+                
+            }
+            
+        });
+
+        // Organizes the buttons in a panel.
         JPanel buttons = new JPanel();
         buttons.add( exitButton );
         buttons.add( nameButton );
+        buttons.add( statusButton );
+        buttons.add( presenceButton );
         getContentPane().add( buttons, BorderLayout.SOUTH );
 
         // Displays the console.

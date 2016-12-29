@@ -68,18 +68,12 @@ public class Bot {
 
         try {
 
-            setUsername( "BlakeBot" ); // Changes the bot's username
             this.client
                     .changeAvatar( Image.forFile( new File( "Blake.png" ) ) ); // Changes
                                                                                // the
                                                                                // bot's
                                                                                // profile
                                                                                // picture
-            this.client.changePresence( true ); // Changes the bot's presence to
-                                                // idle
-            this.client.changeStatus( Status.game( "Bot Dev" ) ); // Changes the
-                                                                  // bot's
-                                                                  // status
         } catch ( RateLimitException | DiscordException e ) { // An error
                                                               // occurred
             e.printStackTrace();
@@ -177,6 +171,7 @@ public class Bot {
     public void terminate() {
 
         reconnect.set( false );
+        log.debug( "Disconnecting bot." );
         try {
             client.logout();
             log.info( "=== Bot terminated ===" );
@@ -210,6 +205,17 @@ public class Bot {
     }
     
     /**
+     * Retrieves the current status of the bot.
+     * 
+     * @return The status of the bot.
+     */
+    public String getStatus() {
+        
+        return client.getOurUser().getStatus().getStatusMessage();
+        
+    }
+    
+    /**
      * Sets the username of the bot.
      * 
      * @param newName New username to be set.
@@ -222,6 +228,32 @@ public class Bot {
         } catch ( DiscordException | RateLimitException e ) {
             log.warn( "Failed to change username.", e );
         }
+        
+    }
+    
+    /**
+     * Sets the status of the bot.
+     * 
+     * @param newStatus New status to be set.
+     */
+    public void setStatus( String newStatus ) {
+        
+        client.changeStatus( Status.game( newStatus ) );
+        log.debug( "Changed bot status to " + newStatus );
+        
+    }
+    
+    /**
+     * Sets the presence of the bot.
+     * 
+     * @param isIdle If true, the bot becomes idle.
+     *               If false, becomes online.
+     */
+    public void setIdle( boolean isIdle ) {
+        
+        client.changePresence( isIdle );
+        log.debug( "Changed bot presence to " + ( isIdle ? "idle" : "online" )
+                + "." );
         
     }
 
