@@ -53,7 +53,8 @@
                             
                         </goals>
                         <configuration>    
-                        	<outputDirectory>${project.parent.build.directory}</outputDirectory>
+                        	<outputDirectory>${project.parent.basedir}/output</outputDirectory>
+                        	<shadedArtifactAttached>true</shadedArtifactAttached>
                         	<descriptorRefs>
 
                         		<descriptorRef>jar-with-dependencies</descriptorRef>

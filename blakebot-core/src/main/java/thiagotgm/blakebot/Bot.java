@@ -35,7 +35,6 @@ public class Bot {
     private volatile IDiscordClient client;
     private String token;
     private final AtomicBoolean reconnect;  
-    private boolean connected;
 
     /**
      * Creates a new bot that uses a given login token.
@@ -46,7 +45,6 @@ public class Bot {
 
         this.token = token;
         this.reconnect = new AtomicBoolean( true );
-        this.connected = false;
 
     }
 
@@ -70,8 +68,7 @@ public class Bot {
 
         try {
 
-            this.client.changeUsername( "BlakeBot" ); // Changes the bot's
-                                                      // username
+            setUsername( "BlakeBot" ); // Changes the bot's username
             this.client
                     .changeAvatar( Image.forFile( new File( "Blake.png" ) ) ); // Changes
                                                                                // the
@@ -88,7 +85,6 @@ public class Bot {
             e.printStackTrace();
 
         }
-        connected = true;
         log.info( "=== Bot READY! ===" );
 
     }
@@ -101,7 +97,6 @@ public class Bot {
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
 
-        connected = false;
         log.debug( "Bot disconnected." );
         CompletableFuture.runAsync( new Runnable() {
 
@@ -199,7 +194,34 @@ public class Bot {
      */
     public boolean isConnected() {
         
-        return this.connected;
+        return client.isLoggedIn();
+        
+    }
+    
+    /**
+     * Retrieves the current username of the bot.
+     * 
+     * @return The username of the bot.
+     */
+    public String getUsername() {
+        
+        return client.getOurUser().getName();
+        
+    }
+    
+    /**
+     * Sets the username of the bot.
+     * 
+     * @param newName New username to be set.
+     */
+    public void setUsername( String newName ) {
+        
+        try {
+            client.changeUsername( newName );
+            log.debug( "Changed bot name to " + newName );
+        } catch ( DiscordException | RateLimitException e ) {
+            log.warn( "Failed to change username.", e );
+        }
         
     }
 

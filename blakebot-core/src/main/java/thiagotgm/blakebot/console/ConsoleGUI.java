@@ -9,6 +9,7 @@ import java.io.PrintStream;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -70,9 +71,40 @@ public class ConsoleGUI extends JFrame {
             }
 
         } );
+        JButton nameButton = new JButton( "Change username" );
+        nameButton.addActionListener( new ActionListener() {
+
+            @Override
+            public void actionPerformed( ActionEvent ev ) {
+
+                String newName = (String) JOptionPane.showInputDialog( 
+                        ConsoleGUI.this,
+                        "Please input a new username.",
+                        "New Username",
+                        JOptionPane.QUESTION_MESSAGE );
+                while ( bot.getUsername().equals( newName ) ) {
+                    
+                    newName = (String) JOptionPane.showInputDialog( 
+                            ConsoleGUI.this,
+                            "That is the current name!\n" +
+                            "Please input a new username.",
+                            "New Username",
+                            JOptionPane.QUESTION_MESSAGE );
+                    
+                }
+                if ( ( newName != null ) && ( newName.length() > 0 ) ) {
+                    bot.setUsername( newName );
+                } else {
+                    log.debug( "Name change cancelled." );
+                }
+                
+            }
+            
+        });
 
         JPanel buttons = new JPanel();
         buttons.add( exitButton );
+        buttons.add( nameButton );
         getContentPane().add( buttons, BorderLayout.SOUTH );
 
         // Displays the console.
