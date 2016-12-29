@@ -1,0 +1,42 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+	
+	<groupId>thiagotgm</groupId>
+    <artifactId>blakebot</artifactId>
+    <version>0.0.2-SNAPSHOT</version>
+    <packaging>pom</packaging>
+	
+	<modules>
+
+        <module>blakebot-core</module>
+
+    </modules>
+
+    <name>blake-bot</name>
+    <url>https://github.com/ThiagoTGM/BlakeBot</url>
+
+    <properties>
+    
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.testTarget>1.8</maven.compiler.testTarget>
+        <maven.compiler.testSource>1.8</maven.compiler.testSource>
+        
+    </properties>
+    
+    <repositories>
+    
+        <repository>
+            <id>jcenter</id>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+        
+    </repositories>
+	
+</project>
