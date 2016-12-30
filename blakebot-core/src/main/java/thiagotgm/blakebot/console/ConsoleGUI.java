@@ -20,6 +20,7 @@ import javax.swing.text.DefaultCaret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sx.blah.discord.util.DiscordException;
 import thiagotgm.blakebot.Bot;
 
 /**
@@ -69,8 +70,9 @@ public class ConsoleGUI extends JFrame {
 
                 log.debug( "Closing console." );
                 if ( bot.isConnected() ) {
-                    bot.terminate();
-                    if ( bot.isConnected() ) {
+                    try {
+                        bot.terminate();
+                    } catch ( DiscordException e ) {
                         // Failed to disconnect.
                         return;
                     }
@@ -121,15 +123,32 @@ public class ConsoleGUI extends JFrame {
         redirectErrStream( output );
 
         // Creates the command buttons.
-        JButton exitButton = new JButton( "Terminate" );
+        final JButton exitButton = new JButton( "Connect" );
         exitButton.addActionListener( new ActionListener() {
 
             @Override
             public void actionPerformed( ActionEvent ev ) {
 
-                // Shuts down the bot.
                 if ( bot.isConnected() ) {
-                    bot.terminate();
+                    // Disconnects the bot.
+                    try {
+                        exitButton.setEnabled( false );
+                        bot.terminate();
+                        exitButton.setText( "Connect" );
+                        exitButton.setEnabled( true );
+                    } catch ( DiscordException e ) {
+                        return;
+                    }
+                } else {
+                    // Connects the bot.
+                    try {
+                        exitButton.setEnabled( false );
+                        bot.login();
+                        exitButton.setText( "Disconnect" );
+                        exitButton.setEnabled( true );
+                    } catch ( DiscordException e ) {
+                        return;
+                    }
                 }
 
             }

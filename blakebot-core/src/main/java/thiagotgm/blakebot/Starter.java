@@ -6,7 +6,7 @@ import sx.blah.discord.util.DiscordException;
 import thiagotgm.blakebot.console.ConsoleGUI;
 
 /**
- * Starts up the bot.
+ * Starts up the bot and the control console.
  * 
  * @author ThiagoTGM
  * @version 0.5
@@ -19,6 +19,8 @@ public class Starter {
     /**
      * On program startup, creates and starts a new instance of the bot
      * with a login key given as argument, and a console to manage it.
+     * The bot isn't immediately connected to discord, it must be ordered
+     * to do so through the console.
      * 
      * @param args Command line arguments. Must be only one, the bot login
      *             key.
@@ -32,11 +34,6 @@ public class Starter {
             throw new IllegalArgumentException( "Please enter token as argument" );
         }
         new ConsoleGUI( bot );
-        try {
-            bot.login();
-        } catch ( DiscordException e ) {
-            log.warn( "Bot could not start", e );
-        }
         
     }
 

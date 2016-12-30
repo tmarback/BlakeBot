@@ -53,7 +53,12 @@ public class Bot {
      */
     public void login() throws DiscordException {
 
-        client = new ClientBuilder().withToken( token ).login();
+        try {
+            client = new ClientBuilder().withToken( token ).login();
+        } catch ( DiscordException e ) {
+            log.error( "Failed to connect!", e );
+            throw e;
+        }
         client.getDispatcher().registerListener( this );
 
     }
@@ -104,6 +109,7 @@ public class Bot {
                         login();
                     } catch ( DiscordException e ) {
                         log.warn( "Failed to reconnect bot", e );
+                        client = null;
                     }
                 }
 
@@ -133,7 +139,11 @@ public class Bot {
 
         String newMessage;
         if ( message.getContent().equals( "!exit" ) ) {
-            terminate();
+            try {
+                terminate();
+            } catch ( DiscordException e ) {
+                newMessage = "Sorry, failed to exit.";
+            }
             return;
         } else if ( message.getContent().equalsIgnoreCase( "hi" ) ) {
             newMessage = "Hi, I am a bot!";
@@ -168,15 +178,17 @@ public class Bot {
     /**
      * Stops the bot, disconnecting it from Discord.
      */
-    public void terminate() {
+    public void terminate() throws DiscordException {
 
         reconnect.set( false );
         log.debug( "Disconnecting bot." );
         try {
             client.logout();
+            client = null;
             log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
-            log.warn( "Logout failed", e );
+            log.error( "Logout failed", e );
+            throw e;
         }
 
     }
@@ -189,7 +201,7 @@ public class Bot {
      */
     public boolean isConnected() {
         
-        return client.isLoggedIn();
+        return ( client != null ) && ( client.isLoggedIn() );
         
     }
     
