@@ -18,6 +18,10 @@ import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RateLimitException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -25,7 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Main bot runner that manages log in/out and bot state.
  * 
  * @author ThiagoTGM
- * @version 0.2
+ * @version 0.3
  * @since 2016-12-27
  */
 public class Bot {
@@ -33,17 +37,17 @@ public class Bot {
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
 
     private volatile IDiscordClient client;
-    private String token;
-    private final AtomicBoolean reconnect;  
+    private Properties properties;
+    private final AtomicBoolean reconnect;
 
     /**
      * Creates a new bot that uses a given login token.
      * 
      * @param token Login token to be used by the bot.
      */
-    public Bot( String token ) {
+    public Bot( Properties properties ) {
 
-        this.token = token;
+        this.properties = properties;
         this.reconnect = new AtomicBoolean( true );
 
     }
@@ -53,6 +57,7 @@ public class Bot {
      */
     public void login() throws DiscordException {
 
+        String token = properties.getProperty( PropertyNames.LOGIN_TOKEN );
         try {
             client = new ClientBuilder().withToken( token ).login();
         } catch ( DiscordException e ) {
@@ -194,6 +199,25 @@ public class Bot {
     }
     
     /**
+     * Saves the properties of the bot to the properties file.
+     */
+    public void saveProperties() {
+        
+        log.info( "Saving properties." );
+        FileOutputStream file;
+        try {
+            file = new FileOutputStream( PropertyNames.PROPERTIES_FILE );
+            properties.storeToXML( file, PropertyNames.PROPERTIES_COMMENT );
+        } catch ( FileNotFoundException e ) {
+            log.error( "Could not open properties file.", e );
+        } catch ( IOException e ) {
+            log.error( "Could not write to properties file.", e );
+        }
+        
+        
+    }
+    
+    /**
      * Retrieves whether the bot is currently connected to Discord.
      * 
      * @return true if the bot is currently connected.
@@ -224,6 +248,17 @@ public class Bot {
     public String getStatus() {
         
         return client.getOurUser().getStatus().getStatusMessage();
+        
+    }
+    
+    /**
+     * Retrieves the properties of the bot.
+     * 
+     * @return The object that contains the properties of the bot.
+     */
+    public Properties getProperties() {
+        
+        return this.properties;
         
     }
     

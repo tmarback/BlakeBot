@@ -1,15 +1,21 @@
 package thiagotgm.blakebot;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.swing.JOptionPane;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sx.blah.discord.util.DiscordException;
 import thiagotgm.blakebot.console.ConsoleGUI;
 
 /**
  * Starts up the bot and the control console.
  * 
  * @author ThiagoTGM
- * @version 0.5
+ * @version 1.0
  * @since 2016-12-28
  */
 public class Starter {
@@ -27,12 +33,53 @@ public class Starter {
      */
     public static void main( String[] args ) {
         
-        Bot bot;
-        if ( args.length == 1 ) {
-            bot = new Bot( args[0] );
-        } else {
-            throw new IllegalArgumentException( "Please enter token as argument" );
+        // Reads default properties.
+        Properties defaults = new Properties();
+        try {
+             FileInputStream input = new FileInputStream( PropertyNames.DEFAULTS_FILE );
+             defaults.loadFromXML( input );
+             log.info( "Loaded default properties." );
+        } catch ( FileNotFoundException e ) {
+            log.error( "Default properties file not found.", e );
+            System.exit( 1 );
+        } catch ( IOException e ) {
+            log.error( "Error reading default properties file.", e );
+            System.exit( 2 );
         }
+        
+        // Reads properties
+        Properties properties = new Properties( defaults );
+        try {
+            FileInputStream input = new FileInputStream( PropertyNames.PROPERTIES_FILE );
+            properties.loadFromXML( input );
+            log.info( "Loaded bot properties." );
+        } catch ( FileNotFoundException e ) {
+            log.error( "Properties file not found. A new one will be created." );
+        } catch ( IOException e ) {
+            log.error( "Error reading properties file.", e );
+            System.exit( 2 );
+        }
+        
+        // Requests login token if none registered.
+        if ( !properties.containsKey( PropertyNames.LOGIN_TOKEN ) ) {
+            log.info( "No registered Key. Requesting key." );
+            String key;
+            do {
+
+                key = JOptionPane.showInputDialog( "Please enter bot login key." );
+                if ( key == null ) {
+                    log.debug( "Setup cancelled." );
+                    System.exit( 0 );
+                }
+                key = key.trim();
+                
+            } while ( key.length() == 0 );
+            log.debug( "Received key." );
+            properties.put( PropertyNames.LOGIN_TOKEN, key );
+        }
+        
+        Bot bot;
+        bot = new Bot( properties );
         new ConsoleGUI( bot );
         
     }

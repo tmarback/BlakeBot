@@ -61,6 +61,7 @@ public class ConsoleGUI extends JFrame {
             public void windowClosed( WindowEvent arg0 ) {
 
                 log.info( "Console closed. Exiting." );
+                bot.saveProperties();
                 System.exit( 0 );
                 
             }
