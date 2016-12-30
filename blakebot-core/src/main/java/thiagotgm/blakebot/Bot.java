@@ -29,12 +29,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Main bot runner that manages log in/out and bot state.
  * 
  * @author ThiagoTGM
- * @version 0.3
+ * @version 1.0
  * @since 2016-12-27
  */
 public class Bot {
 
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
+    private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
 
     private volatile IDiscordClient client;
     private Properties properties;
@@ -295,11 +296,26 @@ public class Bot {
      * Changes the profile image of the bot to that of a given URL.
      * 
      * @param url URL of the image.
+     * @throws IllegalArgumentException if cannot identify the image type from the URL.
      */
-    public void setImage( String url ) {
+    public void setImage( String url ) throws IllegalArgumentException {
         
-        String type = url.substring( url.lastIndexOf( '.' ) + 1 );
-        log.debug( "Changing bot image to " + url + " of type " + type + "." );
+        log.debug( "Changing bot image to " + url );
+        // Determines type of the image from the URL.
+        String type = null;
+        for ( String candidate : IMAGE_TYPES ) {
+            
+            if ( url.contains( "." + candidate ) ) {
+                type = candidate;
+                break;
+            }
+            
+        }
+        if ( type == null ) {
+            log.warn( "Image type not recognized." );
+            throw new IllegalArgumentException( "Could not identify image type from URL " + url );
+        }
+        log.debug( "Detected type " + type + "." );
         try {
             client.changeAvatar( Image.forUrl( type, url ) );
             log.info( "Changed bot image to " + url + " of type " + type + "." );

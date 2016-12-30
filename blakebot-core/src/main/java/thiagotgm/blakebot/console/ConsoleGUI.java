@@ -221,7 +221,7 @@ public class ConsoleGUI extends JFrame {
         imageButton.addActionListener( new ActionListener() {
 
             @Override
-            public void actionPerformed( ActionEvent e ) {
+            public void actionPerformed( ActionEvent ev ) {
 
                 // Changes image of the bot.
                 String[] options = { "Local File", "URL" };
@@ -253,11 +253,15 @@ public class ConsoleGUI extends JFrame {
                             "URL Input",
                             JOptionPane.QUESTION_MESSAGE );
                     if ( ( url != null ) && ( url.length() > 0 ) ) {
-                        bot.setImage( url );
+                        try {
+                            bot.setImage( url );
+                        } catch ( IllegalArgumentException e ) {
+                            // Do nothing.
+                        }
                         return;
                     }
                 }
-                log.debug( "Status change cancelled." );
+                log.debug( "Image change cancelled." );
                 
             }
             
