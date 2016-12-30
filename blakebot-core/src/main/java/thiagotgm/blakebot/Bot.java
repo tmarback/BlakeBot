@@ -76,19 +76,6 @@ public class Bot {
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
-        try {
-
-            this.client
-                    .changeAvatar( Image.forFile( new File( "Blake.png" ) ) ); // Changes
-                                                                               // the
-                                                                               // bot's
-                                                                               // profile
-                                                                               // picture
-        } catch ( RateLimitException | DiscordException e ) { // An error
-                                                              // occurred
-            e.printStackTrace();
-
-        }
         log.info( "=== Bot READY! ===" );
 
     }
@@ -271,7 +258,7 @@ public class Bot {
         
         try {
             client.changeUsername( newName );
-            log.debug( "Changed bot name to " + newName );
+            log.info( "Changed bot name to " + newName );
         } catch ( DiscordException | RateLimitException e ) {
             log.warn( "Failed to change username.", e );
         }
@@ -286,7 +273,7 @@ public class Bot {
     public void setStatus( String newStatus ) {
         
         client.changeStatus( Status.game( newStatus ) );
-        log.debug( "Changed bot status to " + newStatus );
+        log.info( "Changed bot status to " + newStatus );
         
     }
     
@@ -299,8 +286,43 @@ public class Bot {
     public void setIdle( boolean isIdle ) {
         
         client.changePresence( isIdle );
-        log.debug( "Changed bot presence to " + ( isIdle ? "idle" : "online" )
+        log.info( "Changed bot presence to " + ( isIdle ? "idle" : "online" )
                 + "." );
+        
+    }
+    
+    /**
+     * Changes the profile image of the bot to that of a given URL.
+     * 
+     * @param url URL of the image.
+     */
+    public void setImage( String url ) {
+        
+        String type = url.substring( url.lastIndexOf( '.' ) + 1 );
+        log.debug( "Changing bot image to " + url + " of type " + type + "." );
+        try {
+            client.changeAvatar( Image.forUrl( type, url ) );
+            log.info( "Changed bot image to " + url + " of type " + type + "." );
+        } catch ( DiscordException | RateLimitException e ) {
+            log.warn( "Failed to change bot image.", e );
+        }
+        
+    }
+    
+    /**
+     * Changes the profile image of the bot to that of a given file.
+     * 
+     * @param url File of the image.
+     */
+    public void setImage( File file ) {
+        
+        log.debug( "Changing bot image to " + file.getAbsolutePath() + "." );
+        try {
+            client.changeAvatar( Image.forFile( file ) );
+            log.info( "Changed bot image to " + file.getAbsolutePath() + "." );
+        } catch ( RateLimitException | DiscordException e ) {
+            log.warn( "Failed to change bot image.", e );
+        }
         
     }
 

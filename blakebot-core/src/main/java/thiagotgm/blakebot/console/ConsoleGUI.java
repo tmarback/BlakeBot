@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
@@ -245,6 +246,51 @@ public class ConsoleGUI extends JFrame {
             }
             
         });
+        JButton imageButton = new JButton( "Change profile image" );
+        imageButton.addActionListener( new ActionListener() {
+
+            @Override
+            public void actionPerformed( ActionEvent e ) {
+
+                // Changes image of the bot.
+                String[] options = { "Local File", "URL" };
+                int choice = JOptionPane.showOptionDialog(
+                        ConsoleGUI.this,
+                        "Please choose where the image should be taken from.",
+                        "Origin Picker",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        options,
+                        options[0] );
+                if ( choice == JOptionPane.YES_OPTION ) {
+                    // Image from local file.
+                    String path = (String) JOptionPane.showInputDialog( 
+                            ConsoleGUI.this,
+                            "Please input a file path.",
+                            "File Input",
+                            JOptionPane.QUESTION_MESSAGE );
+                    if ( ( path != null ) && ( path.length() > 0 ) ) {
+                        bot.setImage( new File( path ) );
+                        return;
+                    }
+                } else if ( choice == JOptionPane.NO_OPTION ) {
+                    // Image from URL.
+                    String url = (String) JOptionPane.showInputDialog( 
+                            ConsoleGUI.this,
+                            "Please input a URL.",
+                            "URL Input",
+                            JOptionPane.QUESTION_MESSAGE );
+                    if ( ( url != null ) && ( url.length() > 0 ) ) {
+                        bot.setImage( url );
+                        return;
+                    }
+                }
+                log.debug( "Status change cancelled." );
+                
+            }
+            
+        });
 
         // Organizes the buttons in a panel.
         JPanel buttons = new JPanel();
@@ -252,6 +298,7 @@ public class ConsoleGUI extends JFrame {
         buttons.add( nameButton );
         buttons.add( statusButton );
         buttons.add( presenceButton );
+        buttons.add( imageButton );
         getContentPane().add( buttons, BorderLayout.SOUTH );
 
         // Displays the console.
