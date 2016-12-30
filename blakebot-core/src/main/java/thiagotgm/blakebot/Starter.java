@@ -80,7 +80,7 @@ public class Starter {
         
         Bot bot;
         bot = new Bot( properties );
-        new ConsoleGUI( bot );
+        bot.registerListener( new ConsoleGUI( bot ) );
         
     }
 

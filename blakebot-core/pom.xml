@@ -5,7 +5,7 @@
 	<parent>
         <artifactId>blakebot</artifactId>
         <groupId>thiagotgm</groupId>
-        <version>0.0.3-SNAPSHOT</version>
+        <version>0.1.0-SNAPSHOT</version>
     </parent>
     
     <artifactId>blakebot-core</artifactId>

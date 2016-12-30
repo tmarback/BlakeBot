@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Main bot runner that manages log in/out and bot state.
  * 
  * @author ThiagoTGM
- * @version 1.0
+ * @version 1.1
  * @since 2016-12-27
  */
 public class Bot {
@@ -40,6 +41,8 @@ public class Bot {
     private volatile IDiscordClient client;
     private Properties properties;
     private final AtomicBoolean reconnect;
+    
+    private ArrayList<ConnectionStatusListener> listeners;
 
     /**
      * Creates a new bot that uses a given login token.
@@ -50,7 +53,36 @@ public class Bot {
 
         this.properties = properties;
         this.reconnect = new AtomicBoolean( true );
+        listeners = new ArrayList<>();
 
+    }
+    
+    /**
+     * Registers a new listener (for connection status updates).
+     * 
+     * @param listener Listener to be registered.
+     */
+    public void registerListener( ConnectionStatusListener listener ) {
+        
+        listeners.add( listener );
+        log.trace( "Registered status listener." );
+        
+    }
+    
+    /**
+     * Notifies all listeners of a change in the bot connection status.
+     * 
+     * @param connectionStatus New connection status of the bot.
+     */
+    private void notifyListeners( boolean connectionStatus ) {
+        
+        log.trace( "Notifying all listeners." );
+        for ( ConnectionStatusListener listener : listeners ) {
+            
+            listener.connectionChange( connectionStatus );
+            
+        }
+        
     }
 
     /**
@@ -77,6 +109,7 @@ public class Bot {
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
+        notifyListeners( true );
         log.info( "=== Bot READY! ===" );
 
     }
@@ -103,6 +136,7 @@ public class Bot {
                     } catch ( DiscordException e ) {
                         log.warn( "Failed to reconnect bot", e );
                         client = null;
+                        notifyListeners( false );
                     }
                 }
 
@@ -178,6 +212,7 @@ public class Bot {
         try {
             client.logout();
             client = null;
+            notifyListeners( false );
             log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
             log.error( "Logout failed", e );

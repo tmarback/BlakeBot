@@ -2,15 +2,12 @@ package thiagotgm.blakebot.console;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -28,21 +25,26 @@ import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.util.DiscordException;
 import thiagotgm.blakebot.Bot;
+import thiagotgm.blakebot.ConnectionStatusListener;
 import thiagotgm.blakebot.PropertyNames;
 
 /**
  * GUI used for server-side management of the bot.
  * 
  * @author ThiagoTGM
- * @version 0.1
+ * @version 1.0
  * @since 2016-12-28
  */
-public class ConsoleGUI extends JFrame {
+public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
     private static final long serialVersionUID = 7890114311672131502L;
     private static final Logger log = LoggerFactory.getLogger( ConsoleGUI.class );
 
-    private final Bot bot;
+    private final JButton connectionButton;
+    private final JButton nameButton;
+    private final JButton statusButton;
+    private final JButton presenceButton;
+    private final JButton imageButton;
 
     /**
      * Creates a GUI that manages a given bot instance.
@@ -53,7 +55,6 @@ public class ConsoleGUI extends JFrame {
 
         // Initializes the console.
         super( "BlakeBot Console" );
-        this.bot = bot;
         setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
         addWindowListener( new WindowAdapter() {
 
@@ -96,8 +97,8 @@ public class ConsoleGUI extends JFrame {
         redirectErrStream( output );
 
         // Creates the command buttons.
-        final JButton exitButton = new JButton( "Connect" );
-        exitButton.addActionListener( new ActionListener() {
+        connectionButton = new JButton( "Connect" );
+        connectionButton.addActionListener( new ActionListener() {
 
             @Override
             public void actionPerformed( ActionEvent ev ) {
@@ -105,20 +106,18 @@ public class ConsoleGUI extends JFrame {
                 if ( bot.isConnected() ) {
                     // Disconnects the bot.
                     try {
-                        exitButton.setEnabled( false );
+                        connectionButton.setEnabled( false );
                         bot.terminate();
-                        exitButton.setText( "Connect" );
-                        exitButton.setEnabled( true );
+                        connectionButton.setEnabled( true );
                     } catch ( DiscordException e ) {
                         return;
                     }
                 } else {
                     // Connects the bot.
                     try {
-                        exitButton.setEnabled( false );
+                        connectionButton.setEnabled( false );
                         bot.login();
-                        exitButton.setText( "Disconnect" );
-                        exitButton.setEnabled( true );
+                        connectionButton.setEnabled( true );
                     } catch ( DiscordException e ) {
                         return;
                     }
@@ -127,7 +126,7 @@ public class ConsoleGUI extends JFrame {
             }
 
         } );
-        JButton nameButton = new JButton( "Change username" );
+        nameButton = new JButton( "Change username" );
         nameButton.addActionListener( new ActionListener() {
 
             @Override
@@ -158,7 +157,7 @@ public class ConsoleGUI extends JFrame {
             }
             
         });
-        JButton statusButton = new JButton( "Change status" );
+        statusButton = new JButton( "Change status" );
         statusButton.addActionListener( new ActionListener() {
 
             @Override
@@ -189,7 +188,7 @@ public class ConsoleGUI extends JFrame {
             }
             
         });
-        JButton presenceButton = new JButton( "Change presence" );
+        presenceButton = new JButton( "Change presence" );
         presenceButton.addActionListener( new ActionListener() {
 
             @Override
@@ -217,7 +216,7 @@ public class ConsoleGUI extends JFrame {
             }
             
         });
-        JButton imageButton = new JButton( "Change profile image" );
+        imageButton = new JButton( "Change profile image" );
         imageButton.addActionListener( new ActionListener() {
 
             @Override
@@ -269,12 +268,13 @@ public class ConsoleGUI extends JFrame {
 
         // Organizes the buttons in a panel.
         JPanel buttons = new JPanel();
-        buttons.add( exitButton );
+        buttons.add( connectionButton );
         buttons.add( nameButton );
         buttons.add( statusButton );
         buttons.add( presenceButton );
         buttons.add( imageButton );
         getContentPane().add( buttons, BorderLayout.SOUTH );
+        setButtonsEnabled( false ); // Needs to connect before using command buttons.
 
         // Displays the console.
         int width = Integer.valueOf( bot.getProperties().getProperty( PropertyNames.CONSOLE_WIDTH ) );
@@ -321,6 +321,45 @@ public class ConsoleGUI extends JFrame {
         
         OutputStream out = new TerminalStream( output, Color.RED );
         System.setErr( new PrintStream( out, true ) );
+        
+    }
+    
+    /**
+     * Enables or disables all buttons other than the connect/disconnect button.
+     * 
+     * @param enabled If true, all buttons become enabled. Otherwise, they
+     *                all become disabled.
+     */
+    private void setButtonsEnabled( boolean enabled ) {
+        
+        nameButton.setEnabled( enabled );
+        statusButton.setEnabled( enabled );
+        presenceButton.setEnabled( enabled );
+        imageButton.setEnabled( enabled );
+        
+    }
+    
+    /**
+     * If the bot becomes connected or disconnected, changes the button panel
+     * accordingly.
+     * 
+     * @param enabled If true,bot became connected. All control buttons
+     *                are enabled and connect/disconnect button shows
+     *                "Disconnect" option.
+     *                Otherwise, bot became disconnected. 
+     *                Only connect/disconnect button is enabled,
+     *                and it shows "Connect" option.
+     */
+    @Override
+    public void connectionChange( boolean isConnected ) {
+        
+        setButtonsEnabled( isConnected );
+        if ( isConnected ) {
+            connectionButton.setText( "Disconnect" );
+        } else {
+            connectionButton.setText( "Connect" );
+        }
+        connectionButton.setEnabled( true );
         
     }
 
