@@ -75,7 +75,7 @@ public class Starter {
                 
             } while ( key.length() == 0 );
             log.debug( "Received key." );
-            properties.put( PropertyNames.LOGIN_TOKEN, key );
+            properties.setProperty( PropertyNames.LOGIN_TOKEN, key );
         }
         
         Bot bot;

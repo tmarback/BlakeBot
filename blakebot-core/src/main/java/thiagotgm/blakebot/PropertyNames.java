@@ -16,5 +16,7 @@ public interface PropertyNames {
     String PROPERTIES_COMMENT = "Bot properties.";
     
     String LOGIN_TOKEN = "token";
+    String CONSOLE_WIDTH = "width";
+    String CONSOLE_HEIGHT = "height";
 
 }

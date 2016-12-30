@@ -2,8 +2,13 @@ package thiagotgm.blakebot.console;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -23,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.util.DiscordException;
 import thiagotgm.blakebot.Bot;
+import thiagotgm.blakebot.PropertyNames;
 
 /**
  * GUI used for server-side management of the bot.
@@ -49,14 +55,7 @@ public class ConsoleGUI extends JFrame {
         super( "BlakeBot Console" );
         this.bot = bot;
         setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
-        addWindowListener( new WindowListener() {
-
-            @Override
-            public void windowActivated( WindowEvent arg0 ) {
-
-                // Do nothing
-                
-            }
+        addWindowListener( new WindowAdapter() {
 
             @Override
             public void windowClosed( WindowEvent arg0 ) {
@@ -81,34 +80,6 @@ public class ConsoleGUI extends JFrame {
                 }
                 ConsoleGUI.this.setVisible( false );
                 ConsoleGUI.this.dispose();
-                
-            }
-
-            @Override
-            public void windowDeactivated( WindowEvent arg0 ) {
-
-                // Do nothing
-                
-            }
-
-            @Override
-            public void windowDeiconified( WindowEvent arg0 ) {
-
-                // Do nothing
-                
-            }
-
-            @Override
-            public void windowIconified( WindowEvent arg0 ) {
-
-                // Do nothing
-                
-            }
-
-            @Override
-            public void windowOpened( WindowEvent arg0 ) {
-
-                // Do nothing
                 
             }
             
@@ -302,7 +273,22 @@ public class ConsoleGUI extends JFrame {
         getContentPane().add( buttons, BorderLayout.SOUTH );
 
         // Displays the console.
-        setSize( 1000, 800 );
+        int width = Integer.valueOf( bot.getProperties().getProperty( PropertyNames.CONSOLE_WIDTH ) );
+        int height = Integer.valueOf( bot.getProperties().getProperty( PropertyNames.CONSOLE_HEIGHT ) );
+        setSize( width, height );
+        addComponentListener( new ComponentAdapter() {
+
+            @Override
+            public void componentResized( ComponentEvent ev ) {
+
+                bot.getProperties().setProperty( PropertyNames.CONSOLE_WIDTH,
+                        String.valueOf( ConsoleGUI.this.getWidth() ) );
+                bot.getProperties().setProperty( PropertyNames.CONSOLE_HEIGHT,
+                        String.valueOf( ConsoleGUI.this.getHeight() ) );
+                
+            }
+
+        });
         setVisible( true );
         log.info( "Console started." );
 

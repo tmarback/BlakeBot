@@ -2,4 +2,6 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>Default values for bot properties.</comment>
+<entry key="width">1000</entry>
+<entry key="height">800</entry>
 </properties>
