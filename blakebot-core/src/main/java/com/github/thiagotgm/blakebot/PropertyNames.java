@@ -10,7 +10,7 @@ package com.github.thiagotgm.blakebot;
  */
 public interface PropertyNames {
     
-    String DEFAULTS_FILE = "defaults.xml";
+    String DEFAULTS_FILE = "defaultProperties.xml";
     String DEFAULTS_COMMENT = "Default values for bot properties.";
     String PROPERTIES_FILE = "properties.xml";
     String PROPERTIES_COMMENT = "Bot properties.";
