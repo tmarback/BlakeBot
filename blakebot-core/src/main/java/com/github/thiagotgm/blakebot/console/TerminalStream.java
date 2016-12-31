@@ -1,4 +1,4 @@
-package thiagotgm.blakebot.console;
+package com.github.thiagotgm.blakebot.console;
 
 import java.awt.Color;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package thiagotgm.blakebot;
+package com.github.thiagotgm.blakebot;
 
 /**
  * Interface for a class that gets notified when the bot changes connection

@@ -1,4 +1,4 @@
-package thiagotgm.blakebot;
+package com.github.thiagotgm.blakebot;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -9,7 +9,8 @@ import javax.swing.JOptionPane;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import thiagotgm.blakebot.console.ConsoleGUI;
+
+import com.github.thiagotgm.blakebot.console.ConsoleGUI;
 
 /**
  * Starts up the bot and the control console.

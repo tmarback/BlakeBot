@@ -4,4 +4,4 @@
  * @author ThiagoTGM
  * @since 2016-12-28
  */
-package thiagotgm.blakebot.console;
+package com.github.thiagotgm.blakebot.console;

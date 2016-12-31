@@ -1,4 +1,4 @@
-package thiagotgm.blakebot.console;
+package com.github.thiagotgm.blakebot.console;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -23,10 +23,11 @@ import javax.swing.text.DefaultCaret;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.Bot;
+import com.github.thiagotgm.blakebot.ConnectionStatusListener;
+import com.github.thiagotgm.blakebot.PropertyNames;
+
 import sx.blah.discord.util.DiscordException;
-import thiagotgm.blakebot.Bot;
-import thiagotgm.blakebot.ConnectionStatusListener;
-import thiagotgm.blakebot.PropertyNames;
 
 /**
  * GUI used for server-side management of the bot.

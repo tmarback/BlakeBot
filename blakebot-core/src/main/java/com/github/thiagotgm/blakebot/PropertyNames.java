@@ -1,4 +1,4 @@
-package thiagotgm.blakebot;
+package com.github.thiagotgm.blakebot;
 
 /**
  * Constants with the String keys for the bot properties, as well as the
