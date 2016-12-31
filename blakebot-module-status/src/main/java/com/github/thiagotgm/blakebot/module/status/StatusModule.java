@@ -18,6 +18,8 @@ public class StatusModule implements IModule {
     private static final String MODULE_NAME = "Status Module";
     private static final String MODULE_VERSION = "0.0.1";
     
+    static final String PREFIX = "^";
+    
     @Override
     public void disable() {
 
@@ -30,7 +32,19 @@ public class StatusModule implements IModule {
 
         CommandHandlerD4J commandHandler;
         commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
+        registerCommands( commandHandler );
         return true;
+        
+    }
+    
+    /**
+     * Registers all commands in this module with the command handler.
+     * 
+     * @param handler Hander the commands should be registered with.
+     */
+    private void registerCommands( CommandHandlerD4J handler ) {
+        
+        handler.registerAnnotatedCommands( new PingCommand() );
         
     }
 
