@@ -1,5 +1,5 @@
 /**
- * Classes that compose a server-side terminal for bot management.
+ * Classes that compose a server-side console for bot management.
  * 
  * @author ThiagoTGM
  * @since 2016-12-28
