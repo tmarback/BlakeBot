@@ -11,6 +11,8 @@
     <artifactId>blakebot-core</artifactId>
     <version>1.0.0</version>
     
+    <name>blakebot-core</name>
+    
     <build>
     
         <plugins>

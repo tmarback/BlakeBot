@@ -10,7 +10,8 @@
 	<modules>
 
 		<module>blakebot-core</module>
-
+		<module>blakebot-module-status</module>
+		
 	</modules>
 
 	<name>BlakeBot</name>
@@ -32,6 +33,7 @@
 			<id>jcenter</id>
 			<url>http://jcenter.bintray.com</url>
 		</repository>
+		
 		<repository>
 			<id>jitpack.io</id>
 			<url>https://jitpack.io</url>
