@@ -28,33 +28,78 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Main bot runner that manages log in/out and bot state.
+ * Uses a Singleton pattern (only a single instance can exist).
+ * The instance can only be started after the properties were set using the
+ * setProperties() method.
  * 
  * @author ThiagoTGM
- * @version 1.1
+ * @version 2.0
  * @since 2016-12-27
  */
 public class Bot {
 
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
     private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
-
-    private volatile IDiscordClient client;
-    private Properties properties;
-    private final AtomicBoolean reconnect;
     
+    private static Properties properties = null;
+    private static Bot instance = null;
+    
+    private volatile IDiscordClient client;
+    private final AtomicBoolean reconnect;
     private ArrayList<ConnectionStatusListener> listeners;
+    
+    /**
+     * Creates a new instance of the bot.
+     */
+    private Bot() {
+        
+        this.client = null;
+        this.reconnect = new AtomicBoolean( true );
+        this.listeners = new ArrayList<>();
+        
+    }
 
     /**
-     * Creates a new bot that uses a given login token.
+     * Gets the running instance of the bot. If one is not currently running,
+     * creates a new one.
+     * Can only be used after setting bot properties with setProperties() once,
+     * as the bot depends on them to function correctly.
      * 
-     * @param token Login token to be used by the bot.
+     * @return The running instance of the bot.
+     * @throws IllegalStateException if used before bot properties are set.
      */
-    public Bot( Properties properties ) {
+    public static Bot getInstance() throws IllegalStateException {
+        
+        if ( properties == null ) {
+            throw new IllegalStateException( "Attempted to use bot before setting properties." );
+        }
+        if ( instance == null ) {
+            instance = new Bot();
+        }
+        return instance;
+        
+    }
+    
+    /**
+     * Sets the bot properties.
+     * 
+     * @param properties Properties used by the bot.
+     */
+    public static void setProperties( Properties properties ) {
 
-        this.properties = properties;
-        this.reconnect = new AtomicBoolean( true );
-        listeners = new ArrayList<>();
+        Bot.properties = properties;
 
+    }
+    
+    /**
+     * Retrieves the properties of the bot.
+     * 
+     * @return The object that contains the properties of the bot.
+     */
+    public static Properties getProperties() {
+        
+        return Bot.properties;
+        
     }
     
     /**
@@ -271,17 +316,6 @@ public class Bot {
     public String getStatus() {
         
         return client.getOurUser().getStatus().getStatusMessage();
-        
-    }
-    
-    /**
-     * Retrieves the properties of the bot.
-     * 
-     * @return The object that contains the properties of the bot.
-     */
-    public Properties getProperties() {
-        
-        return this.properties;
         
     }
     

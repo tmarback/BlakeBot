@@ -52,10 +52,11 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
      * 
      * @param bot Bot to be managed by the GUI instance.
      */
-    public ConsoleGUI( Bot bot ) {
-
+    public ConsoleGUI() {
+        
         // Initializes the console.
         super( "BlakeBot Console" );
+        final Bot bot = Bot.getInstance();
         setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
         addWindowListener( new WindowAdapter() {
 
@@ -104,23 +105,20 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             @Override
             public void actionPerformed( ActionEvent ev ) {
 
+                connectionButton.setEnabled( false );
                 if ( bot.isConnected() ) {
                     // Disconnects the bot.
                     try {
-                        connectionButton.setEnabled( false );
                         bot.terminate();
-                        connectionButton.setEnabled( true );
                     } catch ( DiscordException e ) {
-                        return;
+                        connectionButton.setEnabled( true );
                     }
                 } else {
                     // Connects the bot.
                     try {
-                        connectionButton.setEnabled( false );
                         bot.login();
-                        connectionButton.setEnabled( true );
                     } catch ( DiscordException e ) {
-                        return;
+                        connectionButton.setEnabled( true );
                     }
                 }
 
@@ -278,17 +276,17 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         setButtonsEnabled( false ); // Needs to connect before using command buttons.
 
         // Displays the console.
-        int width = Integer.valueOf( bot.getProperties().getProperty( PropertyNames.CONSOLE_WIDTH ) );
-        int height = Integer.valueOf( bot.getProperties().getProperty( PropertyNames.CONSOLE_HEIGHT ) );
+        int width = Integer.valueOf( Bot.getProperties().getProperty( PropertyNames.CONSOLE_WIDTH ) );
+        int height = Integer.valueOf( Bot.getProperties().getProperty( PropertyNames.CONSOLE_HEIGHT ) );
         setSize( width, height );
         addComponentListener( new ComponentAdapter() {
 
             @Override
             public void componentResized( ComponentEvent ev ) {
 
-                bot.getProperties().setProperty( PropertyNames.CONSOLE_WIDTH,
+                Bot.getProperties().setProperty( PropertyNames.CONSOLE_WIDTH,
                         String.valueOf( ConsoleGUI.this.getWidth() ) );
-                bot.getProperties().setProperty( PropertyNames.CONSOLE_HEIGHT,
+                Bot.getProperties().setProperty( PropertyNames.CONSOLE_HEIGHT,
                         String.valueOf( ConsoleGUI.this.getHeight() ) );
                 
             }

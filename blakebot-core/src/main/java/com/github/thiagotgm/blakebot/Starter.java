@@ -79,9 +79,8 @@ public class Starter {
             properties.setProperty( PropertyNames.LOGIN_TOKEN, key );
         }
         
-        Bot bot;
-        bot = new Bot( properties );
-        bot.registerListener( new ConsoleGUI( bot ) );
+        Bot.setProperties( properties );
+        Bot.getInstance().registerListener( new ConsoleGUI() );
         
     }
 
