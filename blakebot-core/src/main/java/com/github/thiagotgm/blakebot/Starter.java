@@ -16,7 +16,7 @@ import com.github.thiagotgm.blakebot.console.ConsoleGUI;
  * Starts up the bot and the control console.
  * 
  * @author ThiagoTGM
- * @version 1.0
+ * @version 2.0
  * @since 2016-12-28
  */
 public class Starter {
@@ -80,7 +80,7 @@ public class Starter {
         }
         
         Bot.setProperties( properties );
-        Bot.getInstance().registerListener( new ConsoleGUI() );
+        Bot.getInstance().registerListener( ConsoleGUI.getInstance() );
         
     }
 

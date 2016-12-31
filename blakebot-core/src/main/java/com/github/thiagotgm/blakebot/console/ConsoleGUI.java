@@ -31,9 +31,12 @@ import sx.blah.discord.util.DiscordException;
 
 /**
  * GUI used for server-side management of the bot.
+ * Uses a Singleton pattern (only a single instance can exist).
+ * Instance can only be started if the bot is ready to be started.
+ * @see com.github.thiagotgm.blakebot.Bot Bot
  * 
  * @author ThiagoTGM
- * @version 1.0
+ * @version 2.0
  * @since 2016-12-28
  */
 public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
@@ -46,13 +49,15 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
     private final JButton statusButton;
     private final JButton presenceButton;
     private final JButton imageButton;
+    
+    private static ConsoleGUI instance = null;
 
     /**
-     * Creates a GUI that manages a given bot instance.
+     * Creates a GUI that manages the bot instance.
      * 
-     * @param bot Bot to be managed by the GUI instance.
+     * @throws IllegalStateException if the bot is not ready to be initialized.
      */
-    public ConsoleGUI() {
+    private ConsoleGUI() throws IllegalStateException {
         
         // Initializes the console.
         super( "BlakeBot Console" );
@@ -295,7 +300,26 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         setVisible( true );
         log.info( "Console started." );
 
-    } 
+    }
+    
+    /**
+     * Gets the running instance of the console. If one is not currently running,
+     * creates a new one.
+     * The bot must be ready for initialization before the console can be
+     * started. See {@link com.github.thiagotgm.blakebot.Bot#getInstance() Bot.getInstance}
+     * for details on requirements for bot startup.
+     * 
+     * @return The running instance of the bot.
+     * @throws IllegalStateException if the bot is not ready to be initialized.
+     */
+    public static ConsoleGUI getInstance() throws IllegalStateException {
+       
+        if ( instance == null ) {
+            instance = new ConsoleGUI();
+        }
+        return instance;
+        
+    }
 
     /**
      * Redirects stdout to a given JTextPane, using black for the text

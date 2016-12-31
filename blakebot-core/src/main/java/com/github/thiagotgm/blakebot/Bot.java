@@ -30,10 +30,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Main bot runner that manages log in/out and bot state.
  * Uses a Singleton pattern (only a single instance can exist).
  * The instance can only be started after the properties were set using the
- * setProperties() method.
+ * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
- * @version 2.0
+ * @version 2.1
  * @since 2016-12-27
  */
 public class Bot {
@@ -62,7 +62,8 @@ public class Bot {
     /**
      * Gets the running instance of the bot. If one is not currently running,
      * creates a new one.
-     * Can only be used after setting bot properties with setProperties() once,
+     * Can only be used after setting bot properties with
+     * {@link #setProperties(Properties) setProperties} once,
      * as the bot depends on them to function correctly.
      * 
      * @return The running instance of the bot.
@@ -188,62 +189,6 @@ public class Bot {
             }
 
         } );
-
-    }
-
-    /**
-     * Method triggered when a message is received in one of the channels
-     * the bot is reading from.
-     * 
-     * @param event Event triggered.
-     */
-    @EventSubscriber
-    public void onMessage( MessageReceivedEvent event ) {
-
-        log.debug( "Got message" );
-
-        IMessage message = event.getMessage(); // Gets the message from the event
-                                           // object NOTE: This is not the
-                                           // content of the message, but the
-                                           // object itself
-        IChannel channel = message.getChannel(); // Gets the channel in which
-                                                 // this message was sent.
-
-        String newMessage;
-        if ( message.getContent().equals( "!exit" ) ) {
-            try {
-                terminate();
-            } catch ( DiscordException e ) {
-                newMessage = "Sorry, failed to exit.";
-            }
-            return;
-        } else if ( message.getContent().equalsIgnoreCase( "hi" ) ) {
-            newMessage = "Hi, I am a bot!";
-        } else {
-            newMessage = message.getContent();
-        }
-        try {
-            // Builds (sends) and new message in the channel that the original
-            // message was sent with the content of the original message.
-            new MessageBuilder( this.client ).withChannel( channel )
-                    .withContent( newMessage ).build();
-        } catch ( RateLimitException e ) { // RateLimitException thrown. The bot
-                                           // is sending messages too quickly!
-            System.err.print( "Sending messages too quickly!" );
-            e.printStackTrace();
-        } catch ( DiscordException e ) { // DiscordException thrown. Many
-                                         // possibilities. Use getErrorMessage()
-                                         // to see what went wrong.
-            System.err.print( e.getErrorMessage() ); // Print the error message
-                                                     // sent by Discord
-            e.printStackTrace();
-        } catch ( MissingPermissionsException e ) { // MissingPermissionsException
-                                                    // thrown. The bot doesn't
-                                                    // have permission to send
-                                                    // the message!
-            System.err.println( "Missing permissions for channel!" );
-            e.printStackTrace();
-        }
 
     }
 
