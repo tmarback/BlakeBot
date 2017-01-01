@@ -21,11 +21,7 @@ public class StatusModule implements IModule {
     static final String PREFIX = "^";
     
     @Override
-    public void disable() {
-
-        // TODO Auto-generated method stub
-        
-    }
+    public void disable() { }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
@@ -45,6 +41,7 @@ public class StatusModule implements IModule {
     private void registerCommands( CommandHandlerD4J handler ) {
         
         handler.registerAnnotatedCommands( new PingCommand() );
+        handler.registerAnnotatedCommands( new UptimeCommand() );
         
     }
 
