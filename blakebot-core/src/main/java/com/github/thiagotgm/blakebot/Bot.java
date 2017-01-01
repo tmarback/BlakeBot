@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
- * @version 2.1
+ * @version 2.2.0
  * @since 2016-12-27
  */
 public class Bot {
@@ -45,6 +46,7 @@ public class Bot {
     private static Bot instance = null;
     
     private volatile IDiscordClient client;
+    private long startTime;
     private final AtomicBoolean reconnect;
     private ArrayList<ConnectionStatusListener> listeners;
     
@@ -54,6 +56,7 @@ public class Bot {
     private Bot() {
         
         this.client = null;
+        this.startTime = 0;
         this.reconnect = new AtomicBoolean( true );
         this.listeners = new ArrayList<>();
         
@@ -133,6 +136,8 @@ public class Bot {
 
     /**
      * Logs in to Discord.
+     * 
+     * @throws DiscordException if the login failed.
      */
     public void login() throws DiscordException {
 
@@ -144,6 +149,7 @@ public class Bot {
             throw e;
         }
         client.getDispatcher().registerListener( this );
+        reconnect.set( true );
 
     }
 
@@ -155,9 +161,22 @@ public class Bot {
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
+        startTime = System.currentTimeMillis();
         notifyListeners( true );
         log.info( "=== Bot READY! ===" );
 
+    }
+    
+    /**
+     * Resets the bot to a disconnected state and notifies the listeners
+     * for a disconnection.
+     */
+    private void disconnected() {
+        
+        client = null;
+        startTime = 0;
+        notifyListeners( false );
+        
     }
 
     /**
@@ -181,8 +200,7 @@ public class Bot {
                         login();
                     } catch ( DiscordException e ) {
                         log.warn( "Failed to reconnect bot", e );
-                        client = null;
-                        notifyListeners( false );
+                        disconnected();
                     }
                 }
 
@@ -194,6 +212,8 @@ public class Bot {
 
     /**
      * Stops the bot, disconnecting it from Discord.
+     * 
+     * @throws DiscordException if the logout failed.
      */
     public void terminate() throws DiscordException {
 
@@ -201,8 +221,7 @@ public class Bot {
         log.debug( "Disconnecting bot." );
         try {
             client.logout();
-            client = null;
-            notifyListeners( false );
+            disconnected();
             log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
             log.error( "Logout failed", e );
@@ -261,6 +280,35 @@ public class Bot {
     public String getStatus() {
         
         return client.getOurUser().getStatus().getStatusMessage();
+        
+    }
+    
+    /**
+     * Gets the time that the bot has been connected to Discord.
+     * 
+     * @return The time elapsed since the time connected.<br>
+     *         Is returned in the form of an array with 3 values:<p>
+     *         index 0 - Days elapsed;<br>
+     *         index 1 - Hours elapsed;<br>
+     *         index 2 - Minutes elapsed.
+     * @throws IllegalStateException if called when the bot is currently disconnected.
+     */
+    public long[] getUptime() throws IllegalStateException {
+        
+        if ( startTime == 0 ) {
+            throw new IllegalStateException( "Tried to get uptime when the bot is disconnected." );
+        }
+        
+        long time = System.currentTimeMillis() - startTime;
+        long[] uptime = new long[3];
+        uptime[0] = TimeUnit.MILLISECONDS.toDays( time );
+        time -= TimeUnit.DAYS.toMillis( uptime[0] );
+        uptime[1] = TimeUnit.MILLISECONDS.toHours( time );
+        time -= TimeUnit.HOURS.toMillis( uptime[1] );
+        uptime[2] = TimeUnit.MILLISECONDS.toMinutes( time );
+        log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime +
+                "h | " + uptime + "m" );
+        return uptime;
         
     }
     
@@ -342,7 +390,7 @@ public class Bot {
     /**
      * Changes the profile image of the bot to that of a given file.
      * 
-     * @param url File of the image.
+     * @param file File of the image.
      */
     public void setImage( File file ) {
         

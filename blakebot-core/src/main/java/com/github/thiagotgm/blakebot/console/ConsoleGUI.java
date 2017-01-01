@@ -36,7 +36,7 @@ import sx.blah.discord.util.DiscordException;
  * @see com.github.thiagotgm.blakebot.Bot Bot
  * 
  * @author ThiagoTGM
- * @version 2.0
+ * @version 2.0.0
  * @since 2016-12-28
  */
 public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
@@ -366,12 +366,12 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
      * If the bot becomes connected or disconnected, changes the button panel
      * accordingly.
      * 
-     * @param enabled If true,bot became connected. All control buttons
-     *                are enabled and connect/disconnect button shows
-     *                "Disconnect" option.
-     *                Otherwise, bot became disconnected. 
-     *                Only connect/disconnect button is enabled,
-     *                and it shows "Connect" option.
+     * @param isConnected If true,bot became connected. All control buttons
+     *                    are enabled and connect/disconnect button shows
+     *                    "Disconnect" option.
+     *                    Otherwise, bot became disconnected. 
+     *                    Only connect/disconnect button is enabled,
+     *                    and it shows "Connect" option.
      */
     @Override
     public void connectionChange( boolean isConnected ) {
