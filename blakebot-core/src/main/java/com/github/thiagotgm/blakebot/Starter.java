@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 import javax.swing.JOptionPane;
@@ -22,8 +24,10 @@ import com.github.thiagotgm.blakebot.console.ConsoleGUI;
  */
 public class Starter {
 
-    private static final Logger log = LoggerFactory.getLogger( Starter.class );
-
+    private static final String LOG_FILE = "BlakeBot";
+    private static final String LOG_EXT = ".log";
+    private static final String LOG_FOLDER = "logs";
+    
     /**
      * On program startup, creates and starts a new instance of the bot with a
      * login key given as argument, and a console to manage it. The bot isn't
@@ -34,6 +38,31 @@ public class Starter {
      */
     public static void main( String[] args ) {
 
+        // If there is an existing log file, (attempts to) archives it.
+        if ( Files.exists( Paths.get( LOG_FILE + LOG_EXT ) ) ) {
+            if ( !Files.isDirectory( Paths.get( LOG_FOLDER ) ) ) {
+                try {
+                    Files.createDirectory( Paths.get( LOG_FOLDER ) );
+                } catch ( IOException e ) {
+                    logFileError( "Could not create log archive directory.", e );
+                }
+            }
+            int num = 0;
+            while ( Files.exists( Paths.get( LOG_FOLDER, LOG_FILE + "-" + num + LOG_EXT ) ) ) {
+                
+                num++;
+                
+            }
+            try {
+                Files.move( Paths.get( LOG_FILE + LOG_EXT ), Paths.get( LOG_FOLDER,
+                        LOG_FILE + "-" + num + LOG_EXT ) );
+            } catch ( IOException e ) {
+                logFileError( "Could not move log file.", e );
+            }
+        }
+        
+        final Logger log = LoggerFactory.getLogger( Starter.class );
+        
         // Reads default properties.
         Properties defaults = new Properties();
         try {
@@ -82,6 +111,21 @@ public class Starter {
         Bot.setProperties( properties );
         Bot.getInstance().registerListener( ConsoleGUI.getInstance() );
 
+    }
+    
+    /**
+     * Logs an error that occured while moving the log file (ie. before the
+     * logger object is created).
+     * 
+     * @param message Message to be logged.
+     * @param e Exception that was thrown.
+     */
+    private static void logFileError( String message, Exception e ) {
+        
+        Logger log = LoggerFactory.getLogger( Starter.class );
+        log.error( message, e );
+        log.error( "================================================" );
+        
     }
 
 }
