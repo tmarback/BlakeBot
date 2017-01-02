@@ -3,6 +3,7 @@ package com.github.thiagotgm.blakebot;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import javax.swing.JOptionPane;
@@ -24,30 +25,27 @@ public class Starter {
     private static final Logger log = LoggerFactory.getLogger( Starter.class );
 
     /**
-     * On program startup, creates and starts a new instance of the bot
-     * with a login key given as argument, and a console to manage it.
-     * The bot isn't immediately connected to discord, it must be ordered
-     * to do so through the console.
+     * On program startup, creates and starts a new instance of the bot with a
+     * login key given as argument, and a console to manage it. The bot isn't
+     * immediately connected to discord, it must be ordered to do so through the
+     * console.
      * 
-     * @param args Command line arguments. Must be only one, the bot login
-     *             key.
+     * @param args Command line arguments. Must be only one, the bot login key.
      */
     public static void main( String[] args ) {
-        
+
         // Reads default properties.
         Properties defaults = new Properties();
         try {
-             FileInputStream input = new FileInputStream( PropertyNames.DEFAULTS_FILE );
-             defaults.loadFromXML( input );
-             log.info( "Loaded default properties." );
-        } catch ( FileNotFoundException e ) {
-            log.error( "Default properties file not found.", e );
-            System.exit( 1 );
+            ClassLoader loader = Starter.class.getClassLoader();
+            InputStream input = loader.getResourceAsStream( PropertyNames.DEFAULTS_FILE );
+            defaults.loadFromXML( input );
+            log.info( "Loaded default properties." );
         } catch ( IOException e ) {
             log.error( "Error reading default properties file.", e );
             System.exit( 2 );
         }
-        
+
         // Reads properties
         Properties properties = new Properties( defaults );
         try {
@@ -55,33 +53,35 @@ public class Starter {
             properties.loadFromXML( input );
             log.info( "Loaded bot properties." );
         } catch ( FileNotFoundException e ) {
-            log.error( "Properties file not found. A new one will be created." );
+            log.error(
+                    "Properties file not found. A new one will be created." );
         } catch ( IOException e ) {
             log.error( "Error reading properties file.", e );
             System.exit( 2 );
         }
-        
+
         // Requests login token if none registered.
         if ( !properties.containsKey( PropertyNames.LOGIN_TOKEN ) ) {
             log.info( "No registered Key. Requesting key." );
             String key;
             do {
 
-                key = JOptionPane.showInputDialog( "Please enter bot login key." );
+                key = JOptionPane
+                        .showInputDialog( "Please enter bot login key." );
                 if ( key == null ) {
                     log.debug( "Setup cancelled." );
                     System.exit( 0 );
                 }
                 key = key.trim();
-                
+
             } while ( key.length() == 0 );
             log.debug( "Received key." );
             properties.setProperty( PropertyNames.LOGIN_TOKEN, key );
         }
-        
+
         Bot.setProperties( properties );
         Bot.getInstance().registerListener( ConsoleGUI.getInstance() );
-        
+
     }
 
 }
