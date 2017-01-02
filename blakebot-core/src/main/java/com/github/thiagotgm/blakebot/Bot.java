@@ -7,6 +7,7 @@ import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
@@ -304,6 +305,42 @@ public class Bot {
         log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime +
                 "h | " + uptime + "m" );
         return uptime;
+        
+    }
+    
+    /**
+     * Gets the username of the owner of the bot account.
+     * 
+     * @return The Discord username of the owner.
+     * @throws DiscordException if the name could not be retrieved.
+     */
+    public String getOwner() throws DiscordException {
+        
+        try {
+            return client.getApplicationOwner().getName();
+        } catch ( DiscordException e ) {
+            log.warn( "Could not get owner name.", e );
+            throw e;
+        }
+        
+    }
+    
+    /**
+     * Gets the nickname of the owner of the bot in a certain server.
+     * 
+     * @param server Target server.
+     * @return The nickname of the bot owner in the server, or null if it doesn't
+     *         exist.
+     * @throws DiscordException if the nickname could not be retrieved.
+     */
+    public String getOwner( IGuild server ) throws DiscordException {
+        
+        try {
+            return client.getApplicationOwner().getNicknameForGuild( server ).orElse( null );
+        } catch ( DiscordException e ) {
+            log.warn( "Could not get owner nickname.", e );
+            throw e;
+        }
         
     }
     

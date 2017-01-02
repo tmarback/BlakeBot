@@ -36,10 +36,10 @@ public class UptimeCommand {
             
             long[] uptime = Bot.getInstance().getUptime();
             try {
-                msgBuilder.withContent( "I have been connected for " +
+                msgBuilder.withContent( "\u200BI have been connected for " +
                         uptime[0] + " days, " + uptime[1] + " hours, and " +
                         uptime[2] + " minutes." ).build();
-            } catch (DiscordException | MissingPermissionsException e) {
+            } catch ( DiscordException | MissingPermissionsException e ) {
                 CommandHandlerD4J.logMissingPerms( event, NAME, e );
             }
             

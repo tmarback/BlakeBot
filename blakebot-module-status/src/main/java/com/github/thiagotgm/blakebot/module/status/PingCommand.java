@@ -34,7 +34,7 @@ public class PingCommand {
         RequestBuffer.request( () -> {
             
             try {
-                msgBuilder.withContent( "pong!" ).build();
+                msgBuilder.withContent( "\u200Bpong!" ).build();
             } catch ( DiscordException | MissingPermissionsException e ) {
                 CommandHandlerD4J.logMissingPerms( event, NAME, e );
             }
