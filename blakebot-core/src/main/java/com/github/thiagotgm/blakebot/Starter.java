@@ -19,7 +19,7 @@ import com.github.thiagotgm.blakebot.console.ConsoleGUI;
  * Starts up the bot and the control console.
  * 
  * @author ThiagoTGM
- * @version 2.0
+ * @version 2.0.1
  * @since 2016-12-28
  */
 public class Starter {
@@ -69,6 +69,7 @@ public class Starter {
             ClassLoader loader = Starter.class.getClassLoader();
             InputStream input = loader.getResourceAsStream( PropertyNames.DEFAULTS_FILE );
             defaults.loadFromXML( input );
+            input.close();
             log.info( "Loaded default properties." );
         } catch ( IOException e ) {
             log.error( "Error reading default properties file.", e );
@@ -80,6 +81,7 @@ public class Starter {
         try {
             FileInputStream input = new FileInputStream( PropertyNames.PROPERTIES_FILE );
             properties.loadFromXML( input );
+            input.close();
             log.info( "Loaded bot properties." );
         } catch ( FileNotFoundException e ) {
             log.error(
@@ -114,7 +116,7 @@ public class Starter {
     }
     
     /**
-     * Logs an error that occured while moving the log file (ie. before the
+     * Logs an error that occurred while moving the log file (ie. before the
      * logger object is created).
      * 
      * @param message Message to be logged.

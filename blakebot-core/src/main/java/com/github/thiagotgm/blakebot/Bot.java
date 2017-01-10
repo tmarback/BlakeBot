@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
- * @version 2.2.0
+ * @version 2.2.1
  * @since 2016-12-27
  */
 public class Bot {
@@ -236,6 +236,7 @@ public class Bot {
         try {
             file = new FileOutputStream( PropertyNames.PROPERTIES_FILE );
             properties.storeToXML( file, PropertyNames.PROPERTIES_COMMENT );
+            file.close();
         } catch ( FileNotFoundException e ) {
             log.error( "Could not open properties file.", e );
         } catch ( IOException e ) {
@@ -302,8 +303,8 @@ public class Bot {
         uptime[1] = TimeUnit.MILLISECONDS.toHours( time );
         time -= TimeUnit.HOURS.toMillis( uptime[1] );
         uptime[2] = TimeUnit.MILLISECONDS.toMinutes( time );
-        log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime +
-                "h | " + uptime + "m" );
+        log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime[1] +
+                "h | " + uptime[2] + "m" );
         return uptime;
         
     }
