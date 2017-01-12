@@ -28,6 +28,7 @@ import com.github.thiagotgm.blakebot.ConnectionStatusListener;
 import com.github.thiagotgm.blakebot.PropertyNames;
 
 import sx.blah.discord.util.DiscordException;
+import sx.blah.discord.util.RateLimitException;
 
 /**
  * GUI used for server-side management of the bot.
@@ -122,7 +123,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
                     // Connects the bot.
                     try {
                         bot.login();
-                    } catch ( DiscordException e ) {
+                    } catch ( DiscordException | RateLimitException e ) {
                         connectionButton.setEnabled( true );
                     }
                 }

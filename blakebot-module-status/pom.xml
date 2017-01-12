@@ -15,11 +15,6 @@
   <name>blakebot-module-status</name>
 
   <dependencies>
-  
-    <dependency>
-  		<groupId>com.github.alphahelix00</groupId>
-	    <artifactId>Discordinator</artifactId>
-  	</dependency>
   	
 	<dependency>
 		<groupId>com.github.thiagotgm</groupId>
@@ -32,6 +27,22 @@
   <build>
     
         <plugins>
+        
+            <!-- To set the module class in the manifest -->
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-jar-plugin</artifactId>
+		        <version>3.0.2</version>
+		        <configuration>
+			        <archive>
+	                    <manifestEntries>
+	                    
+	                        <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
+	                    
+	                    </manifestEntries>
+	                </archive>
+		        </configuration>
+            </plugin>
         
             <!-- To create an executable fat JAR when using mvn package -->
             <plugin>
@@ -49,7 +60,12 @@
                         </goals>
                         <configuration>    
                         	<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                        	<shadedArtifactAttached>true</shadedArtifactAttached>             
+                        	<shadedArtifactAttached>true</shadedArtifactAttached>
+                        	<artifactSet>
+				                <includes>
+				                  <include>com.github.thiagotgm:blakebot-module-status</include>
+				                </includes>
+				            </artifactSet>             
                         </configuration>
                     </execution>
                     

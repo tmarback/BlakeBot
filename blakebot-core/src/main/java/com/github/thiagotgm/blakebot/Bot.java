@@ -2,6 +2,9 @@ package com.github.thiagotgm.blakebot;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.alphahelix00.discordinator.d4j.DiscordinatorModule;
+
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
@@ -53,7 +56,15 @@ public class Bot {
      */
     private Bot() {
         
-        this.client = null;
+        String token = properties.getProperty( PropertyNames.LOGIN_TOKEN );
+        DiscordinatorModule discordinator = new DiscordinatorModule();
+        try {
+            this.client = new ClientBuilder().withToken( token ).build();
+        } catch ( DiscordException e ) {
+            log.error( "Failed to create bot.", e );
+            System.exit( 5 );
+        }
+        this.client.getModuleLoader().loadModule( discordinator );
         this.startTime = 0;
         this.reconnect = new AtomicBoolean( true );
         this.listeners = new ArrayList<>();
@@ -76,7 +87,7 @@ public class Bot {
             throw new IllegalStateException( "Attempted to use bot before setting properties." );
         }
         if ( instance == null ) {
-            instance = new Bot();
+            instance = new Bot();   
         }
         return instance;
         
@@ -137,12 +148,11 @@ public class Bot {
      * 
      * @throws DiscordException if the login failed.
      */
-    public void login() throws DiscordException {
+    public void login() throws DiscordException, RateLimitException {
 
-        String token = properties.getProperty( PropertyNames.LOGIN_TOKEN );
         try {
-            client = new ClientBuilder().withToken( token ).login();
-        } catch ( DiscordException e ) {
+            client.login();
+        } catch ( DiscordException | RateLimitException e ) {
             log.error( "Failed to connect!", e );
             throw e;
         }
@@ -171,7 +181,6 @@ public class Bot {
      */
     private void disconnected() {
         
-        client = null;
         startTime = 0;
         notifyListeners( false );
         
@@ -196,7 +205,7 @@ public class Bot {
                     log.info( "Reconnecting bot" );
                     try {
                         login();
-                    } catch ( DiscordException e ) {
+                    } catch ( DiscordException | RateLimitException e ) {
                         log.warn( "Failed to reconnect bot", e );
                         disconnected();
                     }
