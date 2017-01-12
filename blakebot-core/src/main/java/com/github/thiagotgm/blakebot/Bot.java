@@ -7,6 +7,7 @@ import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
+import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.util.DiscordException;
@@ -18,6 +19,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -434,6 +436,52 @@ public class Bot {
         } catch ( RateLimitException | DiscordException e ) {
             log.warn( "Failed to change bot image.", e );
         }
+        
+    }
+    
+    /**
+     * Gets all the channels visible to the bot.
+     *
+     * @return The list of channels visible to the bot.
+     */
+    public List<IChannel> getChannels() {
+        
+        return client.getChannels( true );
+        
+    }
+    
+    /**
+     * Gets all the public channels visible to the bot.
+     *
+     * @return The list of public channels visible to the bot.
+     */
+    public List<IChannel> getPublicChannels() {
+        
+        return client.getChannels();
+        
+    }
+    
+    /**
+     * Gets all the private channels visible to the bot.
+     *
+     * @return The list of private channels visible to the bot.
+     */
+    public List<IChannel> getPrivateChannels() {
+        
+        List<IChannel> channels = client.getChannels( true );
+        channels.removeAll( client.getChannels() );
+        return channels;
+        
+    }
+    
+    /**
+     * Gets all the guilds (servers) where the bot is present.
+     *
+     * @return The list of guilds that the bot is connected to.
+     */
+    public List<IGuild> getGuilds() {
+        
+        return client.getGuilds();
         
     }
 

@@ -43,6 +43,7 @@ public class StatusModule implements IModule {
         handler.registerAnnotatedCommands( new PingCommand() );
         handler.registerAnnotatedCommands( new UptimeCommand() );
         handler.registerAnnotatedCommands( new OwnerCommand() );
+        handler.registerAnnotatedCommands( new StatusCommand() );
         
     }
 
