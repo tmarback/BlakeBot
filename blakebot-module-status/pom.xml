@@ -28,7 +28,7 @@
     
         <plugins>
         
-            <!-- To set the module class in the manifest -->
+            <!-- To set the module class and version in the manifest -->
 	        <plugin>
 		        <groupId>org.apache.maven.plugins</groupId>
 		        <artifactId>maven-jar-plugin</artifactId>
@@ -38,6 +38,7 @@
 	                    <manifestEntries>
 	                    
 	                        <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
+	                        <Implementation-Version>${project.version}</Implementation-Version>
 	                    
 	                    </manifestEntries>
 	                </archive>

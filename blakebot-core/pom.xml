@@ -17,6 +17,22 @@
     
         <plugins>
         
+            <!-- To set the versions in the manifest -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                        
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                            
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        
             <!-- To create an executable fat JAR when using mvn package -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -493,5 +493,16 @@ public class Bot {
         return client.getGuilds();
         
     }
+    
+    /**
+     * Retrieves the current version of the core module.
+     *
+     * @return The version of the core module.
+     */
+    public String getVersion() {
+        
+        return getClass().getPackage().getImplementationVersion();
+        
+    }
 
 }

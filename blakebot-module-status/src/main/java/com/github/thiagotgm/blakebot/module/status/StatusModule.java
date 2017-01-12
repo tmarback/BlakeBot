@@ -16,7 +16,6 @@ import sx.blah.discord.modules.IModule;
 public class StatusModule implements IModule {
     
     private static final String MODULE_NAME = "Status Module";
-    private static final String MODULE_VERSION = "0.3.0";
     
     static final String PREFIX = "^";
     
@@ -71,7 +70,7 @@ public class StatusModule implements IModule {
     @Override
     public String getVersion() {
 
-        return MODULE_VERSION;
+        return getClass().getPackage().getImplementationVersion();
         
     }
 
