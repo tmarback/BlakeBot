@@ -6,11 +6,11 @@
   <parent>
     <groupId>com.github.thiagotgm</groupId>
     <artifactId>blakebot</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0-SNAPSHOT</version>
   </parent>
   
   <artifactId>blakebot-module-status</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0-SNAPSHOT</version>
   
   <name>blakebot-module-status</name>
 

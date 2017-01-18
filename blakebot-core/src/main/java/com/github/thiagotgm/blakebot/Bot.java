@@ -10,6 +10,7 @@ import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
+import sx.blah.discord.handle.impl.events.ResumedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.Status;
@@ -172,6 +173,19 @@ public class Bot {
         startTime = System.currentTimeMillis();
         notifyListeners( true );
         log.info( "=== Bot READY! ===" );
+
+    }
+    
+    /**
+     * Method triggered when the bot is resumed (after disconnect).
+     * 
+     * @param event Event fired.
+     */
+    @EventSubscriber
+    public void onResume( ResumedEvent event ) {
+
+        startTime = System.currentTimeMillis();
+        log.info( "=== Bot RECONNECTED! ===" );
 
     }
     
