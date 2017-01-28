@@ -111,7 +111,7 @@ public class Starter {
         }
 
         Bot.setProperties( properties );
-        Bot.getInstance().registerListener( ConsoleGUI.getInstance() );
+        Bot.registerListener( ConsoleGUI.getInstance() );
 
     }
     

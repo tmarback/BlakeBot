@@ -71,7 +71,6 @@ public class StatusCommand implements ConnectionStatusListener {
                 
                 /* Structures status message */
                 EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.withDescription( "Bot status" );
                 embedBuilder.appendField( "Public channels", publicAmount + " channels", false );
                 embedBuilder.appendField( "Private channels", privateAmount + " channels", false );
                 embedBuilder.appendField( "Servers", serverAmount + " servers", false );
@@ -124,7 +123,7 @@ public class StatusCommand implements ConnectionStatusListener {
     @Override
     public void connectionChange( boolean isConnected ) {
 
-        if ( isConnected == true ) {
+        if ( isConnected ) {
             return; // Just connected - do nothing.
         }
         long uptime = Bot.getInstance().getLastUptime();

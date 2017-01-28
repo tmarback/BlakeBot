@@ -2,6 +2,7 @@ package com.github.thiagotgm.blakebot.module.status;
 
 import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
 import com.github.alphahelix00.ordinator.Ordinator;
+import com.github.thiagotgm.blakebot.Bot;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
@@ -17,10 +18,16 @@ public class StatusModule implements IModule {
     
     private static final String MODULE_NAME = "Status Module";
     
-    static final String PREFIX = "^";
+    public static final String PREFIX = "^";
+    
+    private StatusCommand statusCommand;
     
     @Override
-    public void disable() { }
+    public void disable() {
+        
+        Bot.unregisterListener( statusCommand );
+        
+    }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
@@ -28,6 +35,7 @@ public class StatusModule implements IModule {
         CommandHandlerD4J commandHandler;
         commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
         registerCommands( commandHandler );
+        Bot.registerListener( statusCommand );
         return true;
         
     }
@@ -42,7 +50,8 @@ public class StatusModule implements IModule {
         handler.registerAnnotatedCommands( new PingCommand() );
         handler.registerAnnotatedCommands( new UptimeCommand() );
         handler.registerAnnotatedCommands( new OwnerCommand() );
-        handler.registerAnnotatedCommands( new StatusCommand() );
+        statusCommand = new StatusCommand();
+        handler.registerAnnotatedCommands( statusCommand );
         
     }
 

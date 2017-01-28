@@ -46,12 +46,12 @@ public class Bot {
     
     private static Properties properties = null;
     private static Bot instance = null;
+    private static ArrayList<ConnectionStatusListener> listeners = new ArrayList<>();
     
     private volatile IDiscordClient client;
     private long startTime;
     private long lastUptime;
     private final AtomicBoolean reconnect;
-    private ArrayList<ConnectionStatusListener> listeners;
     
     /**
      * Creates a new instance of the bot.
@@ -70,7 +70,6 @@ public class Bot {
         this.startTime = 0;
         this.lastUptime = 0;
         this.reconnect = new AtomicBoolean( true );
-        this.listeners = new ArrayList<>();
         
     }
 
@@ -123,10 +122,22 @@ public class Bot {
      * 
      * @param listener Listener to be registered.
      */
-    public void registerListener( ConnectionStatusListener listener ) {
+    public static void registerListener( ConnectionStatusListener listener ) {
         
         listeners.add( listener );
         log.trace( "Registered status listener." );
+        
+    }
+    
+    /**
+     * Unregisters a current listener.
+     * 
+     * @param listener Listener to be unregistered.
+     */
+    public static void unregisterListener( ConnectionStatusListener listener ) {
+        
+        listeners.remove( listener );
+        log.trace( "Unregistered status listener." );
         
     }
     
