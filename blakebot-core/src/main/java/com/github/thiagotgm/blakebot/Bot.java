@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
- * @version 2.2.1
+ * @version 2.3.0
  * @since 2016-12-27
  */
 public class Bot {
@@ -49,6 +49,7 @@ public class Bot {
     
     private volatile IDiscordClient client;
     private long startTime;
+    private long lastUptime;
     private final AtomicBoolean reconnect;
     private ArrayList<ConnectionStatusListener> listeners;
     
@@ -67,6 +68,7 @@ public class Bot {
         }
         this.client.getModuleLoader().loadModule( discordinator );
         this.startTime = 0;
+        this.lastUptime = 0;
         this.reconnect = new AtomicBoolean( true );
         this.listeners = new ArrayList<>();
         
@@ -170,8 +172,7 @@ public class Bot {
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
-        startTime = System.currentTimeMillis();
-        notifyListeners( true );
+        connected();
         log.info( "=== Bot READY! ===" );
 
     }
@@ -184,9 +185,19 @@ public class Bot {
     @EventSubscriber
     public void onResume( ResumedEvent event ) {
 
-        startTime = System.currentTimeMillis();
+        connected();
         log.info( "=== Bot RECONNECTED! ===" );
 
+    }
+    
+    /**
+     * Records time that the bot connected and notifies listeners.
+     */
+    private void connected() {
+        
+        startTime = System.currentTimeMillis();
+        notifyListeners( true );
+        
     }
     
     /**
@@ -194,7 +205,8 @@ public class Bot {
      * for a disconnection.
      */
     private void disconnected() {
-        
+      
+        lastUptime = System.currentTimeMillis() - startTime;
         startTime = 0;
         notifyListeners( false );
         
@@ -209,6 +221,7 @@ public class Bot {
     public void onDisconnect( DisconnectedEvent event ) {
 
         log.debug( "Bot disconnected." );
+        disconnected();
         CompletableFuture.runAsync( new Runnable() {
 
             @Override
@@ -220,8 +233,7 @@ public class Bot {
                     try {
                         login();
                     } catch ( DiscordException | RateLimitException e ) {
-                        log.warn( "Failed to reconnect bot", e );
-                        disconnected();
+                        log.warn( "Failed to reconnect bot", e );    
                     }
                 }
 
@@ -242,7 +254,6 @@ public class Bot {
         log.debug( "Disconnecting bot." );
         try {
             client.logout();
-            disconnected();
             log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
             log.error( "Logout failed", e );
@@ -306,31 +317,67 @@ public class Bot {
     }
     
     /**
-     * Gets the time that the bot has been connected to Discord.
-     * 
-     * @return The time elapsed since the time connected.<br>
+     * Parses a time difference in milliseconds to days, hours and minutes.
+     *
+     * @param time Time difference in milliseconds.
+     * @return The parsed time difference.<br>
      *         Is returned in the form of an array with 3 values:<p>
      *         index 0 - Days elapsed;<br>
      *         index 1 - Hours elapsed;<br>
      *         index 2 - Minutes elapsed.
-     * @throws IllegalStateException if called when the bot is currently disconnected.
      */
-    public long[] getUptime() throws IllegalStateException {
-        
-        if ( startTime == 0 ) {
-            throw new IllegalStateException( "Tried to get uptime when the bot is disconnected." );
-        }
-        
-        long time = System.currentTimeMillis() - startTime;
+    public static long[] parseUptime( long time ) {
+            
         long[] uptime = new long[3];
         uptime[0] = TimeUnit.MILLISECONDS.toDays( time );
         time -= TimeUnit.DAYS.toMillis( uptime[0] );
         uptime[1] = TimeUnit.MILLISECONDS.toHours( time );
         time -= TimeUnit.HOURS.toMillis( uptime[1] );
         uptime[2] = TimeUnit.MILLISECONDS.toMinutes( time );
+        return uptime;
+        
+    }
+    
+    /**
+     * Converts a uptime array to a string, in the form "dd days, hh hours, mm minutes".
+     *
+     * @param uptime Array containing the uptime.
+     * @return Uptime as a string.
+     */
+    public static String uptimeString( long[] uptime ) {
+        
+        return uptime[0] + " days, " + uptime[1] + " hours, " + uptime[2] + " minutes";
+        
+    }
+    
+    /**
+     * Gets the time that the bot has been connected to Discord.
+     * 
+     * @return The time elapsed, in milliseconds.
+     * @throws IllegalStateException if called when the bot is currently disconnected.
+     */
+    public long getUptime() throws IllegalStateException {
+        
+        if ( startTime == 0 ) {
+            throw new IllegalStateException( "Tried to get uptime when the bot is disconnected." );
+        }
+        
+        long time = System.currentTimeMillis() - startTime;
+        long[] uptime = parseUptime( time );
         log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime[1] +
                 "h | " + uptime[2] + "m" );
-        return uptime;
+        return time;
+        
+    }
+    
+    /**
+     * Gets the time that the bot has been connected to Discord before the last disconnect.
+     * 
+     * @return The time elapsed, in milliseconds.
+     */
+    public long getLastUptime() {
+        
+        return lastUptime;
         
     }
     
@@ -365,6 +412,23 @@ public class Bot {
             return client.getApplicationOwner().getNicknameForGuild( server ).orElse( null );
         } catch ( DiscordException e ) {
             log.warn( "Could not get owner nickname.", e );
+            throw e;
+        }
+        
+    }
+    
+    /**
+     * Retrieves the url of the avatar image of the owner of the bot.
+     *
+     * @return The avatar of the owner of the bot.
+     * @throws DiscordException If the image could not be retrieved.
+     */
+    public String getOwnerImage() throws DiscordException {
+        
+        try {
+            return client.getApplicationOwner().getAvatarURL();
+        } catch ( DiscordException e ) {
+            log.warn( "Could not get owner image url.", e );
             throw e;
         }
         
