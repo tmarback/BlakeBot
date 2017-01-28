@@ -79,6 +79,7 @@ public class StatusCommand implements ConnectionStatusListener {
                 embedBuilder.appendField( "Average uptime", averageUptime, false );
                 embedBuilder.appendField( "Highest uptime", maxUptime, false );
                 embedBuilder.appendField( "Lowest uptime", minUptime, false );
+                embedBuilder.appendField( "Disconnects", String.valueOf( disconnects ), false );
                 embedBuilder.withColor( Color.RED );
                 
                 /* Sends status message */ 
