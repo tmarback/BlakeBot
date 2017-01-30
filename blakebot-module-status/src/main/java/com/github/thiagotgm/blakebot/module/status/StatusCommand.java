@@ -130,7 +130,8 @@ public class StatusCommand implements ConnectionStatusListener {
         long uptime = Bot.getInstance().getLastUptime();
         if ( uptime > highestUptime ) {
             highestUptime = uptime; // New max runtime.
-        } else if ( ( lowestUptime == 0 ) || ( uptime < lowestUptime ) ) {
+        }
+        if ( ( lowestUptime == 0 ) || ( uptime < lowestUptime ) ) {
             lowestUptime = uptime; // New min runtime.
         }
         totalUptime += uptime;
