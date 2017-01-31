@@ -135,7 +135,8 @@ public class StatusCommand implements ConnectionStatusListener {
         
         if ( uptime > highestUptime ) {
             maxUptime = lastUptime; // New max runtime.
-        } else if ( ( lowestUptime == 0 ) || ( uptime < lowestUptime ) ) {
+        }
+        if ( ( lowestUptime == 0 ) || ( uptime < lowestUptime ) ) {
             minUptime = lastUptime; // New min runtime.
         }
         totalUptime += uptime;
