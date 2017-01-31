@@ -18,7 +18,7 @@ import sx.blah.discord.util.RequestBuffer;
  * Command that displays how long the bot has been connected to Discord.
  * 
  * @author ThiagoTGM
- * @version 1.1
+ * @version 1.2
  * @since 2017-01-01
  */
 public class UptimeCommand {
@@ -36,10 +36,9 @@ public class UptimeCommand {
         
         RequestBuffer.request( () -> {
             
-            long[] uptime = Bot.parseUptime( Bot.getInstance().getUptime() );
             try {
                 EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.appendField( "Connection uptime", Bot.uptimeString( uptime ), false );
+                embedBuilder.appendField( "Connection uptime", Bot.getInstance().getUptime().toString(), false );
                 embedBuilder.withColor( Color.RED );
                 msgBuilder.withEmbed( embedBuilder.build() ).build();
             } catch ( DiscordException | MissingPermissionsException e ) {

@@ -5,11 +5,11 @@
 	<parent>
 		<groupId>com.github.thiagotgm</groupId>
         <artifactId>blakebot</artifactId>        
-        <version>0.2.0</version>
+        <version>0.2.1</version>
     </parent>
     
     <artifactId>blakebot-core</artifactId>
-    <version>1.2.1</version>
+    <version>0.3.0</version>
     
     <name>blakebot-core</name>
     

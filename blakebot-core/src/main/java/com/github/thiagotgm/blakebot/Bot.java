@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -36,7 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
- * @version 2.3.0
+ * @version 2.4.0
  * @since 2016-12-27
  */
 public class Bot {
@@ -50,7 +49,7 @@ public class Bot {
     
     private volatile IDiscordClient client;
     private long startTime;
-    private long lastUptime;
+    private Time lastUptime;
     private final AtomicBoolean reconnect;
     
     /**
@@ -68,7 +67,7 @@ public class Bot {
         }
         this.client.getModuleLoader().loadModule( discordinator );
         this.startTime = 0;
-        this.lastUptime = 0;
+        this.lastUptime = new Time( 0 );
         this.reconnect = new AtomicBoolean( true );
         
     }
@@ -217,7 +216,7 @@ public class Bot {
      */
     private void disconnected() {
       
-        lastUptime = System.currentTimeMillis() - startTime;
+        lastUptime = new Time( System.currentTimeMillis() - startTime );
         startTime = 0;
         notifyListeners( false );
         
@@ -328,56 +327,20 @@ public class Bot {
     }
     
     /**
-     * Parses a time difference in milliseconds to days, hours and minutes.
-     *
-     * @param time Time difference in milliseconds.
-     * @return The parsed time difference.<br>
-     *         Is returned in the form of an array with 3 values:<p>
-     *         index 0 - Days elapsed;<br>
-     *         index 1 - Hours elapsed;<br>
-     *         index 2 - Minutes elapsed.
-     */
-    public static long[] parseUptime( long time ) {
-            
-        long[] uptime = new long[3];
-        uptime[0] = TimeUnit.MILLISECONDS.toDays( time );
-        time -= TimeUnit.DAYS.toMillis( uptime[0] );
-        uptime[1] = TimeUnit.MILLISECONDS.toHours( time );
-        time -= TimeUnit.HOURS.toMillis( uptime[1] );
-        uptime[2] = TimeUnit.MILLISECONDS.toMinutes( time );
-        return uptime;
-        
-    }
-    
-    /**
-     * Converts a uptime array to a string, in the form "dd days, hh hours, mm minutes".
-     *
-     * @param uptime Array containing the uptime.
-     * @return Uptime as a string.
-     */
-    public static String uptimeString( long[] uptime ) {
-        
-        return uptime[0] + " days, " + uptime[1] + " hours, " + uptime[2] + " minutes";
-        
-    }
-    
-    /**
      * Gets the time that the bot has been connected to Discord.
      * 
      * @return The time elapsed, in milliseconds.
      * @throws IllegalStateException if called when the bot is currently disconnected.
      */
-    public long getUptime() throws IllegalStateException {
+    public Time getUptime() throws IllegalStateException {
         
         if ( startTime == 0 ) {
             throw new IllegalStateException( "Tried to get uptime when the bot is disconnected." );
         }
         
-        long time = System.currentTimeMillis() - startTime;
-        long[] uptime = parseUptime( time );
-        log.debug( "Uptime: " + time + "ms = " + uptime[0] + "d | " + uptime[1] +
-                "h | " + uptime[2] + "m" );
-        return time;
+        Time uptime = new Time( System.currentTimeMillis() - startTime );
+        log.debug( "Uptime: " + uptime.getTotalTime() + "ms = " + uptime.toString( false ) );
+        return uptime;
         
     }
     
@@ -386,9 +349,9 @@ public class Bot {
      * 
      * @return The time elapsed, in milliseconds.
      */
-    public long getLastUptime() {
+    public Time getLastUptime() {
         
-        return lastUptime;
+        return new Time( lastUptime );
         
     }
     
