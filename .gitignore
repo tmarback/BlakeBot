@@ -8,3 +8,4 @@ dependency-reduced-pom.xml
 .project
 properties.xml
 doc/
+output/

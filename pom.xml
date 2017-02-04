@@ -97,11 +97,6 @@
 								<include>**/*.jar</include>
 								
 							</includes>
-							<excludes>
-							
-            					<exclude>**/discordinator*.jar</exclude>
-
-          					</excludes>
 						</fileset>
 						
 					</filesets>
