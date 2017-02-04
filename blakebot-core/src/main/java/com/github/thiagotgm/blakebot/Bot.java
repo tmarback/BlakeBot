@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Main bot runner that manages log in/out and bot state.
@@ -50,7 +48,6 @@ public class Bot {
     private volatile IDiscordClient client;
     private long startTime;
     private Time lastUptime;
-    private final AtomicBoolean reconnect;
     
     /**
      * Creates a new instance of the bot.
@@ -68,7 +65,6 @@ public class Bot {
         this.client.getModuleLoader().loadModule( discordinator );
         this.startTime = 0;
         this.lastUptime = new Time( 0 );
-        this.reconnect = new AtomicBoolean( true );
         
     }
 
@@ -170,7 +166,6 @@ public class Bot {
             throw e;
         }
         client.getDispatcher().registerListener( this );
-        reconnect.set( true );
 
     }
 
@@ -232,24 +227,6 @@ public class Bot {
 
         log.debug( "Bot disconnected." );
         disconnected();
-        CompletableFuture.runAsync( new Runnable() {
-
-            @Override
-            public void run() {
-
-                // If not requested disconnect, attempts to reconnect.
-                if ( reconnect.get() ) {
-                    log.info( "Reconnecting bot" );
-                    try {
-                        login();
-                    } catch ( DiscordException | RateLimitException e ) {
-                        log.warn( "Failed to reconnect bot", e );    
-                    }
-                }
-
-            }
-
-        } );
 
     }
 
@@ -260,7 +237,6 @@ public class Bot {
      */
     public void terminate() throws DiscordException {
 
-        reconnect.set( false );
         log.debug( "Disconnecting bot." );
         try {
             client.logout();
