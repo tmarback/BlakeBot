@@ -36,6 +36,7 @@ public class FunModule implements IModule {
     private void registerCommands( CommandHandlerD4J handler ) {
         
         handler.registerAnnotatedCommands( new LennysCommand() );
+        handler.registerAnnotatedCommands( new SquareCommand() );
         
     }
 
