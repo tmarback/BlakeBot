@@ -18,7 +18,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.text.DefaultCaret;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,8 +96,6 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
         // Creates the output terminal.
         JTextPane output = new JTextPane();
-        DefaultCaret caret = (DefaultCaret) output.getCaret();
-        caret.setUpdatePolicy( DefaultCaret.ALWAYS_UPDATE );
         JScrollPane scrollPane = new JScrollPane( output );
         getContentPane().add( scrollPane, BorderLayout.CENTER );
         redirectOutStream( output );
