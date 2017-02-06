@@ -54,7 +54,7 @@ public class StatusCommand implements ConnectionStatusListener {
             description = "retrieves advanced information on bot status",
             usage = StatusModule.PREFIX + "status"
     )
-    public void pingCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void statusCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
         
         RequestBuffer.request( () -> {
             

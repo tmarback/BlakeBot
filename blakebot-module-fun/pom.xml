@@ -9,40 +9,30 @@
     <version>0.2.1</version>
   </parent>
   
-  <artifactId>blakebot-module-status</artifactId>
-  <version>1.0.1</version>
+  <artifactId>blakebot-module-fun</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
   
-  <name>blakebot-module-status</name>
-
-  <dependencies>
-  	
-	<dependency>
-		<groupId>com.github.thiagotgm</groupId>
-  		<artifactId>blakebot-core</artifactId>
-  		<version>1.2.1</version>
-  	</dependency>
-    
-  </dependencies>
+  <name>blakebot-module-fun</name>
   
   <build>
     
         <plugins>
         
             <!-- To set the module class and version in the manifest -->
-	        <plugin>
-		        <groupId>org.apache.maven.plugins</groupId>
-		        <artifactId>maven-jar-plugin</artifactId>
-		        <version>3.0.2</version>
-		        <configuration>
-			        <archive>
-	                    <manifestEntries>
-	                    
-	                        <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
-	                        <Implementation-Version>${project.version}</Implementation-Version>
-	                    
-	                    </manifestEntries>
-	                </archive>
-		        </configuration>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                        
+                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.fun.FunModule</Discord4J-ModuleClass>
+                            <Implementation-Version>${project.version}</Implementation-Version>
+                        
+                        </manifestEntries>
+                    </archive>
+                </configuration>
             </plugin>
         
             <!-- To create an executable fat JAR when using mvn package -->
@@ -60,13 +50,13 @@
                             
                         </goals>
                         <configuration>    
-                        	<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                        	<shadedArtifactAttached>true</shadedArtifactAttached>
-                        	<artifactSet>
-				                <includes>
-				                  <include>com.github.thiagotgm:blakebot-module-status</include>
-				                </includes>
-				            </artifactSet>             
+                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <artifactSet>
+                                <includes>
+                                  <include>com.github.thiagotgm:blakebot-module-fun</include>
+                                </includes>
+                            </artifactSet>             
                         </configuration>
                     </execution>
                     
@@ -76,5 +66,5 @@
         </plugins>
         
     </build>
-  
+    
 </project>

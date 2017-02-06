@@ -9,7 +9,7 @@
     </parent>
     
     <artifactId>blakebot-core</artifactId>
-    <version>0.3.0</version>
+    <version>1.2.1</version>
     
     <name>blakebot-core</name>
     
