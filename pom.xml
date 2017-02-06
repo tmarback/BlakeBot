@@ -12,8 +12,9 @@
 		<module>blakebot-core</module>
 		<module>blakebot-module-status</module>
         <module>blakebot-module-fun</module>
+        <module>blakebot-module-admin</module>
         
-  </modules>
+    </modules>
 
 	<name>BlakeBot</name>
 	<url>https://github.com/ThiagoTGM/BlakeBot</url>

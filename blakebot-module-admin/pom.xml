@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.github.thiagotgm</groupId>
+		<artifactId>blakebot</artifactId>
+		<version>0.2.1</version>
+	</parent>
+
+	<artifactId>blakebot-module-admin</artifactId>
+	<version>0.1.0</version>
+
+	<name>blakebot-module-admin</name>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.dom4j</groupId>
+			<artifactId>dom4j</artifactId>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+
+		<plugins>
+
+			<!-- To set the module class and version in the manifest -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+
+							<Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.admin.AdminModule</Discord4J-ModuleClass>
+							<Implementation-Version>${project.version}</Implementation-Version>
+
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<!-- To create an executable fat JAR when using mvn package -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.3</version>
+				<executions>
+
+					<execution>
+						<phase>package</phase>
+						<goals>
+
+							<goal>shade</goal>
+
+						</goals>
+						<configuration>
+							<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<artifactSet>
+								<includes>
+									<include>com.github.thiagotgm:blakebot-module-admin</include>
+								</includes>
+							</artifactSet>
+						</configuration>
+					</execution>
+
+				</executions>
+			</plugin>
+
+		</plugins>
+
+	</build>
+
+</project>

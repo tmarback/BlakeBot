@@ -1,32 +1,27 @@
-package com.github.thiagotgm.blakebot.module.status;
+package com.github.thiagotgm.blakebot.module.admin;
 
 import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
 import com.github.alphahelix00.ordinator.Ordinator;
-import com.github.thiagotgm.blakebot.Bot;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
 
 /**
- * Main module manager for the 'status' module.
+ * Main module manager for the 'admin' module.
  * 
  * @author ThiagoTGM
- * @version 1.0.0
- * @since 2016-12-31
+ * @version 0.1.0
+ * @since 2017-02-04
  */
-public class StatusModule implements IModule {
-    
-    private static final String MODULE_NAME = "Status Module";
+public class AdminModule implements IModule {
+
+    private static final String MODULE_NAME = "Admin Module";
     
     public static final String PREFIX = "^";
     
-    private StatusCommand statusCommand;
-    
     @Override
     public void disable() {
-        
-        Bot.unregisterListener( statusCommand );
-        
+
     }
 
     @Override
@@ -35,11 +30,10 @@ public class StatusModule implements IModule {
         CommandHandlerD4J commandHandler;
         commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
         registerCommands( commandHandler );
-        Bot.registerListener( statusCommand );
         return true;
         
     }
-    
+
     /**
      * Registers all commands in this module with the command handler.
      * 
@@ -47,11 +41,7 @@ public class StatusModule implements IModule {
      */
     private void registerCommands( CommandHandlerD4J handler ) {
         
-        handler.registerAnnotatedCommands( new PingCommand() );
-        handler.registerAnnotatedCommands( new UptimeCommand() );
-        handler.registerAnnotatedCommands( new OwnerCommand() );
-        statusCommand = new StatusCommand();
-        handler.registerAnnotatedCommands( statusCommand );
+        //handler.registerAnnotatedCommands( new #Command() );
         
     }
 
@@ -66,7 +56,7 @@ public class StatusModule implements IModule {
     public String getMinimumDiscord4JVersion() {
 
         return "2.7.0";
-                
+        
     }
 
     @Override

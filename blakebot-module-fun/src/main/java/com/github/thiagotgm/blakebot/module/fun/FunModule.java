@@ -6,7 +6,13 @@ import com.github.alphahelix00.ordinator.Ordinator;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
 
-
+/**
+ * Main module manager for the 'fun' module.
+ * 
+ * @author ThiagoTGM
+ * @version 0.2.0
+ * @since 2017-02-04
+ */
 public class FunModule implements IModule {
 
     private static final String MODULE_NAME = "Fun Module";
