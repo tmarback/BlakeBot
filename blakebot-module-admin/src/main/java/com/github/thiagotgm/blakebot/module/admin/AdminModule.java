@@ -19,14 +19,20 @@ public class AdminModule implements IModule {
     
     public static final String PREFIX = "^";
     
+    static IDiscordClient client;
+    
     @Override
     public void disable() {
+        
+        AdminModule.client = null;
 
     }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
 
+        AdminModule.client = arg0;
+        
         CommandHandlerD4J commandHandler;
         commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
         registerCommands( commandHandler );
@@ -41,7 +47,7 @@ public class AdminModule implements IModule {
      */
     private void registerCommands( CommandHandlerD4J handler ) {
         
-        //handler.registerAnnotatedCommands( new #Command() );
+        handler.registerAnnotatedCommands( new BlacklistCommand() );
         
     }
 
