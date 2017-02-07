@@ -81,9 +81,10 @@ public class Blacklist {
     /**
      * Loads an existing blacklist document.
      *
-     * @return The loaded document.
+     * @return The loaded document if it exists, or null if it doesn't exist or
+     *         could not be read.
      */
-    private Document loadDocument() {
+    private synchronized Document loadDocument() {
         
         File inputFile = new File( PATH );
         if ( !inputFile.exists() ) {
@@ -91,33 +92,28 @@ public class Blacklist {
         }
         SAXReader reader = new SAXReader();
         try {
-            Document document = reader.read( inputFile );
+            return reader.read( inputFile );
         } catch ( DocumentException e ) {
             log.error( "Failed to read blacklist document.", e );
+            return null;
         }
-        return document;
         
     }
     
     /**
      * Writes blacklist document to file.
      */
-    public void saveDocument() {
+    private synchronized void saveDocument() {
         
         try {
-            FileOutputStream output = new FileOutputStream( new File( PATH ) );
+            FileOutputStream  output = new FileOutputStream( new File( PATH ) );
+            OutputFormat format = OutputFormat.createPrettyPrint();
+            XMLWriter writer = new XMLWriter( output, format );
+            writer.write( document );
         } catch ( FileNotFoundException e ) {
             log.error( "Could not create or open blacklist file.", e );
-        }
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        XMLWriter writer = null;
-        try {
-            writer = new XMLWriter( System.out, format );
         } catch ( UnsupportedEncodingException e ) {
             log.error( "Could not create XML writer.", e );
-        }
-        try {
-            writer.write( document );
         } catch ( IOException e ) {
             log.error( "Could not write to blacklist file.", e );
         }
