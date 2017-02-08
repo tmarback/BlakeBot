@@ -6,6 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Paths;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -16,6 +18,10 @@ import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IUser;
 
 /**
  * Class that keeps record of the blacklist for all servers.<br>
@@ -31,6 +37,11 @@ public class Blacklist {
     private static final String FILEPATH = Paths.get( "data" ).toString();
     private static final String PATH = Paths.get( FILEPATH, FILENAME ).toString();
     private static final String ROOT_TAG = "blacklist";
+    private static final String RESTRICTION_TAG = "restriction";
+    private static final String GUILD_TAG = "guild";
+    private static final String CHANNEL_TAG = "channel";
+    private static final String USER_TAG = "user";
+    private static final String NAME_ATTRIBUTE = "name";
     
     private static final Logger log = LoggerFactory.getLogger( Blacklist.class );
     
@@ -117,6 +128,99 @@ public class Blacklist {
         } catch ( IOException e ) {
             log.error( "Could not write to blacklist file.", e );
         }
+        
+    }
+    
+    /**
+     * Recursively obtain a list of all the restrictions that applies to a given
+     * element (eg all restrictions under that element and its parents).
+     *
+     * @param element The element to get restrictions for.
+     * @return The list of all restrictions that apply for that element,
+     *         or an empty list if the element is the root element.
+     */
+    private List<String> getRestrictions( Element element ) {
+        
+        if ( element == root ) {
+            return new LinkedList<>();
+        }
+        
+        List<String> restrictions = getRestrictions( element.getParent() );
+        for ( Element restriction : element.elements( RESTRICTION_TAG ) ) {
+            
+            restrictions.add( restriction.getText() );
+            
+        }
+        
+        return restrictions;
+        
+    }
+    
+    /**
+     * Retrieves the child of a given element that has a given tag (name) and has
+     * a given "name" attribute.
+     *
+     * @param parent Parent of the desired element.
+     * @param childTag Tag (name) of the desired Element.
+     * @param childId "name" attribute of the desired Element.
+     * @return The child of parent with specified id/name and "name" attribute.
+     */
+    private Element getChild( Element parent, String childTag, String childId ) {
+        
+        Element found = parent;
+        for ( Element candidate : parent.elements( childTag ) ) {
+            
+            if ( childId.equals( candidate.attributeValue( NAME_ATTRIBUTE ) ) ) {
+                found = candidate;
+                break;
+            }
+            
+        }
+        return found;
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Guild, or the root element
+     * if it doesn't exist.
+     *
+     * @param guild Desired Guild.
+     * @return The Element that corresponds to that Guild, or root if it doesn't
+     *         exist.
+     */
+    private Element getGuildElement( IGuild guild ) {
+        
+        return getChild( root, GUILD_TAG, guild.getID() );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Guild, or the closest
+     * element (Guild or root) if it doesn't exist.
+     *
+     * @param channel Desired Channel.
+     * @return the Element that corresponds to that Channel, or the closest
+     *         element (Guild or root) if it doesn't exist.
+     */
+    private Element getChannelElement( IChannel channel ) {
+        
+        return getChild( getGuildElement( channel.getGuild() ), CHANNEL_TAG,
+                channel.getID() );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given User in a given Channel,
+     * or the closest element (Channel, Guild or root) if it doesn't exist.
+     *
+     * @param user Desired User.
+     * @param channel Channel the User is in.
+     * @return the Element that corresponds to that User in that Channel, or the
+     *         closest element (Channel, Guild or root) if it doesn't exist.
+     */
+    private Element getUserElement( IUser user, IChannel channel ) {
+        
+        return getChild( getChannelElement( channel ), USER_TAG, user.getID() );
         
     }
 
