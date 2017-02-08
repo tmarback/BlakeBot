@@ -132,7 +132,32 @@ public class Blacklist {
     }
     
     /**
-     * Recursively obtain a list of all the restrictions that applies to a given
+     * Retrieves the child of a given element that has a given tag (name) and has
+     * a given "name" attribute. If the child doesn't exist, returns the parent.
+     *
+     * @param parent Parent of the desired element.
+     * @param childTag Tag (name) of the desired Element.
+     * @param childId "name" attribute of the desired Element.
+     * @return The child of parent with specified id/name and "name" attribute.
+     *         If it doesn't exist, returns parent.
+     */
+    private Element getChild( Element parent, String childTag, String childId ) {
+        
+        Element found = parent;
+        for ( Element candidate : parent.elements( childTag ) ) {
+            
+            if ( childId.equals( candidate.attributeValue( NAME_ATTRIBUTE ) ) ) {
+                found = candidate;
+                break;
+            }
+            
+        }
+        return found;
+        
+    }
+    
+    /**
+     * Recursively obtains a list of all the restrictions that applies to a given
      * element (eg all restrictions under that element and its parents).
      *
      * @param element The element to get restrictions for.
@@ -157,30 +182,6 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves the child of a given element that has a given tag (name) and has
-     * a given "name" attribute.
-     *
-     * @param parent Parent of the desired element.
-     * @param childTag Tag (name) of the desired Element.
-     * @param childId "name" attribute of the desired Element.
-     * @return The child of parent with specified id/name and "name" attribute.
-     */
-    private Element getChild( Element parent, String childTag, String childId ) {
-        
-        Element found = parent;
-        for ( Element candidate : parent.elements( childTag ) ) {
-            
-            if ( childId.equals( candidate.attributeValue( NAME_ATTRIBUTE ) ) ) {
-                found = candidate;
-                break;
-            }
-            
-        }
-        return found;
-        
-    }
-    
-    /**
      * Retrieves the Element that corresponds to a given Guild, or the root element
      * if it doesn't exist.
      *
@@ -188,24 +189,49 @@ public class Blacklist {
      * @return The Element that corresponds to that Guild, or root if it doesn't
      *         exist.
      */
-    private Element getGuildElement( IGuild guild ) {
+    private Element getElement( IGuild guild ) {
         
         return getChild( root, GUILD_TAG, guild.getID() );
         
     }
     
     /**
-     * Retrieves the Element that corresponds to a given Guild, or the closest
+     * Retrieves all the restrictions that apply for a given Guild.
+     *
+     * @param guild Desired Guild.
+     * @return The restrictions that apply for that Guild.
+     */
+    public List<String> getRestrictions( IGuild guild ) {
+        
+        return getRestrictions( getElement( guild ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Channel, or the closest
      * element (Guild or root) if it doesn't exist.
      *
      * @param channel Desired Channel.
      * @return the Element that corresponds to that Channel, or the closest
      *         element (Guild or root) if it doesn't exist.
      */
-    private Element getChannelElement( IChannel channel ) {
+    private Element getElement( IChannel channel ) {
         
-        return getChild( getGuildElement( channel.getGuild() ), CHANNEL_TAG,
+        return getChild( getElement( channel.getGuild() ), CHANNEL_TAG,
                 channel.getID() );
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given Channel
+     * (including Guild-wide restrictions).
+     *
+     * @param channel Desired Channel.
+     * @return The restrictions that apply for that Channel.
+     */
+    public List<String> getRestrictions( IChannel channel ) {
+        
+        return getRestrictions( getElement( channel ) );
         
     }
     
@@ -218,9 +244,23 @@ public class Blacklist {
      * @return the Element that corresponds to that User in that Channel, or the
      *         closest element (Channel, Guild or root) if it doesn't exist.
      */
-    private Element getUserElement( IUser user, IChannel channel ) {
+    private Element getElement( IUser user, IChannel channel ) {
         
-        return getChild( getChannelElement( channel ), USER_TAG, user.getID() );
+        return getChild( getElement( channel ), USER_TAG, user.getID() );
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given User, in a given
+     * channel (including Channel and Guild-wide restrictions).
+     *
+     * @param user Desired User.
+     * @param channel Channel the user is in.
+     * @return The restrictions that apply for that User.
+     */
+    public List<String> getRestrictions( IUser user, IChannel channel ) {
+        
+        return getRestrictions( getElement( user, channel ) );
         
     }
 
