@@ -217,8 +217,7 @@ public class Blacklist {
      */
     private Element getElement( IChannel channel ) {
         
-        return getChild( getElement( channel.getGuild() ), CHANNEL_TAG,
-                channel.getID() );
+        return getChild( getElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
         
     }
     
@@ -261,6 +260,128 @@ public class Blacklist {
     public List<String> getRestrictions( IUser user, IChannel channel ) {
         
         return getRestrictions( getElement( user, channel ) );
+        
+    }
+    
+    /**
+     * Retrieves the child of a given element that has a given tag (name) and has
+     * a given "name" attribute. If the child doesn't exist, creates it.
+     *
+     * @param parent Parent of the desired element.
+     * @param childTag Tag (name) of the desired Element.
+     * @param childId "name" attribute of the desired Element.
+     * @return The child of parent with specified id/name and "name" attribute.
+     */
+    private Element getOrCreateChild( Element parent, String childTag, String childId ) {
+        
+        Element child = getChild( parent, childTag, childId );
+        if ( child == parent ) {
+            child = parent.addElement( childTag );
+            child.addAttribute( NAME_ATTRIBUTE, childId );
+        }
+        return child;
+        
+    }
+    
+    /**
+     * Adds a restriction to a given element, if it does not contain that restriction yet.
+     *
+     * @param restriction Restriction to be added.
+     * @param element Element to add the restriction to.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present in that element.
+     */
+    private boolean addRestriction( String restriction, Element element ) {
+        
+        for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
+            if ( existent.getText().equals( restriction ) ) {
+                return false;
+            }
+        }
+        element.addElement( RESTRICTION_TAG ).setText( restriction );
+        saveDocument();
+        return true;
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Guild. Creates it if it doesn't exist.
+     *
+     * @param guild Desired Guild.
+     * @return The Element that corresponds to that Guild.
+     */
+    private Element getOrCreateElement( IGuild guild ) {
+        
+        return getOrCreateChild( root, GUILD_TAG, guild.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given Guild.
+     *
+     * @param restriction Restriction to be added.
+     * @param guild Guild to add the restriction to.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that Guild.
+     */
+    public boolean addRestriction( String restriction, IGuild guild ) {
+        
+        return addRestriction( restriction, getOrCreateElement( guild ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Channel. Creates it if it doesn't exist.
+     *
+     * @param channel Desired Channel.
+     * @return The Element that corresponds to that Channel.
+     */
+    private Element getOrCreateElement( IChannel channel ) {
+        
+        return getOrCreateChild( getElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given Channel.
+     *
+     * @param restriction Restriction to be added.
+     * @param channel Channel to add the restriction to.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that Channel.
+     */
+    public boolean addRestriction( String restriction, IChannel channel ) {
+        
+        return addRestriction( restriction, getOrCreateElement( channel ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given User in a given Channel. Creates it if
+     * it doesn't exist.
+     *
+     * @param user Desired User.
+     * @param channel Channel the user is in.
+     * @return the Element that corresponds to that User in that Channel.
+     */
+    private Element getOrCreateElement( IUser user, IChannel channel ) {
+        
+        return getOrCreateChild( getElement( channel ), USER_TAG, user.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given User in a given Channel.
+     *
+     * @param restriction Restriction to be added.
+     * @param user User to add the restriction to.
+     * @param channel Channel the user is in.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that User in that Channel.
+     */
+    public boolean addRestriction( String restriction, IUser user, IChannel channel ) {
+        
+        return addRestriction( restriction, getOrCreateElement( user, channel ) );
         
     }
 
