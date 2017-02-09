@@ -62,6 +62,7 @@
 							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<artifactSet>
 								<includes>
+								    <include>org.dom4j:dom4j</include>
 									<include>com.github.thiagotgm:blakebot-module-admin</include>
 								</includes>
 							</artifactSet>

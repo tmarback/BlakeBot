@@ -116,6 +116,11 @@ public class Blacklist {
      */
     private synchronized void saveDocument() {
         
+        File folders = new File( FILEPATH );
+        if ( !folders.exists() ) {
+            folders.mkdirs();
+        }
+            
         try {
             FileOutputStream  output = new FileOutputStream( new File( PATH ) );
             OutputFormat format = OutputFormat.createPrettyPrint();
@@ -407,6 +412,7 @@ public class Blacklist {
                     element = parent;
                     
                 }
+                saveDocument();
                 return true;
             }
             
