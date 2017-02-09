@@ -384,5 +384,78 @@ public class Blacklist {
         return addRestriction( restriction, getOrCreateElement( user, channel ) );
         
     }
+    
+    /**
+     * Removes a given restriction from a given Element. Trims any Elements that become
+     * childless due to this operation.
+     *
+     * @param restriction Restriction to be removed.
+     * @param element Element where the restriction should be removed from.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given Element.
+     */
+    private boolean removeRestriction( String restriction, Element element ) {
+        
+        for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
+            
+            if ( existent.getText().equals( restriction ) ) {
+                element.remove( existent );
+                while ( ( element != root ) && ( element.elements().isEmpty() ) ) {
+                    // Trims childless elements.
+                    Element parent = element.getParent();
+                    parent.remove( element );
+                    element = parent;
+                    
+                }
+                return true;
+            }
+            
+        }
+        return false;
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given Guild.
+     *
+     * @param restriction Restriction to be removed.
+     * @param guild Guild where the restriction should be removed from.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given Guild.
+     */
+    public boolean removeRestriction( String restriction, IGuild guild ) {
+        
+        return removeRestriction( restriction, getElement( guild ) );
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given Channel.
+     *
+     * @param restriction Restriction to be removed.
+     * @param channel Channel where the restriction should be removed from.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given Channel.
+     */
+    public boolean removeRestriction( String restriction, IChannel channel ) {
+        
+        return removeRestriction( restriction, getElement( channel ) );
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given User in a given Channel.
+     *
+     * @param restriction Restriction to be removed.
+     * @param user User where the restriction should be removed from.
+     * @param channel Channel the user is in.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given User.
+     */
+    public boolean removeRestriction( String restriction, IUser user, IChannel channel ) {
+        
+        return removeRestriction( restriction, getElement( user, channel ) );
+        
+    }
 
 }
