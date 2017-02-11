@@ -250,7 +250,11 @@ public class Blacklist {
      */
     private Element getElement( IUser user, IChannel channel ) {
         
-        return getChild( getElement( channel ), USER_TAG, user.getID() );
+        Element channelElem =  getElement( channel );
+        if ( channelElem.getName().equals( GUILD_TAG ) ) {
+            return channelElem; // Prevents from getting server restriction when channel node does not exist.
+        }
+        return getChild( channelElem, USER_TAG, user.getID() );
         
     }
     

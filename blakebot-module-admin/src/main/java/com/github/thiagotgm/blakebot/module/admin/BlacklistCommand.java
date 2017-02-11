@@ -19,7 +19,6 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RateLimitException;
 import sx.blah.discord.util.RequestBuffer;
 
 /**
@@ -395,6 +394,23 @@ public class BlacklistCommand {
         
     }
     
+    /**
+     * Given a list of restrictions and a list of which ones appear more than once, removes the repeated values
+     * from the list.
+     * 
+     * @param list List to be edited.
+     * @param extras List with which values are repeated (in the amount they are repeated).
+     */
+    private void removeRepeated( List<String> list, List<String> extras ) {
+        
+        for ( String repeat : extras ) {
+            
+            list.remove( repeat );
+            
+        }
+        
+    }
+    
     @SubCommand(
             name = LIST_NAME,
             alias = "list",
@@ -434,7 +450,7 @@ public class BlacklistCommand {
             for ( IUser user : users ) {
                 
                 List<String> restrictionList = blacklist.getRestrictions( user, guild );
-                restrictionList.removeAll( blacklist.getRestrictions( guild ) );
+                removeRepeated( restrictionList, blacklist.getRestrictions( guild ) );
                 restrictions = formatRestrictionList( restrictionList );
                 builder.appendField( "Blacklist for " + user.mention(), restrictions, false );
                 
@@ -442,7 +458,7 @@ public class BlacklistCommand {
             for ( IRole role : roles ) {
                 
                 List<String> restrictionList = blacklist.getRestrictions( role, guild );
-                restrictionList.removeAll( blacklist.getRestrictions( guild ) );
+                removeRepeated( restrictionList, blacklist.getRestrictions( guild ) );
                 restrictions = formatRestrictionList( restrictionList );
                 builder.appendField( "Blacklist for " + role.mention(), restrictions, false );
                 
@@ -481,7 +497,7 @@ public class BlacklistCommand {
         IChannel channel = event.getMessage().getChannel();
         if ( users.isEmpty() && roles.isEmpty() ) {
             List<String> restrictionList = blacklist.getRestrictions( channel );
-            restrictionList.removeAll( blacklist.getRestrictions( channel.getGuild() ) );
+            removeRepeated( restrictionList, blacklist.getRestrictions( channel.getGuild() ) );
             restrictions = formatRestrictionList( restrictionList );
             builder.appendField( "Channel-wide blacklist", restrictions, false );
         } else {
@@ -489,7 +505,7 @@ public class BlacklistCommand {
             for ( IUser user : users ) {
                 
                 List<String> restrictionList = blacklist.getRestrictions( user, channel );
-                restrictionList.removeAll( blacklist.getRestrictions( channel ) );
+                removeRepeated( restrictionList, blacklist.getRestrictions( channel ) );
                 restrictions = formatRestrictionList( restrictionList );
                 builder.appendField( "Blacklist for " + user.mention(), restrictions, false );
                 
@@ -497,7 +513,7 @@ public class BlacklistCommand {
             for ( IRole role : roles ) {
                 
                 List<String> restrictionList = blacklist.getRestrictions( role, channel );
-                restrictionList.removeAll( blacklist.getRestrictions( channel ) );
+                removeRepeated( restrictionList, blacklist.getRestrictions( channel ) );
                 restrictions = formatRestrictionList( restrictionList );
                 builder.appendField( "Blacklist for " + role.mention(), restrictions, false );
                 

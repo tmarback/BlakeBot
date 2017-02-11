@@ -4,6 +4,7 @@ import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
 import com.github.alphahelix00.ordinator.Ordinator;
 
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.modules.IModule;
 
 /**
@@ -20,10 +21,14 @@ public class AdminModule implements IModule {
     public static final String PREFIX = "^";
     
     static IDiscordClient client;
+    static BlacklistEnforcer enforcer = new BlacklistEnforcer();
+    
     
     @Override
     public void disable() {
         
+        EventDispatcher dispatcher = client.getDispatcher();
+        dispatcher.unregisterListener( enforcer );
         AdminModule.client = null;
 
     }
@@ -36,6 +41,8 @@ public class AdminModule implements IModule {
         CommandHandlerD4J commandHandler;
         commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
         registerCommands( commandHandler );
+        EventDispatcher dispatcher = client.getDispatcher();
+        dispatcher.registerListener( enforcer );
         return true;
         
     }
