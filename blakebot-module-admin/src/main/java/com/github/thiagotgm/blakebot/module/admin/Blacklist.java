@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 
 /**
@@ -41,6 +42,7 @@ public class Blacklist {
     private static final String GUILD_TAG = "guild";
     private static final String CHANNEL_TAG = "channel";
     private static final String USER_TAG = "user";
+    private static final String ROLE_TAG = "role";
     private static final String NAME_ATTRIBUTE = "name";
     
     private static final Logger log = LoggerFactory.getLogger( Blacklist.class );
@@ -148,16 +150,14 @@ public class Blacklist {
      */
     private Element getChild( Element parent, String childTag, String childId ) {
         
-        Element found = parent;
         for ( Element candidate : parent.elements( childTag ) ) {
             
             if ( childId.equals( candidate.attributeValue( NAME_ATTRIBUTE ) ) ) {
-                found = candidate;
-                break;
+                return candidate; // Found child.
             }
             
         }
-        return found;
+        return parent; // Child not found.
         
     }
     
@@ -265,6 +265,93 @@ public class Blacklist {
     public List<String> getRestrictions( IUser user, IChannel channel ) {
         
         return getRestrictions( getElement( user, channel ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given User in a given Guild,
+     * or the closest element (Guild or root) if it doesn't exist.
+     *
+     * @param user Desired User.
+     * @param guild Guild the User is in.
+     * @return the Element that corresponds to that User in that Guild, or the
+     *         closest element (Guild or root) if it doesn't exist.
+     */
+    private Element getElement( IUser user, IGuild guild ) {
+        
+        return getChild( getElement( guild ), USER_TAG, user.getID() );
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given User, in a given
+     * guild (including Guild-wide restrictions).
+     *
+     * @param user Desired User.
+     * @param guild Guild the user is in.
+     * @return The restrictions that apply for that User.
+     */
+    public List<String> getRestrictions( IUser user, IGuild guild ) {
+        
+        return getRestrictions( getElement( user, guild ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Role in a given Channel,
+     * or the closest element (Channel, Guild or root) if it doesn't exist.
+     *
+     * @param role Desired Role.
+     * @param channel Channel the Role is in.
+     * @return the Element that corresponds to that Role in that Channel, or the
+     *         closest element (Channel, Guild or root) if it doesn't exist.
+     */
+    private Element getElement( IRole role, IChannel channel ) {
+        
+        return getChild( getElement( channel ), ROLE_TAG, role.getID() );
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given Role, in a given
+     * channel (including Channel and Guild-wide restrictions).
+     *
+     * @param role Desired Role.
+     * @param channel Channel the role is in.
+     * @return The restrictions that apply for that Role.
+     */
+    public List<String> getRestrictions( IRole role, IChannel channel ) {
+        
+        return getRestrictions( getElement( role, channel ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Role in a given Guild,
+     * or the closest element (Guild or root) if it doesn't exist.
+     *
+     * @param role Desired Role.
+     * @param guild Guild the Role is in.
+     * @return the Element that corresponds to that Role in that Guild, or the
+     *         closest element (Guild or root) if it doesn't exist.
+     */
+    private Element getElement( IRole role, IGuild guild ) {
+        
+        return getChild( getElement( guild ), ROLE_TAG, role.getID() );
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given Role, in a given
+     * guild (including Guild-wide restrictions).
+     *
+     * @param role Desired Role.
+     * @param guild Guild the role is in.
+     * @return The restrictions that apply for that Role.
+     */
+    public List<String> getRestrictions( IRole role, IGuild guild ) {
+        
+        return getRestrictions( getElement( role, guild ) );
         
     }
     
@@ -391,6 +478,93 @@ public class Blacklist {
     }
     
     /**
+     * Retrieves the Element that corresponds to a given User in a given Guild. Creates it if
+     * it doesn't exist.
+     *
+     * @param user Desired User.
+     * @param guild Guild the user is in.
+     * @return the Element that corresponds to that User in that Guild.
+     */
+    private Element getOrCreateElement( IUser user, IGuild guild ) {
+        
+        return getOrCreateChild( getElement( guild ), USER_TAG, user.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given User in a given Guild.
+     *
+     * @param restriction Restriction to be added.
+     * @param user User to add the restriction to.
+     * @param guild Guild the user is in.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that User in that Guild.
+     */
+    public boolean addRestriction( String restriction, IUser user, IGuild guild ) {
+        
+        return addRestriction( restriction, getOrCreateElement( user, guild ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Role in a given Channel. Creates it if
+     * it doesn't exist.
+     *
+     * @param role Desired Role.
+     * @param channel Channel the role is in.
+     * @return the Element that corresponds to that Role in that Channel.
+     */
+    private Element getOrCreateElement( IRole role, IChannel channel ) {
+        
+        return getOrCreateChild( getElement( channel ), ROLE_TAG, role.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given Role in a given Channel.
+     *
+     * @param restriction Restriction to be added.
+     * @param role Role to add the restriction to.
+     * @param channel Channel the role is in.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that Role in that Channel.
+     */
+    public boolean addRestriction( String restriction, IRole role, IChannel channel ) {
+        
+        return addRestriction( restriction, getOrCreateElement( role, channel ) );
+        
+    }
+    
+    /**
+     * Retrieves the Element that corresponds to a given Role in a given Guild. Creates it if
+     * it doesn't exist.
+     *
+     * @param role Desired Role.
+     * @param guild Guild the role is in.
+     * @return the Element that corresponds to that Role in that Guild.
+     */
+    private Element getOrCreateElement( IRole role, IGuild guild ) {
+        
+        return getOrCreateChild( getElement( guild ), ROLE_TAG, role.getID() );
+        
+    }
+    
+    /**
+     * Adds a restriction to the given Role in a given Guild.
+     *
+     * @param restriction Restriction to be added.
+     * @param role Role to add the restriction to.
+     * @param guild Guild the role is in.
+     * @return True if the restriction was added successfully. False if the restriction was
+     *         already present for that Role in that Guild.
+     */
+    public boolean addRestriction( String restriction, IRole role, IGuild guild ) {
+        
+        return addRestriction( restriction, getOrCreateElement( role, guild ) );
+        
+    }
+    
+    /**
      * Removes a given restriction from a given Element. Trims any Elements that become
      * childless due to this operation.
      *
@@ -456,11 +630,56 @@ public class Blacklist {
      * @param user User where the restriction should be removed from.
      * @param channel Channel the user is in.
      * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given User.
+     *         was not found on the given User in the given Channel.
      */
     public boolean removeRestriction( String restriction, IUser user, IChannel channel ) {
         
         return removeRestriction( restriction, getElement( user, channel ) );
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given User in a given Guild.
+     *
+     * @param restriction Restriction to be removed.
+     * @param user User where the restriction should be removed from.
+     * @param guild Guild the user is in.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given User in the given Guild.
+     */
+    public boolean removeRestriction( String restriction, IUser user, IGuild guild ) {
+        
+        return removeRestriction( restriction, getElement( user, guild ) );
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given Role in a given Channel.
+     *
+     * @param restriction Restriction to be removed.
+     * @param role Role where the restriction should be removed from.
+     * @param channel Channel the role is in.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given Role in the given Channel.
+     */
+    public boolean removeRestriction( String restriction, IRole role, IChannel channel ) {
+        
+        return removeRestriction( restriction, getElement( role, channel ) );
+        
+    }
+    
+    /**
+     * Removes a given restriction from a given Role in a given Guild.
+     *
+     * @param restriction Restriction to be removed.
+     * @param role Role where the restriction should be removed from.
+     * @param guild Guild the role is in.
+     * @return true if the restriction was successfully removed. false if the restriction
+     *         was not found on the given Role in the given Guild.
+     */
+    public boolean removeRestriction( String restriction, IRole role, IGuild guild ) {
+        
+        return removeRestriction( restriction, getElement( role, guild ) );
         
     }
 
