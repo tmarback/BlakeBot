@@ -43,7 +43,7 @@ public class Blacklist {
     private static final String CHANNEL_TAG = "channel";
     private static final String USER_TAG = "user";
     private static final String ROLE_TAG = "role";
-    private static final String NAME_ATTRIBUTE = "name";
+    private static final String ID_ATTRIBUTE = "id";
     
     private static final Logger log = LoggerFactory.getLogger( Blacklist.class );
     
@@ -152,7 +152,7 @@ public class Blacklist {
         
         for ( Element candidate : parent.elements( childTag ) ) {
             
-            if ( childId.equals( candidate.attributeValue( NAME_ATTRIBUTE ) ) ) {
+            if ( childId.equals( candidate.attributeValue( ID_ATTRIBUTE ) ) ) {
                 return candidate; // Found child.
             }
             
@@ -369,7 +369,7 @@ public class Blacklist {
         Element child = getChild( parent, childTag, childId );
         if ( child == parent ) {
             child = parent.addElement( childTag );
-            child.addAttribute( NAME_ATTRIBUTE, childId );
+            child.addAttribute( ID_ATTRIBUTE, childId );
         }
         return child;
         

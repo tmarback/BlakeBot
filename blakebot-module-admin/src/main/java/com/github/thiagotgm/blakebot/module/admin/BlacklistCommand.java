@@ -9,11 +9,13 @@ import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.alphahelix00.ordinator.commands.SubCommand;
 
 import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.MissingPermissionsException;
+import sx.blah.discord.util.RateLimitException;
 import sx.blah.discord.util.RequestBuffer;
 
 /**
@@ -29,12 +31,15 @@ public class BlacklistCommand {
     
     private static final String ADD_NAME = "Add";
     private static final String ADD_SERVER_NAME = "Add (Server)";
+    private static final String ADD_CHANNEL_NAME = "Add (Channel)";
     
     private static final String LIST_NAME = "List";
     private static final String LIST_SERVER_NAME = "List (Server)";
+    private static final String LIST_CHANNEL_NAME = "List (Channel)";
     
     private static final String REMOVE_NAME = "Remove";
     private static final String REMOVE_SERVER_NAME = "Remove (Server)";
+    private static final String REMOVE_CHANNEL_NAME = "Remove (Channel)";
     
     private final Blacklist blacklist;
     
@@ -51,9 +56,6 @@ public class BlacklistCommand {
             description = "Manages the message blacklist. A subcommand must be used.",
             usage = AdminModule.PREFIX + "blacklist|bl <subcommand>",
             subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME }
-    )
-    @Permission(
-            permissions = {Permissions.MANAGE_MESSAGES}
     )
     public void blacklistCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
     
@@ -84,9 +86,12 @@ public class BlacklistCommand {
     @SubCommand(
             name = ADD_NAME,
             alias = "add",
-            description = "Adds a new blacklist entry. A scope must be specified.",
+            description = "Adds a new blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
             usage = AdminModule.PREFIX + "blacklist|bl add <scope> <entry>",
-            subCommands = { ADD_SERVER_NAME }
+            subCommands = { ADD_SERVER_NAME, ADD_CHANNEL_NAME }
+    )
+    @Permission(
+            permissions = { Permissions.MANAGE_MESSAGES }
     )
     public void blacklistAddCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
         
@@ -125,6 +130,37 @@ public class BlacklistCommand {
         
     }
     
+    @SubCommand(
+            name = ADD_CHANNEL_NAME,
+            alias = "channel",
+            description = "Adds a new blacklist entry that applies to the channel where the " +
+                          "command is used.",
+            usage = AdminModule.PREFIX + "blacklist|bl add channel <entry>"
+    )
+    public void blacklistAddChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+        
+        String message;
+        if ( args.isEmpty() ) {
+            message = "Please provide an entry to be added.";
+        } else {
+            String restriction = parseRestriction( args );
+            boolean success = blacklist.addRestriction( restriction, event.getMessage().getChannel() );
+            message = ( success ) ? ( "\u200BSuccessfully blacklisted \"" + restriction + "\" for this channel!" ) :
+                                    ( "\u200BFailure: \"" + restriction + "\" is already blacklisted in this channel." );
+        }
+        
+        RequestBuffer.request( () -> {
+            
+            try {
+                msgBuilder.withContent( message ).build();
+            } catch ( DiscordException | MissingPermissionsException e ) {
+                CommandHandlerD4J.logMissingPerms( event, ADD_CHANNEL_NAME, e );
+            }
+            
+        });
+        
+    }
+    
     private String formatRestrictionList( List<String> list ) {
         
         StringBuilder builder = new StringBuilder();
@@ -144,7 +180,7 @@ public class BlacklistCommand {
             alias = "list",
             description = "Lists blacklist entries. A scope must be specified.",
             usage = AdminModule.PREFIX + "blacklist|bl list <scope>",
-            subCommands = { LIST_SERVER_NAME }
+            subCommands = { LIST_SERVER_NAME, LIST_CHANNEL_NAME }
     )
     public void blacklistListCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
         
@@ -155,7 +191,7 @@ public class BlacklistCommand {
     @SubCommand(
             name = LIST_SERVER_NAME,
             alias = "server",
-            description = "Lists entry that apply to the server where the " +
+            description = "Lists entries that apply to the server where the " +
                           "command is used.",
             usage = AdminModule.PREFIX + "blacklist|bl list server"
     )
@@ -178,11 +214,39 @@ public class BlacklistCommand {
     }
     
     @SubCommand(
+            name = LIST_CHANNEL_NAME,
+            alias = "channel",
+            description = "Lists entries that apply to the channel where the " +
+                          "command is used.",
+            usage = AdminModule.PREFIX + "blacklist|bl list channel"
+    )
+    public void blacklistListChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+       
+        RequestBuffer.request( () -> {
+            
+            try {
+                String restrictions = formatRestrictionList( blacklist.getRestrictions( event.getMessage().getChannel() ) );
+                EmbedBuilder builder = new EmbedBuilder();
+                builder.appendField( "Channel-wide blacklist", restrictions, false );
+                builder.withColor( Color.BLACK );
+                msgBuilder.withEmbed( builder.build() ).build();
+            } catch ( DiscordException | MissingPermissionsException e ) {
+                CommandHandlerD4J.logMissingPerms( event, LIST_CHANNEL_NAME, e );
+            }
+            
+        });
+        
+    }
+    
+    @SubCommand(
             name = REMOVE_NAME,
             alias = { "remove", "rm" },
-            description = "Removes a blacklist entry. A scope must be specified.",
+            description = "Removes a blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
             usage = AdminModule.PREFIX + "blacklist|bl remove|rm <scope> <entry>",
-            subCommands = { REMOVE_SERVER_NAME }
+            subCommands = { REMOVE_SERVER_NAME, REMOVE_CHANNEL_NAME }
+    )
+    @Permission(
+            permissions = { Permissions.MANAGE_MESSAGES }
     )
     public void blacklistRemoveCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
         
@@ -215,6 +279,37 @@ public class BlacklistCommand {
                 msgBuilder.withContent( message ).build();
             } catch ( DiscordException | MissingPermissionsException e ) {
                 CommandHandlerD4J.logMissingPerms( event, REMOVE_SERVER_NAME, e );
+            }
+            
+        });
+        
+    }
+    
+    @SubCommand(
+            name = REMOVE_CHANNEL_NAME,
+            alias = "channel",
+            description = "Removes an entry that applies to the channel where the " +
+                          "command is used.",
+            usage = AdminModule.PREFIX + "blacklist|bl remove|rm channel <entry>"
+    )
+    public void blacklistRemoveChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+       
+        String message;
+        if ( args.isEmpty() ) {
+            message = "Please provide an entry to be removed.";
+        } else {
+            String restriction = parseRestriction( args );
+            boolean success = blacklist.removeRestriction( restriction, event.getMessage().getChannel() );
+            message = ( success ) ? ( "\u200BSuccessfully removed \"" + restriction + "\" from this channel's blacklist!" ) :
+                                    ( "\u200BFailure: \"" + restriction + "\" is not blacklisted in this channel." );
+        }
+        
+        RequestBuffer.request( () -> {
+            
+            try {
+                msgBuilder.withContent( message ).build();
+            } catch ( DiscordException | MissingPermissionsException e ) {
+                CommandHandlerD4J.logMissingPerms( event, REMOVE_CHANNEL_NAME, e );
             }
             
         });
