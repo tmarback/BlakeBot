@@ -225,8 +225,12 @@ public class Bot {
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
 
-        log.debug( "Bot disconnected." );
-        disconnected();
+        if ( startTime != 0 ) {
+            log.debug( "Bot disconnected." );
+            disconnected();
+        } else {
+            log.debug( "Bot disconnected - but was not connected." );
+        }
 
     }
 
