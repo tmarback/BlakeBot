@@ -162,20 +162,14 @@ public class Blacklist {
     }
     
     /**
-     * Recursively obtains a list of all the restrictions that applies to a given
-     * element (eg all restrictions under that element and its parents).
-     *
-     * @param element The element to get restrictions for.
-     * @return The list of all restrictions that apply for that element,
-     *         or an empty list if the element is the root element.
+     * Retrieves all the restrictions contained in a specified element.
+     * 
+     * @param element Element that contains the restrictions.
+     * @return The list of restrictions in this element.
      */
     private List<String> getRestrictions( Element element ) {
         
-        if ( element == root ) {
-            return new LinkedList<>();
-        }
-        
-        List<String> restrictions = getRestrictions( element.getParent() );
+        List<String> restrictions = new LinkedList<>();
         for ( Element restriction : element.elements( RESTRICTION_TAG ) ) {
             
             restrictions.add( restriction.getText() );
@@ -201,14 +195,19 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given Guild.
+     * Retrieves the restrictions for a given Guild.
      *
      * @param guild Desired Guild.
      * @return The restrictions that apply for that Guild.
      */
     public List<String> getRestrictions( IGuild guild ) {
         
-        return getRestrictions( getElement( guild ) );
+        Element element = getElement( guild );
+        if ( element.getName().equals( GUILD_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
         
     }
     
@@ -227,15 +226,19 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given Channel
-     * (including Guild-wide restrictions).
+     * Retrieves the restrictions for a given Channel.
      *
      * @param channel Desired Channel.
      * @return The restrictions that apply for that Channel.
      */
     public List<String> getRestrictions( IChannel channel ) {
         
-        return getRestrictions( getElement( channel ) );
+        Element element = getElement( channel );
+        if ( element.getName().equals( CHANNEL_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
         
     }
     
@@ -250,17 +253,17 @@ public class Blacklist {
      */
     private Element getElement( IUser user, IChannel channel ) {
         
-        Element channelElem =  getElement( channel );
-        if ( channelElem.getName().equals( GUILD_TAG ) ) {
+        Element channelElem = getElement( channel );
+        if ( channelElem.getName().equals( CHANNEL_TAG ) ) {
+            return getChild( channelElem, USER_TAG, user.getID() );
+        } else {
             return channelElem; // Prevents from getting server restriction when channel node does not exist.
         }
-        return getChild( channelElem, USER_TAG, user.getID() );
         
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given User, in a given
-     * channel (including Channel and Guild-wide restrictions).
+     * Retrieves the restrictions for a given User, in a given channel.
      *
      * @param user Desired User.
      * @param channel Channel the user is in.
@@ -268,7 +271,12 @@ public class Blacklist {
      */
     public List<String> getRestrictions( IUser user, IChannel channel ) {
         
-        return getRestrictions( getElement( user, channel ) );
+        Element element = getElement( user, channel );
+        if ( element.getName().equals( USER_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
         
     }
     
@@ -288,8 +296,7 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given User, in a given
-     * guild (including Guild-wide restrictions).
+     * Retrieves the restrictions for a given User, in a given guild.
      *
      * @param user Desired User.
      * @param guild Guild the user is in.
@@ -297,7 +304,12 @@ public class Blacklist {
      */
     public List<String> getRestrictions( IUser user, IGuild guild ) {
         
-        return getRestrictions( getElement( user, guild ) );
+        Element element = getElement( user, guild );
+        if ( element.getName().equals( USER_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
         
     }
     
@@ -312,13 +324,17 @@ public class Blacklist {
      */
     private Element getElement( IRole role, IChannel channel ) {
         
-        return getChild( getElement( channel ), ROLE_TAG, role.getID() );
+        Element channelElem =  getElement( channel );
+        if ( channelElem.getName().equals( CHANNEL_TAG ) ) {
+            return getChild( channelElem, ROLE_TAG, role.getID() );
+        } else {
+            return channelElem; // Prevents from getting server restriction when channel node does not exist.
+        }
         
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given Role, in a given
-     * channel (including Channel and Guild-wide restrictions).
+     * Retrieves the restrictions for a given Role, in a given channel.
      *
      * @param role Desired Role.
      * @param channel Channel the role is in.
@@ -326,7 +342,12 @@ public class Blacklist {
      */
     public List<String> getRestrictions( IRole role, IChannel channel ) {
         
-        return getRestrictions( getElement( role, channel ) );
+        Element element = getElement( role, channel );
+        if ( element.getName().equals( ROLE_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
         
     }
     
@@ -346,8 +367,7 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves all the restrictions that apply for a given Role, in a given
-     * guild (including Guild-wide restrictions).
+     * Retrieves the restrictions for a given Role, in a given guild.
      *
      * @param role Desired Role.
      * @param guild Guild the role is in.
@@ -355,7 +375,75 @@ public class Blacklist {
      */
     public List<String> getRestrictions( IRole role, IGuild guild ) {
         
-        return getRestrictions( getElement( role, guild ) );
+        Element element = getElement( role, guild );
+        if ( element.getName().equals( ROLE_TAG ) ) {
+            return getRestrictions( element );
+        } else {
+            return new LinkedList<>();
+        }
+        
+    }
+    
+    
+    /**
+     * Recursively obtains a list of all the restrictions that apply to a given user and his/her roles up to a given
+     * scope (eg all restrictions for that user under that element and its parents).
+     *
+     * @param element The element that represents the scope.
+     * @param user The user to get restrictions for.
+     * @param roles List of all the roles the user belongs to.
+     * @return The list of all restrictions that apply for that user in all scopes up to the given one,
+     *         or an empty list if the element is the root element.
+     */
+    private List<String> getAllRestrictions( Element element, IUser user, List<IRole> roles ) {
+        
+        if ( element == root ) {
+            return new LinkedList<>();
+        }
+        
+        List<String> restrictions = getAllRestrictions( element.getParent(), user, roles );
+        for ( Element restriction : element.elements( RESTRICTION_TAG ) ) {
+            // Adds all scope-wide restrictions.
+            restrictions.add( restriction.getText() );
+            
+        }
+        Element userElement = getChild( element, USER_TAG, user.getID() );
+        if ( userElement != element ) {
+            for ( Element restriction : userElement.elements( RESTRICTION_TAG ) ) {
+                // Adds user-specific restrictions, if any.
+                restrictions.add( restriction.getText() );
+                
+            }
+        }
+        for ( IRole role : roles ) {
+            
+            Element roleElement = getChild( element, ROLE_TAG, role.getID() );
+            if ( roleElement != element ) {
+                for ( Element restriction : roleElement.elements( RESTRICTION_TAG ) ) {
+                    // Adds role-specific restrictions, if any.
+                    restrictions.add( restriction.getText() );
+                    
+                }
+            }
+            
+        }
+        
+        return restrictions;
+        
+    }
+    
+    /**
+     * Retrieves all the restrictions that apply for a given User in a given Channel, for all scopes, both scope-wide
+     * and user-specific.
+     * The list may contain duplicates if a restriction is present in more than one scope.
+     * 
+     * @param user User to get restrictions for.
+     * @param channel Channel where the user is in.
+     * @return The list of restrictions that apply for that user in that channel.
+     */
+    public List<String> getAllRestrictions( IUser user, IChannel channel ) {
+        
+        return getAllRestrictions( getElement( channel ), user, user.getRolesForGuild( channel.getGuild() ) );
         
     }
     
@@ -434,7 +522,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IChannel channel ) {
         
-        return getOrCreateChild( getElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
+        return getOrCreateChild( getOrCreateElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
         
     }
     
@@ -462,7 +550,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IUser user, IChannel channel ) {
         
-        return getOrCreateChild( getElement( channel ), USER_TAG, user.getID() );
+        return getOrCreateChild( getOrCreateElement( channel ), USER_TAG, user.getID() );
         
     }
     
@@ -491,7 +579,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IUser user, IGuild guild ) {
         
-        return getOrCreateChild( getElement( guild ), USER_TAG, user.getID() );
+        return getOrCreateChild( getOrCreateElement( guild ), USER_TAG, user.getID() );
         
     }
     
@@ -520,7 +608,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IRole role, IChannel channel ) {
         
-        return getOrCreateChild( getElement( channel ), ROLE_TAG, role.getID() );
+        return getOrCreateChild( getOrCreateElement( channel ), ROLE_TAG, role.getID() );
         
     }
     
@@ -549,7 +637,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IRole role, IGuild guild ) {
         
-        return getOrCreateChild( getElement( guild ), ROLE_TAG, role.getID() );
+        return getOrCreateChild( getOrCreateElement( guild ), ROLE_TAG, role.getID() );
         
     }
     
@@ -609,7 +697,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IGuild guild ) {
         
-        return removeRestriction( restriction, getElement( guild ) );
+        Element element = getElement( guild );
+        if ( element.getName().equals( GUILD_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
     
@@ -623,7 +716,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IChannel channel ) {
         
-        return removeRestriction( restriction, getElement( channel ) );
+        Element element = getElement( channel );
+        if ( element.getName().equals( CHANNEL_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
     
@@ -638,7 +736,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IUser user, IChannel channel ) {
         
-        return removeRestriction( restriction, getElement( user, channel ) );
+        Element element = getElement( user, channel );
+        if ( element.getName().equals( USER_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
     
@@ -653,7 +756,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IUser user, IGuild guild ) {
         
-        return removeRestriction( restriction, getElement( user, guild ) );
+        Element element = getElement( user, guild );
+        if ( element.getName().equals( USER_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
     
@@ -668,7 +776,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IRole role, IChannel channel ) {
         
-        return removeRestriction( restriction, getElement( role, channel ) );
+        Element element = getElement( role, channel );
+        if ( element.getName().equals( ROLE_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
     
@@ -683,7 +796,12 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IRole role, IGuild guild ) {
         
-        return removeRestriction( restriction, getElement( role, guild ) );
+        Element element = getElement( role, guild );
+        if ( element.getName().equals( ROLE_TAG ) ) {
+            return removeRestriction( restriction, element );
+        } else {
+            return false;
+        }
         
     }
 

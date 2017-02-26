@@ -53,8 +53,7 @@ public class BlacklistEnforcer {
             return; // Ignores the bot's own messages.
         }
         
-        List<String> restrictions = blacklist.getRestrictions( author, channel );
-        restrictions.addAll( blacklist.getRestrictions( author, guild ) );
+        List<String> restrictions = blacklist.getAllRestrictions( author, channel );
         log.trace( "Restrictions for author " + author.getName() + " in channel " + channel.getName() + " of guild " + 
                 guild.getName() + ": " + restrictions );
         for ( String restriction : restrictions ) {
@@ -71,9 +70,9 @@ public class BlacklistEnforcer {
                     } catch ( RateLimitException | DiscordException e ) {
                         log.warn( "Failed to delete message.", e );
                     }
-                    return;
                 
                 });
+                return;
             }
             
         }
