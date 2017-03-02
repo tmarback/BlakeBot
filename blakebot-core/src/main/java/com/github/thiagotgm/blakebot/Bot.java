@@ -211,8 +211,13 @@ public class Bot {
      */
     private void disconnected() {
       
-        lastUptime = new Time( System.currentTimeMillis() - startTime );
-        startTime = 0;
+        if ( startTime != 0 ) {
+            lastUptime = new Time( System.currentTimeMillis() - startTime );
+            log.info( "Disconnected after " + lastUptime.toString( false ) );
+            startTime = 0;
+        } else {
+            log.debug( "Bot disconnected - but was not connected." );
+        }
         notifyListeners( false );
         
     }
@@ -224,13 +229,9 @@ public class Bot {
      */
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
-
-        if ( startTime != 0 ) {
-            log.debug( "Bot disconnected." );
-            disconnected();
-        } else {
-            log.debug( "Bot disconnected - but was not connected." );
-        }
+     
+        log.debug( "Bot disconnected." );
+        disconnected();
 
     }
 
