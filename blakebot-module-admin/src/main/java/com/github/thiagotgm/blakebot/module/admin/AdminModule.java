@@ -21,7 +21,7 @@ public class AdminModule implements IModule {
     public static final String PREFIX = "^";
     
     static IDiscordClient client;
-    static BlacklistEnforcer enforcer = new BlacklistEnforcer();
+    private static BlacklistEnforcer enforcer = new BlacklistEnforcer();
     
     
     @Override
@@ -29,6 +29,7 @@ public class AdminModule implements IModule {
         
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.unregisterListener( enforcer );
+        TimeoutController.getInstance().terminate();
         AdminModule.client = null;
 
     }
@@ -55,6 +56,7 @@ public class AdminModule implements IModule {
     private void registerCommands( CommandHandlerD4J handler ) {
         
         handler.registerAnnotatedCommands( new BlacklistCommand() );
+        handler.registerAnnotatedCommands( new TimeoutCommand() );
         
     }
 

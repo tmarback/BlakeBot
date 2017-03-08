@@ -32,17 +32,17 @@ public class BlacklistCommand {
     
     private static final String NAME = "Blacklist";
     
-    private static final String ADD_NAME = "Add";
-    private static final String ADD_SERVER_NAME = "Add (Server)";
-    private static final String ADD_CHANNEL_NAME = "Add (Channel)";
+    private static final String ADD_NAME = "Blacklist Add";
+    private static final String ADD_SERVER_NAME = "Blacklist Add (Server)";
+    private static final String ADD_CHANNEL_NAME = "Blacklist Add (Channel)";
     
-    private static final String LIST_NAME = "List";
-    private static final String LIST_SERVER_NAME = "List (Server)";
-    private static final String LIST_CHANNEL_NAME = "List (Channel)";
+    private static final String LIST_NAME = "Blacklist List";
+    private static final String LIST_SERVER_NAME = "Blacklist List (Server)";
+    private static final String LIST_CHANNEL_NAME = "Blacklist List (Channel)";
     
-    private static final String REMOVE_NAME = "Remove";
-    private static final String REMOVE_SERVER_NAME = "Remove (Server)";
-    private static final String REMOVE_CHANNEL_NAME = "Remove (Channel)";
+    private static final String REMOVE_NAME = "Blacklist Remove";
+    private static final String REMOVE_SERVER_NAME = "Blacklist Remove (Server)";
+    private static final String REMOVE_CHANNEL_NAME = "Blacklist Remove (Channel)";
     
     private final Blacklist blacklist;
     
