@@ -21,12 +21,13 @@ import sx.blah.discord.util.RequestBuffer;
 public class TimeoutController {
     
     private static final int START_SIZE = 100;
+    private static final String ID_SEPARATOR = "|";
     private static final Logger log = LoggerFactory.getLogger( TimeoutController.class );
     
     private static TimeoutController instance;
     
-    private Timer timer;
-    private Hashtable<String, TimerTask> tasks;
+    private final Timer timer;
+    private final Hashtable<String, TimerTask> tasks;
     
     /**
      * Creates a new Controller instance.
@@ -91,6 +92,8 @@ public class TimeoutController {
      */
     private void setPermission( IUser user, IChannel channel, boolean allow ) {
         
+        log.debug( "Permission set " + allow + " for " + user.getName() + "@" +
+                channel.getName() + "@" + channel.getGuild().getName() );
         IChannel.PermissionOverride overrides = channel.getUserOverrides().get( user.getID() );
         EnumSet<Permissions> allowed = 
                 ( overrides != null ) ? overrides.allow() : EnumSet.noneOf( Permissions.class );
@@ -125,10 +128,29 @@ public class TimeoutController {
      *
      * @param user User to be restricted.
      * @param channel Channel to be restricted.
+     * @param timeout How long the timeout should last, in milliseconds.
      */
-    public void timeout( IUser user, IChannel channel ) {
+    public void timeout( IUser user, IChannel channel, long timeout ) {
         
-        setPermission( user, channel, false );
+        final String id = user.getID() + ID_SEPARATOR + channel.getID() +
+                ID_SEPARATOR + channel.getGuild().getID();
+        if ( !tasks.contains( id ) ) {
+            setPermission( user, channel, false );
+            addTask( new TimerTask() {
+                
+                @Override
+                public void run() {
+                    
+                    // TODO: Check if guild timeout pending.
+                    setPermission( user, channel, true );
+                    tasks.remove( id );
+                    
+                }
+                
+            }, timeout, id );
+        } else {
+            // TODO: Error message
+        }
         
     }
     
@@ -137,8 +159,9 @@ public class TimeoutController {
      *
      * @param user User to be restricted.
      * @param guild Guild to be restricted.
+     * @param timeout How long the timeout should last, in milliseconds.
      */
-    public void timeout( IUser user, IGuild guild ) {
+    public void timeout( IUser user, IGuild guild, long timeout ) {
         
         for ( IChannel channel : guild.getChannels() ) {
             // Disables writing permissions for each channel the user is in on this server.

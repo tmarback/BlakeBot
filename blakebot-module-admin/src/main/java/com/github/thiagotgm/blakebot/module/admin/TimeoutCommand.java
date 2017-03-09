@@ -48,34 +48,70 @@ public class TimeoutCommand {
             name = NAME_1,
             alias = { "timeout", "to" },
             description = "Times a user out.",
-            usage = AdminModule.PREFIX + "timeout|to <user>",
+            usage = AdminModule.PREFIX + "timeout|to <time> <user(s)>",
             subCommands = { SUB_NAME }
     )
     public void timeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
-        if ( args.isEmpty() ) {
+        boolean hasSub = false; // Checks if has subcommand.
+        if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
+            hasSub = true;
+            args.remove( 0 );
+        }
+        
+        if ( args.size() < 2 ) { // Checks minimum amount of arguments.
             RequestBuffer.request( () -> {
                 
                 try {
-                    msgBuilder.withContent( "Please specify a user(s) to be timed out." ).build();
+                    msgBuilder.withContent( "Please specify a time and the user(s) to be timed out." ).build();
                 } catch ( DiscordException | MissingPermissionsException e ) {
                     CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
                 }
                 
             });
+            return;
+        }
+        
+        long timeout;
+        try { // Obtains time amount.
+            timeout = Long.parseLong( args.get( 0 ) );
+        } catch ( NumberFormatException e1 ) {
+            RequestBuffer.request( () -> {
+                
+                try {
+                    msgBuilder.withContent( "Invalid time amount." ).build();
+                } catch ( DiscordException | MissingPermissionsException e2 ) {
+                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e2 );
+                }
+                
+            });
+            return;
+        }
+        timeout *= 1000; // Converts to milliseconds.
+        
+        List<IUser> targets = event.getMessage().getMentions();
+        if ( targets.isEmpty() ) { // Checks if a user was specified.
+            RequestBuffer.request( () -> {
+                
+                try {
+                    msgBuilder.withContent( "Please specify a the user(s) to be timed out." ).build();
+                } catch ( DiscordException | MissingPermissionsException e ) {
+                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
+                }
+                
+            });
+            return;
         }
         
         IChannel channel = event.getMessage().getChannel();
-        boolean hasSub = args.get( 0 ).equals( SUB_ALIAS );
         List<Executor> execs = new LinkedList<>();
-        
-        for ( IUser target : event.getMessage().getMentions() ) {
+        for ( IUser target : targets ) {
             
             Executor exec = new Executor( target );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
-                exec.withTargetChannel( channel ).execute();
+                exec.withTargetChannel( channel ).withTimeout( timeout ).execute();
             }
             
         }
@@ -90,30 +126,36 @@ public class TimeoutCommand {
             name = NAME_2,
             alias = { "untimeout", "uto" },
             description = "Un-times out a user.",
-            usage = AdminModule.PREFIX + "untimeout|uto <user>",
+            usage = AdminModule.PREFIX + "untimeout|uto <user(s)>",
             subCommands = { SUB_NAME }
     )
     public void untimeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
-        if ( args.isEmpty() ) {
+        boolean hasSub = false; // Checks if has subcommand.
+        if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
+            hasSub = true;
+            args.remove( 0 );
+        }
+        
+        List<IUser> targets = event.getMessage().getMentions();
+        if ( targets.isEmpty() ) { // Checks if a user was specified.
             RequestBuffer.request( () -> {
                 
                 try {
-                    msgBuilder.withContent( "Please specify a user(s) to be timed out." ).build();
+                    msgBuilder.withContent( "Please specify a the user(s) to be untimed out." ).build();
                 } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_2, e );
+                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
                 }
                 
             });
+            return;
         }
         
         IChannel channel = event.getMessage().getChannel();
-        boolean hasSub = args.get( 0 ).equals( SUB_ALIAS );
         List<Executor> execs = new LinkedList<>();
-        
-        for ( IUser target : event.getMessage().getMentions() ) {
+        for ( IUser target : targets ) {
             
-            Executor exec = new Executor( target ).isUntimeout( true );
+            Executor exec = new Executor( target );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -137,7 +179,7 @@ public class TimeoutCommand {
     public void serverSubCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
     
         List<Executor> execs = executors.remove( event.getMessage().getID() );
-        if ( execs != null ) { // If there are users to time out.
+        if ( execs != null ) { // If there are users to (un)time out.
             IGuild guild = event.getMessage().getGuild();
             for ( Executor exec : execs ) {
                 // Executes for each user with a guild-wide scope.
@@ -151,6 +193,7 @@ public class TimeoutCommand {
     /**
      * Executor class that calls in the appropriate (un)timeout for a particular scope.
      * Will only use the last scope set (either a channel or a guild).
+     * If a timeout is set, performs a timeout. Else, performs an untimeout.
      *
      * @version 1.0
      * @author ThiagoTGM
@@ -161,7 +204,7 @@ public class TimeoutCommand {
         private final IUser targetUser;
         private IChannel targetChannel;
         private IGuild targetGuild;
-        private boolean untimeout;
+        private long timeout;
         
         /**
          * Creates a new instance of this object with a certain user as a target.
@@ -173,7 +216,7 @@ public class TimeoutCommand {
             this.targetUser = targetUser;
             targetChannel = null;
             targetGuild = null;
-            untimeout = false;
+            timeout = -1;
             
         }
         
@@ -206,16 +249,14 @@ public class TimeoutCommand {
         }
         
         /**
-         * Sets whether the command is a timeout or un-timeout.
-         * By default (without calling this method), it is a timeout.
+         * Sets the time the timeout should last (executes a timeout).
          *
-         * @param untimeout If true, will be set to untimeout. If false, set to
-         *                  timeout.
+         * @param untimeout Time the timeout should last for.
          * @return A reference to this object.
          */
-        public Executor isUntimeout( boolean untimeout ) {
+        public Executor withTimeout( long timeout ) {
             
-            this.untimeout = untimeout;
+            this.timeout = timeout;
             return this;
             
         }
@@ -232,7 +273,7 @@ public class TimeoutCommand {
             }
             
             TimeoutController controller = TimeoutController.getInstance();
-            if ( untimeout ) {
+            if ( timeout == -1 ) {
                 // Un-times out the user.
                 if ( targetGuild != null ) { // For the guild.
                     controller.untimeout( targetUser, targetGuild );
@@ -242,9 +283,9 @@ public class TimeoutCommand {
             } else {
                 // Times out the user.
                 if ( targetGuild != null ) { // For the guild.
-                    controller.timeout( targetUser, targetGuild );
+                    controller.timeout( targetUser, targetGuild, timeout );
                 } else { // For the channel.
-                    controller.timeout( targetUser, targetChannel );
+                    controller.timeout( targetUser, targetChannel, timeout );
                 }
             }
             
