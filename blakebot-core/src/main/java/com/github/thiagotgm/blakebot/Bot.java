@@ -14,6 +14,7 @@ import sx.blah.discord.handle.impl.events.ResumedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.Status;
+import sx.blah.discord.modules.IModule;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
 import sx.blah.discord.util.RateLimitException;
@@ -23,6 +24,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
@@ -40,6 +43,7 @@ public class Bot {
 
     private static final Logger log = LoggerFactory.getLogger( Bot.class );
     private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
+    private static final String[] TERMINATE_MODULES = { "Admin Module" };
     
     private static Properties properties = null;
     private static Bot instance = null;
@@ -151,6 +155,42 @@ public class Bot {
         }
         
     }
+    
+    /**
+     * Retrieves the modules that have to be terminated before disconnecting
+     * the bot.
+     * 
+     * @return The list of modules that need to be terminated.
+     */
+    private List<IModule> getTerminateModules() {
+        
+        List<String> targets = Arrays.asList( TERMINATE_MODULES );
+        List<IModule> found = new LinkedList<>();
+        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
+            
+            if ( targets.contains( module.getName() ) ) {
+                found.add( module );
+            }
+            
+        }
+        return found;
+        
+    }
+    
+    /**
+     * Reboots the modules that need to be terminated on disconnect, so no tasks will be
+     * pending.
+     */
+    private void rebootModules() {
+        
+        for ( IModule module : getTerminateModules() ) {
+            
+            module.disable();
+            module.enable( client );
+            
+        }
+        
+    }
 
     /**
      * Logs in to Discord.
@@ -244,6 +284,7 @@ public class Bot {
 
         log.debug( "Disconnecting bot." );
         try {
+            rebootModules();
             client.logout();
             log.info( "=== Bot terminated ===" );
         } catch ( DiscordException e ) {
