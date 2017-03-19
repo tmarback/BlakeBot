@@ -19,9 +19,8 @@ public class AdminModule implements IModule {
     private static final String MODULE_NAME = "Admin Module";
     
     public static final String PREFIX = "^";
-    
     static IDiscordClient client;
-    private static BlacklistEnforcer enforcer = new BlacklistEnforcer();
+    private static final BlacklistEnforcer enforcer = new BlacklistEnforcer();
     
     
     @Override

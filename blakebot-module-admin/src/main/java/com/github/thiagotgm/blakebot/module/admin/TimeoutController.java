@@ -1,9 +1,7 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
 import java.util.EnumSet;
-import java.util.Enumeration;
 import java.util.Hashtable;
-import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,7 +19,7 @@ import sx.blah.discord.util.RequestBuffer;
 public class TimeoutController {
     
     private static final int START_SIZE = 100;
-    private static final String ID_SEPARATOR = "|";
+    private static final String ID_SEPARATOR = "@";
     private static final Logger log = LoggerFactory.getLogger( TimeoutController.class );
     
     private static TimeoutController instance;
@@ -132,17 +130,20 @@ public class TimeoutController {
      */
     public void timeout( IUser user, IChannel channel, long timeout ) {
         
-        final String id = user.getID() + ID_SEPARATOR + channel.getID() +
-                ID_SEPARATOR + channel.getGuild().getID();
-        if ( !tasks.contains( id ) ) {
+        log.debug( "Timing out " + user.getName() + "@" + channel.getName() + "@" +
+                channel.getGuild().getName()  );
+        final String id = getTaskID( user, channel );
+        if ( !tasks.containsKey( id ) ) {
             setPermission( user, channel, false );
             addTask( new TimerTask() {
                 
                 @Override
                 public void run() {
                     
-                    // TODO: Check if guild timeout pending.
-                    setPermission( user, channel, true );
+                    if ( !tasks.containsKey( getTaskID( user, channel.getGuild() ) ) ) {
+                        // Check if guild timeout pending.
+                        setPermission( user, channel, true );
+                    }
                     tasks.remove( id );
                     
                 }
@@ -163,12 +164,37 @@ public class TimeoutController {
      */
     public void timeout( IUser user, IGuild guild, long timeout ) {
         
-        for ( IChannel channel : guild.getChannels() ) {
-            // Disables writing permissions for each channel the user is in on this server.
-            if ( channel.getUsersHere().contains( user ) ) {
-                setPermission( user, channel, false );
+        log.debug( "Timing out " + user.getName() + "@" + guild.getName() );
+        final String id = getTaskID( user, guild );
+        if ( !tasks.containsKey( id ) ) {
+            for ( IChannel channel : guild.getChannels() ) {
+                // Disables writing permissions for each channel the user is in on this server.
+                if ( channel.getUsersHere().contains( user ) ) {
+                    setPermission( user, channel, false );
+                }
+                
             }
-            
+            addTask( new TimerTask() {
+                
+                @Override
+                public void run() {
+                    
+                    for ( IChannel channel : guild.getChannels() ) {
+                        // Re-enables writing permissions for each channel the user is in
+                        if ( channel.getUsersHere().contains( user ) && // on this server.
+                                !tasks.containsKey( getTaskID( user, channel ) ) ) { 
+                            // Check if channel timeout pending.
+                            setPermission( user, channel, true );
+                        }
+                        
+                    }
+                    tasks.remove( id );
+                    
+                }
+                
+            }, timeout, id );
+        } else {
+            // TODO: Error message
         }
         
     }
@@ -181,7 +207,16 @@ public class TimeoutController {
      */
     public void untimeout( IUser user, IChannel channel ) {
 
-        setPermission( user, channel, true );
+        log.debug( "Untiming out " + user.getName() + "@" + channel.getName() + "@" +
+                channel.getGuild().getName()  );
+        // Removes and stops timeout task if any.
+        TimerTask task = tasks.remove( getTaskID( user, channel ) );
+        if ( task != null ) {
+            task.cancel();
+        }
+        if ( !tasks.containsKey( getTaskID( user, channel.getGuild() ) ) ) {
+            setPermission( user, channel, true );
+        }
         
     }
     
@@ -193,13 +228,79 @@ public class TimeoutController {
      */
     public void untimeout( IUser user, IGuild guild ) {
         
+        log.debug( "Untiming out " + user.getName() + "@" + guild.getName() );
+        // Removes and stops timeout task if any.
+        TimerTask task = tasks.remove( getTaskID( user, guild ) );
+        if ( task != null ) {
+            task.cancel();
+        }
+        
         for ( IChannel channel : guild.getChannels() ) {
             // Re-enables writing permissions for each channel the user is in on this server.
-            if ( channel.getUsersHere().contains( user ) ) {
+            if ( channel.getUsersHere().contains( user ) &&
+                    !tasks.containsKey( getTaskID( user, channel ) ) ) {
                 setPermission( user, channel, true );
             }
             
         }
+        
+    }
+    
+    /**
+     * Checks if a user has a timeout currently running on a given channel.
+     *
+     * @param user User to be checked. 
+     * @param channel Channel to be checked.
+     * @return true if the user has a timeout on that channel.
+     *         false otherwise.
+     */
+    public boolean hasTimeout( IUser user, IChannel channel ) {
+        
+        log.trace( "Checking to for " + user.getName() + "@" + channel.getName() + "@" +
+                channel.getGuild().getName()  );
+        return tasks.containsKey( getTaskID( user, channel ) );
+        
+    }
+    
+    /**
+     * Checks if a user has a timeout currently running on a given guild.
+     *
+     * @param user User to be checked. 
+     * @param guild Guild to be checked.
+     * @return true if the user has a timeout on that guild.
+     *         false otherwise.
+     */
+    public boolean hasTimeout( IUser user, IGuild guild ) {
+        
+        log.trace( "Checking to for " + user.getName() + "@" + guild.getName() );
+        return tasks.containsKey( getTaskID( user, guild ) );
+        
+    }
+    
+    /**
+     * Calculates the ID of a timeoutask executed over a given user in a given channel.
+     *
+     * @param user User the task is executed over.
+     * @param channel Channel the task was executed in.
+     * @return The task ID.
+     */
+    private static String getTaskID( IUser user, IChannel channel ) {
+        
+        return user.getID() + ID_SEPARATOR + channel.getID() + ID_SEPARATOR +
+                channel.getGuild().getID();
+        
+    }
+    
+    /**
+     * Calculates the ID of a timeoutask executed over a given user in a given guild.
+     *
+     * @param user User the task is executed over.
+     * @param guild Guild the task was executed in.
+     * @return The task ID.
+     */
+    private static String getTaskID( IUser user, IGuild guild ) {
+        
+        return user.getID() + ID_SEPARATOR + guild.getID();
         
     }
 
