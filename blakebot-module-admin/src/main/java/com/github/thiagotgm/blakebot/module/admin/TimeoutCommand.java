@@ -55,7 +55,7 @@ public class TimeoutCommand {
             subCommands = { SUB_NAME }
     )
     @Permission(
-            permissions = { Permissions.MANAGE_PERMISSIONS }
+            permissions = { Permissions.MANAGE_MESSAGES }
     )
     public void timeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
@@ -114,7 +114,7 @@ public class TimeoutCommand {
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
             
-            Executor exec = new Executor( target ).withTimeout( timeout );
+            Executor exec = new Executor( target, msgBuilder, event ).withTimeout( timeout );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -137,7 +137,7 @@ public class TimeoutCommand {
             subCommands = { SUB_NAME }
     )
     @Permission(
-            permissions = { Permissions.MANAGE_PERMISSIONS }
+            permissions = { Permissions.MANAGE_MESSAGES }
     )
     public void untimeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
@@ -166,7 +166,7 @@ public class TimeoutCommand {
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
             
-            Executor exec = new Executor( target );
+            Executor exec = new Executor( target, msgBuilder, event );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -189,7 +189,7 @@ public class TimeoutCommand {
     )
     public void serverSubCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
     
-        if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_PERMISSIONS ) ) {
+        if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_MESSAGES ) ) {
             // Does not have server-wide role management permissions.
             executors.remove( event.getMessage().getID() );
             return;
@@ -275,18 +275,24 @@ public class TimeoutCommand {
         private IChannel targetChannel;
         private IGuild targetGuild;
         private long timeout;
+        private final MessageBuilder response;
+        private final MessageReceivedEvent event;
         
         /**
          * Creates a new instance of this object with a certain user as a target.
          *
          * @param targetUser User targeted by the command.
+         * @param response Message builder to be used for response messages.
+         * @param event Event that triggered the command.
          */
-        public Executor( IUser targetUser ) {
+        public Executor( IUser targetUser, MessageBuilder response, MessageReceivedEvent event ) {
             
             this.targetUser = targetUser;
             targetChannel = null;
             targetGuild = null;
             timeout = -1;
+            this.response = response;
+            this.event = event;
             
         }
         
@@ -350,12 +356,24 @@ public class TimeoutCommand {
                 } else { // For the channel.
                     controller.untimeout( targetUser, targetChannel );
                 }
+                
             } else {
-                // Times out the user.
+                boolean success; // Times out the user.
                 if ( targetGuild != null ) { // For the guild.
-                    controller.timeout( targetUser, targetGuild, timeout );
+                    success = controller.timeout( targetUser, targetGuild, timeout );
                 } else { // For the channel.
-                    controller.timeout( targetUser, targetChannel, timeout );
+                    success = controller.timeout( targetUser, targetChannel, timeout );
+                }
+                if ( !success ) {
+                    RequestBuffer.request( () -> {
+                        
+                        try {
+                            response.withContent( "User is already timed out." ).build();
+                        } catch ( DiscordException | MissingPermissionsException e ) {
+                            CommandHandlerD4J.logMissingPerms( event, "TIMEOUT-EXECUTOR", e );
+                        }
+                        
+                    });
                 }
             }
             

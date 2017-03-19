@@ -127,8 +127,10 @@ public class TimeoutController {
      * @param user User to be restricted.
      * @param channel Channel to be restricted.
      * @param timeout How long the timeout should last, in milliseconds.
+     * @return true if the user was timed out successfully.
+     *         false if the user was already timed out.
      */
-    public void timeout( IUser user, IChannel channel, long timeout ) {
+    public boolean timeout( IUser user, IChannel channel, long timeout ) {
         
         log.debug( "Timing out " + user.getName() + "@" + channel.getName() + "@" +
                 channel.getGuild().getName()  );
@@ -149,8 +151,9 @@ public class TimeoutController {
                 }
                 
             }, timeout, id );
+            return true;
         } else {
-            // TODO: Error message
+            return false;
         }
         
     }
@@ -161,8 +164,10 @@ public class TimeoutController {
      * @param user User to be restricted.
      * @param guild Guild to be restricted.
      * @param timeout How long the timeout should last, in milliseconds.
+     * @return true if the user was timed out successfully.
+     *         false if the user was already timed out.
      */
-    public void timeout( IUser user, IGuild guild, long timeout ) {
+    public boolean timeout( IUser user, IGuild guild, long timeout ) {
         
         log.debug( "Timing out " + user.getName() + "@" + guild.getName() );
         final String id = getTaskID( user, guild );
@@ -193,8 +198,9 @@ public class TimeoutController {
                 }
                 
             }, timeout, id );
+            return true;
         } else {
-            // TODO: Error message
+            return false;
         }
         
     }
