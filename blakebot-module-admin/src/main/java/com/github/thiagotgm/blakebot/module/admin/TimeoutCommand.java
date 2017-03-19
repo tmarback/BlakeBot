@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.discordinator.d4j.permissions.Permission;
 import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.alphahelix00.ordinator.commands.SubCommand;
 
@@ -35,7 +34,8 @@ public class TimeoutCommand {
     private static final String SUB_NAME = "Un/Timeout Server";
     private static final String SUB_ALIAS = "server";
     
-    private static final Permissions REQUIRED = Permissions.MANAGE_MESSAGES;
+    private static final Permissions REQUIRED_CHANNEL = Permissions.MANAGE_MESSAGES;
+    private static final Permissions REQUIRED_SERVER = Permissions.MANAGE_MESSAGES;
     
     private final Hashtable<String, List<Executor>> executors;
     
@@ -56,15 +56,12 @@ public class TimeoutCommand {
             usage = AdminModule.PREFIX + "timeout|to <time> <user(s)>",
             subCommands = { SUB_NAME }
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_MESSAGES }
-    )
     public void timeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
         boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
         if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED ) ) {
+            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
                 permission = false; // No permissions to run command at this level.
             } else {
                 hasSub = true;
@@ -72,7 +69,7 @@ public class TimeoutCommand {
                 args.remove( 0 );
             }
         } else {
-            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED ) ) {
+            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
                 permission = false; // No permissions to run command at this level.
             }
         }
@@ -134,9 +131,14 @@ public class TimeoutCommand {
             return;
         }
         
+        IUser thisUser = AdminModule.client.getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
+            
+            if ( thisUser.equals( target ) ) {
+                continue; // Don't affect this bot.
+            }
             
             Executor exec = new Executor( target, msgBuilder, event ).withTimeout( timeout );
             if ( hasSub ) { // Has subcommand, stores for it.
@@ -160,15 +162,12 @@ public class TimeoutCommand {
             usage = AdminModule.PREFIX + "untimeout|uto <user(s)>",
             subCommands = { SUB_NAME }
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_MESSAGES }
-    )
     public void untimeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
         boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
         if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED ) ) {
+            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
                 permission = false; // No permissions to run command at this level.
             } else {
                 hasSub = true;
@@ -176,7 +175,7 @@ public class TimeoutCommand {
                 args.remove( 0 );
             }
         } else {
-            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED ) ) {
+            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
                 permission = false; // No permissions to run command at this level.
             }
         }
@@ -208,9 +207,14 @@ public class TimeoutCommand {
             return;
         }
         
+        IUser thisUser = AdminModule.client.getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
+            
+            if ( thisUser.equals( target ) ) {
+                continue; // Don't affect this bot.
+            }
             
             Executor exec = new Executor( target, msgBuilder, event );
             if ( hasSub ) { // Has subcommand, stores for it.
