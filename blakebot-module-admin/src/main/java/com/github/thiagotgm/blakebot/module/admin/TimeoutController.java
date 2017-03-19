@@ -72,10 +72,10 @@ public class TimeoutController {
      */
     public void terminate() {
         
-        timer.cancel();
         for ( TimerTask task : tasks.values() ) {
             task.run();
         }    
+        timer.cancel();
         instance = null;
         
     }
