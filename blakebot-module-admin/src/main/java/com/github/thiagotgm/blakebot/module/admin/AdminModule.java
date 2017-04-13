@@ -56,6 +56,7 @@ public class AdminModule implements IModule {
         
         handler.registerAnnotatedCommands( new BlacklistCommand() );
         handler.registerAnnotatedCommands( new TimeoutCommand() );
+        handler.registerAnnotatedCommands( new AutoRoleCommand() );
         
     }
 
