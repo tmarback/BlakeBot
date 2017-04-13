@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.discordinator.d4j.permissions.Permission;
 import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.alphahelix00.ordinator.commands.SubCommand;
 
@@ -35,6 +34,9 @@ public class TimeoutCommand {
     private static final String SUB_NAME = "Un/Timeout Server";
     private static final String SUB_ALIAS = "server";
     
+    private static final Permissions REQUIRED_CHANNEL = Permissions.MANAGE_MESSAGES;
+    private static final Permissions REQUIRED_SERVER = Permissions.MANAGE_MESSAGES;
+    
     private final Hashtable<String, List<Executor>> executors;
     
     /**
@@ -54,16 +56,35 @@ public class TimeoutCommand {
             usage = AdminModule.PREFIX + "timeout|to <time> <user(s)>",
             subCommands = { SUB_NAME }
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_PERMISSIONS }
-    )
     public void timeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
+        boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
         if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            hasSub = true;
-            args = new LinkedList<>( args );
-            args.remove( 0 );
+            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
+                permission = false; // No permissions to run command at this level.
+            } else {
+                hasSub = true;
+                args = new LinkedList<>( args );
+                args.remove( 0 );
+            }
+        } else {
+            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
+                permission = false; // No permissions to run command at this level.
+            }
+        }
+        
+        if ( !permission ) {
+            RequestBuffer.request( () -> {
+                
+                try {
+                    msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
+                } catch ( DiscordException | MissingPermissionsException e ) {
+                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
+                }
+                
+            });
+            return;
         }
         
         if ( args.size() < 2 ) { // Checks minimum amount of arguments.
@@ -110,11 +131,16 @@ public class TimeoutCommand {
             return;
         }
         
+        IUser thisUser = AdminModule.client.getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
             
-            Executor exec = new Executor( target ).withTimeout( timeout );
+            if ( thisUser.equals( target ) ) {
+                continue; // Don't affect this bot.
+            }
+            
+            Executor exec = new Executor( target, msgBuilder, event ).withTimeout( timeout );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -136,16 +162,35 @@ public class TimeoutCommand {
             usage = AdminModule.PREFIX + "untimeout|uto <user(s)>",
             subCommands = { SUB_NAME }
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_PERMISSIONS }
-    )
     public void untimeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
    
+        boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
         if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            hasSub = true;
-            args = new LinkedList<>( args );
-            args.remove( 0 );
+            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
+                permission = false; // No permissions to run command at this level.
+            } else {
+                hasSub = true;
+                args = new LinkedList<>( args );
+                args.remove( 0 );
+            }
+        } else {
+            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
+                permission = false; // No permissions to run command at this level.
+            }
+        }
+        
+        if ( !permission ) {
+            RequestBuffer.request( () -> {
+                
+                try {
+                    msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
+                } catch ( DiscordException | MissingPermissionsException e ) {
+                    CommandHandlerD4J.logMissingPerms( event, NAME_2, e );
+                }
+                
+            });
+            return;
         }
         
         List<IUser> targets = event.getMessage().getMentions();
@@ -162,11 +207,16 @@ public class TimeoutCommand {
             return;
         }
         
+        IUser thisUser = AdminModule.client.getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
             
-            Executor exec = new Executor( target );
+            if ( thisUser.equals( target ) ) {
+                continue; // Don't affect this bot.
+            }
+            
+            Executor exec = new Executor( target, msgBuilder, event );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -188,12 +238,6 @@ public class TimeoutCommand {
             usage = AdminModule.PREFIX + "timeout|to/untimeout|uto server <user>"
     )
     public void serverSubCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
-    
-        if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_PERMISSIONS ) ) {
-            // Does not have server-wide role management permissions.
-            executors.remove( event.getMessage().getID() );
-            return;
-        }
         
         List<Executor> execs = executors.remove( event.getMessage().getID() );
         if ( execs != null ) { // If there are users to (un)time out.
@@ -275,18 +319,24 @@ public class TimeoutCommand {
         private IChannel targetChannel;
         private IGuild targetGuild;
         private long timeout;
+        private final MessageBuilder response;
+        private final MessageReceivedEvent event;
         
         /**
          * Creates a new instance of this object with a certain user as a target.
          *
          * @param targetUser User targeted by the command.
+         * @param response Message builder to be used for response messages.
+         * @param event Event that triggered the command.
          */
-        public Executor( IUser targetUser ) {
+        public Executor( IUser targetUser, MessageBuilder response, MessageReceivedEvent event ) {
             
             this.targetUser = targetUser;
             targetChannel = null;
             targetGuild = null;
             timeout = -1;
+            this.response = response;
+            this.event = event;
             
         }
         
@@ -350,12 +400,24 @@ public class TimeoutCommand {
                 } else { // For the channel.
                     controller.untimeout( targetUser, targetChannel );
                 }
+                
             } else {
-                // Times out the user.
+                boolean success; // Times out the user.
                 if ( targetGuild != null ) { // For the guild.
-                    controller.timeout( targetUser, targetGuild, timeout );
+                    success = controller.timeout( targetUser, targetGuild, timeout );
                 } else { // For the channel.
-                    controller.timeout( targetUser, targetChannel, timeout );
+                    success = controller.timeout( targetUser, targetChannel, timeout );
+                }
+                if ( !success ) {
+                    RequestBuffer.request( () -> {
+                        
+                        try {
+                            response.withContent( "User is already timed out." ).build();
+                        } catch ( DiscordException | MissingPermissionsException e ) {
+                            CommandHandlerD4J.logMissingPerms( event, "TIMEOUT-EXECUTOR", e );
+                        }
+                        
+                    });
                 }
             }
             
