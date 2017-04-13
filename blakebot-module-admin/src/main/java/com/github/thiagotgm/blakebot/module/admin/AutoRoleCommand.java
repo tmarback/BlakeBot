@@ -1,6 +1,5 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.util.Hashtable;
 import java.util.List;
 
 import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
@@ -29,14 +28,14 @@ public class AutoRoleCommand {
     private static final String CHECK = "Check Auto Role";
     private static final String REMOVE = "Remove Auto Role";
     
-    private final Hashtable<String, String> roles;
+    private final AutoRoleManager manager;
     
     /**
      * Creates a new instance of this class.
      */
     public AutoRoleCommand() {
         
-        roles = new Hashtable<>();
+        manager = AutoRoleManager.getInstance();
         
     }
     
@@ -46,7 +45,7 @@ public class AutoRoleCommand {
             alias = { "autorole", "ar" },
             description = "Automatically assigns new users to a certain role.",
             usage = AdminModule.PREFIX + "autorole|ar <subcommand>",
-            subCommands = { SET, CHECK }
+            subCommands = { SET, CHECK, REMOVE }
     )
     public void autoRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
     
@@ -79,7 +78,7 @@ public class AutoRoleCommand {
         IRole role = roleList.get( 0 );
         
         // Register role for server.
-        roles.put( event.getMessage().getGuild().getID(), role.getID() );
+        manager.set( event.getMessage().getGuild(), role );
         RequestBuffer.request( () -> {
             
             try {
@@ -100,9 +99,8 @@ public class AutoRoleCommand {
             usage = AdminModule.PREFIX + "autorole|ar check <role>"
     )
     public void checkRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
-        
-        String roleID = roles.get( event.getMessage().getGuild().getID() );
-        IRole targetRole = ( roleID != null ) ? event.getMessage().getGuild().getRoleByID( roleID ) : null;
+
+        IRole targetRole = manager.get( event.getMessage().getGuild() );
         RequestBuffer.request( () -> {
             
             try {
@@ -128,11 +126,11 @@ public class AutoRoleCommand {
     )
     public void removeRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
         
-        String roleID = roles.remove( event.getMessage().getGuild().getID() );
+        boolean removed = manager.remove( event.getMessage().getGuild() );
         RequestBuffer.request( () -> {
             
             try {
-                if ( roleID != null ) {    
+                if ( removed ) {    
                     msgBuilder.withContent( "Disabled automatic role assigning." );
                 } else {
                     msgBuilder.withContent( "Automatic role assigning not enabled." );
