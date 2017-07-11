@@ -17,93 +17,94 @@
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.github.thiagotgm</groupId>
-		<artifactId>blakebot</artifactId>
-		<version>0.2.1</version>
-	</parent>
+    <parent>
+        <groupId>com.github.thiagotgm</groupId>
+        <artifactId>blakebot</artifactId>
+        <version>0.2.1</version>
+    </parent>
 
-	<artifactId>blakebot-module-status</artifactId>
-	<version>1.0.1</version>
+    <artifactId>blakebot-module-status</artifactId>
+    <version>1.0.1</version>
 
-	<name>blakebot-module-status</name>
+    <name>blakebot-module-status</name>
 
-	<licenses>
+    <licenses>
 
-		<license>
-			<name>GNU LGPLv3 License</name>
-			<url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
-			<distribution>repo</distribution>
-		</license>
+        <license>
+            <name>GNU LGPLv3 License</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
 
-	</licenses>
+    </licenses>
 
-	<dependencies>
+    <dependencies>
 
-		<dependency>
-			<groupId>com.github.thiagotgm</groupId>
-			<artifactId>blakebot-core</artifactId>
-			<version>1.2.1</version>
-		</dependency>
+        <dependency>
+            <groupId>com.github.thiagotgm</groupId>
+            <artifactId>blakebot-core</artifactId>
+            <version>1.2.1</version>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
-	<build>
+    <build>
 
-		<plugins>
+        <plugins>
 
-			<!-- To set the module class and version in the manifest -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
-				<configuration>
-					<archive>
-						<manifestEntries>
+            <!-- To set the module class and version in the manifest -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
 
-							<Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
-							<Implementation-Version>${project.version}</Implementation-Version>
+                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
+                            <Implementation-Version>${project.version}</Implementation-Version>
 
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
 
-			<!-- To create an executable fat JAR when using mvn package -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.4.3</version>
-				<executions>
+            <!-- To create an executable fat JAR when using mvn package -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
 
-					<execution>
-						<phase>package</phase>
-						<goals>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
 
-							<goal>shade</goal>
+                            <goal>shade</goal>
 
-						</goals>
-						<configuration>
-							<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<artifactSet>
-								<includes>
-								
-									<include>com.github.thiagotgm:blakebot-module-status</include>
-								
-								</includes>
-							</artifactSet>
-						</configuration>
-					</execution>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <artifactSet>
+                                <includes>
 
-				</executions>
-			</plugin>
+                                    <include>com.github.thiagotgm:blakebot-module-status</include>
 
-		</plugins>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
 
-	</build>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
 
 </project>

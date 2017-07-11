@@ -16,37 +16,38 @@
   ~     You should have received a copy of the GNU Lesser General Public License
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
-  
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.thiagotgm</groupId>
-	<artifactId>blakebot</artifactId>
-	<version>0.2.1</version>
-	<packaging>pom</packaging>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<modules>
+    <groupId>com.github.thiagotgm</groupId>
+    <artifactId>blakebot</artifactId>
+    <version>0.2.1</version>
+    <packaging>pom</packaging>
 
-		<module>blakebot-core</module>
-		<module>blakebot-module-status</module>
+    <modules>
+
+        <module>blakebot-core</module>
+        <module>blakebot-module-status</module>
         <module>blakebot-module-fun</module>
         <module>blakebot-module-admin</module>
-        
+
     </modules>
 
-	<name>BlakeBot</name>
-	<url>https://github.com/ThiagoTGM/BlakeBot</url>
+    <name>BlakeBot</name>
+    <url>https://github.com/ThiagoTGM/BlakeBot</url>
 
-	<properties>
+    <properties>
 
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.target>1.8</maven.compiler.target>
-		<maven.compiler.source>1.8</maven.compiler.source>
-		<maven.compiler.testTarget>1.8</maven.compiler.testTarget>
-		<maven.compiler.testSource>1.8</maven.compiler.testSource>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.testTarget>1.8</maven.compiler.testTarget>
+        <maven.compiler.testSource>1.8</maven.compiler.testSource>
 
-	</properties>
-	
+    </properties>
+
     <licenses>
 
         <license>
@@ -57,88 +58,88 @@
 
     </licenses>
 
-	<repositories>
+    <repositories>
 
-		<repository>
-			<id>jcenter</id>
-			<url>http://jcenter.bintray.com</url>
-		</repository>
-		
-		<repository>
-			<id>jitpack.io</id>
-			<url>https://jitpack.io</url>
-		</repository>
+        <repository>
+            <id>jcenter</id>
+            <url>http://jcenter.bintray.com</url>
+        </repository>
 
-	</repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
 
-	<dependencies>
-    
+    </repositories>
+
+    <dependencies>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>com.github.austinv11</groupId>
             <artifactId>Discord4J</artifactId>
             <version>2.7.0</version>
         </dependency>
-        
+
         <dependency>
             <groupId>com.github.alphahelix00</groupId>
             <artifactId>Discordinator</artifactId>
             <version>1.2.5</version>
         </dependency>
-        
+
         <!-- Allows you to log events from Discord4J -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>1.1.7</version>
         </dependency>
-        
+
     </dependencies>
-    
+
     <dependencyManagement>
-    	<dependencies>
-    	
-    		<dependency>
+        <dependencies>
+
+            <dependency>
                 <groupId>org.dom4j</groupId>
                 <artifactId>dom4j</artifactId>
                 <version>2.0.0</version>
             </dependency>
-            
-    	</dependencies>
+
+        </dependencies>
     </dependencyManagement>
 
-	<build>
-	
-		<plugins>
+    <build>
 
-			<!-- So that a full project clean deletes the jars -->
-			<plugin>
-				<artifactId>maven-clean-plugin</artifactId>
-				<version>3.0.0</version>
-				<configuration>
-					<filesets>
-					
-						<fileset>
-							<directory>output</directory>
-							<includes>
-							
-								<include>**/*.jar</include>
-								
-							</includes>
-						</fileset>
-						
-					</filesets>
-				</configuration>
-			</plugin>
-			
-		</plugins>
+        <plugins>
 
-	</build>
+            <!-- So that a full project clean deletes the jars -->
+            <plugin>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.0.0</version>
+                <configuration>
+                    <filesets>
+
+                        <fileset>
+                            <directory>output</directory>
+                            <includes>
+
+                                <include>**/*.jar</include>
+
+                            </includes>
+                        </fileset>
+
+                    </filesets>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
 
 </project>

@@ -16,21 +16,23 @@
   ~     You should have received a copy of the GNU Lesser General Public License
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
-  
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.github.thiagotgm</groupId>
-		<artifactId>blakebot</artifactId>
-		<version>0.2.1</version>
-	</parent>
+<project
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
 
-	<artifactId>blakebot-module-admin</artifactId>
-	<version>0.3.0-SNAPSHOT</version>
+    <parent>
+        <groupId>com.github.thiagotgm</groupId>
+        <artifactId>blakebot</artifactId>
+        <version>0.2.1</version>
+    </parent>
 
-	<name>blakebot-module-admin</name>
-	
+    <artifactId>blakebot-module-admin</artifactId>
+    <version>0.3.0-SNAPSHOT</version>
+
+    <name>blakebot-module-admin</name>
+
     <licenses>
 
         <license>
@@ -41,69 +43,69 @@
 
     </licenses>
 
-	<dependencies>
+    <dependencies>
 
-		<dependency>
-			<groupId>org.dom4j</groupId>
-			<artifactId>dom4j</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+        </dependency>
 
-	</dependencies>
+    </dependencies>
 
-	<build>
+    <build>
 
-		<plugins>
+        <plugins>
 
-			<!-- To set the module class and version in the manifest -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.0.2</version>
-				<configuration>
-					<archive>
-						<manifestEntries>
+            <!-- To set the module class and version in the manifest -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
 
-							<Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.admin.AdminModule</Discord4J-ModuleClass>
-							<Implementation-Version>${project.version}</Implementation-Version>
+                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.admin.AdminModule</Discord4J-ModuleClass>
+                            <Implementation-Version>${project.version}</Implementation-Version>
 
-						</manifestEntries>
-					</archive>
-				</configuration>
-			</plugin>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
 
-			<!-- To create an executable fat JAR when using mvn package -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>2.4.3</version>
-				<executions>
+            <!-- To create an executable fat JAR when using mvn package -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.4.3</version>
+                <executions>
 
-					<execution>
-						<phase>package</phase>
-						<goals>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
 
-							<goal>shade</goal>
+                            <goal>shade</goal>
 
-						</goals>
-						<configuration>
-							<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<artifactSet>
-								<includes>
-								
-								    <include>org.dom4j:dom4j</include>
-									<include>com.github.thiagotgm:blakebot-module-admin</include>
-								
-								</includes>
-							</artifactSet>
-						</configuration>
-					</execution>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <artifactSet>
+                                <includes>
 
-				</executions>
-			</plugin>
+                                    <include>org.dom4j:dom4j</include>
+                                    <include>com.github.thiagotgm:blakebot-module-admin</include>
 
-		</plugins>
+                                </includes>
+                            </artifactSet>
+                        </configuration>
+                    </execution>
 
-	</build>
+                </executions>
+            </plugin>
+
+        </plugins>
+
+    </build>
 
 </project>
