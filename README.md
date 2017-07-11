@@ -18,7 +18,7 @@ Planned Modules:
 
 - [ ] Anime: Anime-related jokes and functions.
 - [ ] Games: Simple message-based games that can be played by the server's users.
-- [ ] Help: Provides detailed information about each module and the commands in them.
+- [ ] Info: Provides detailed information about each module and the commands in them.
 - [ ] Kancolle: Kantai Collection-related jokes and functions.
 - [ ] NSFW: Doesn't need much explanation.
 - [ ] Permissions: Allows server admins to specify what modules are available for users on the server and specific channels.
