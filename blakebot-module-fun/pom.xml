@@ -1,70 +1,99 @@
-<?xml version="1.0"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <modelVersion>4.0.0</modelVersion>
-  
-  <parent>
-    <groupId>com.github.thiagotgm</groupId>
-    <artifactId>blakebot</artifactId>
-    <version>0.2.1</version>
-  </parent>
-  
-  <artifactId>blakebot-module-fun</artifactId>
-  <version>0.2.0</version>
-  
-  <name>blakebot-module-fun</name>
-  
-  <build>
-    
-        <plugins>
-        
-            <!-- To set the module class and version in the manifest -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                        
-                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.fun.FunModule</Discord4J-ModuleClass>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                        
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
-        
-            <!-- To create an executable fat JAR when using mvn package -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-                
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                        
-                            <goal>shade</goal>
-                            
-                        </goals>
-                        <configuration>    
-                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <artifactSet>
-                                <includes>
-                                  <include>com.github.thiagotgm:blakebot-module-fun</include>
-                                </includes>
-                            </artifactSet>             
-                        </configuration>
-                    </execution>
-                    
-                </executions>
-            </plugin>
-            
-        </plugins>
-        
-    </build>
-    
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~     This file is part of BlakeBot.
+  ~
+  ~     BlakeBot is free software: you can redistribute it and/or modify
+  ~     it under the terms of the GNU Lesser General Public License as published by
+  ~     the Free Software Foundation, either version 3 of the License, or
+  ~     (at your option) any later version.
+  ~
+  ~     BlakeBot is distributed in the hope that it will be useful,
+  ~     but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~     GNU Lesser General Public License for more details.
+  ~
+  ~     You should have received a copy of the GNU Lesser General Public License
+  ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>com.github.thiagotgm</groupId>
+		<artifactId>blakebot</artifactId>
+		<version>0.2.1</version>
+	</parent>
+
+	<artifactId>blakebot-module-fun</artifactId>
+	<version>0.2.0</version>
+
+	<name>blakebot-module-fun</name>
+
+	<licenses>
+
+		<license>
+			<name>GNU LGPLv3 License</name>
+			<url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+			<distribution>repo</distribution>
+		</license>
+
+	</licenses>
+
+	<build>
+
+		<plugins>
+
+			<!-- To set the module class and version in the manifest -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>3.0.2</version>
+				<configuration>
+					<archive>
+						<manifestEntries>
+
+							<Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.fun.FunModule</Discord4J-ModuleClass>
+							<Implementation-Version>${project.version}</Implementation-Version>
+
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<!-- To create an executable fat JAR when using mvn package -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.3</version>
+				<executions>
+
+					<execution>
+						<phase>package</phase>
+						<goals>
+
+							<goal>shade</goal>
+
+						</goals>
+						<configuration>
+							<outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<artifactSet>
+								<includes>
+								
+									<include>com.github.thiagotgm:blakebot-module-fun</include>
+									
+								</includes>
+							</artifactSet>
+						</configuration>
+					</execution>
+
+				</executions>
+			</plugin>
+
+		</plugins>
+
+	</build>
+
 </project>
