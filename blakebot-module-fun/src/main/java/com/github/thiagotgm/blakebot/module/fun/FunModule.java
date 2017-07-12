@@ -32,7 +32,7 @@ import sx.blah.discord.modules.IModule;
  */
 public class FunModule implements IModule {
 
-    private static final String MODULE_NAME = "Fun Module";
+    private static final String MODULE_NAME = "Fun";
     
     public static final String PREFIX = "^";
     
@@ -73,7 +73,7 @@ public class FunModule implements IModule {
     @Override
     public String getMinimumDiscord4JVersion() {
 
-        return "2.7.0";
+        return getClass().getPackage().getSpecificationVersion();
         
     }
 

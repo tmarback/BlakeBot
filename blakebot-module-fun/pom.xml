@@ -57,6 +57,7 @@
 
                             <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.fun.FunModule</Discord4J-ModuleClass>
                             <Implementation-Version>${project.version}</Implementation-Version>
+                            <Specification-Version>${discord4J.version}</Specification-Version>
 
                         </manifestEntries>
                     </archive>

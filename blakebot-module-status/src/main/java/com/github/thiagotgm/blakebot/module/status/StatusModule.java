@@ -33,7 +33,7 @@ import sx.blah.discord.modules.IModule;
  */
 public class StatusModule implements IModule {
     
-    private static final String MODULE_NAME = "Status Module";
+    private static final String MODULE_NAME = "Status";
     
     public static final String PREFIX = "^";
     
@@ -82,7 +82,7 @@ public class StatusModule implements IModule {
     @Override
     public String getMinimumDiscord4JVersion() {
 
-        return "2.7.0";
+        return getClass().getPackage().getSpecificationVersion();
                 
     }
 

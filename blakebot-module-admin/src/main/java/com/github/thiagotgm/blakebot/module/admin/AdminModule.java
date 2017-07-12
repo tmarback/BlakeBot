@@ -33,7 +33,7 @@ import sx.blah.discord.modules.IModule;
  */
 public class AdminModule implements IModule {
 
-    private static final String MODULE_NAME = "Admin Module";
+    private static final String MODULE_NAME = "Admin";
     
     public static final String PREFIX = "^";
     static IDiscordClient client;
@@ -87,7 +87,7 @@ public class AdminModule implements IModule {
     @Override
     public String getMinimumDiscord4JVersion() {
 
-        return "2.7.0";
+        return getClass().getPackage().getSpecificationVersion();
         
     }
 
