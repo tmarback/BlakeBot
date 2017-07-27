@@ -25,12 +25,11 @@ import com.github.alphahelix00.discordinator.d4j.DiscordinatorModule;
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.DisconnectedEvent;
+import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
-import sx.blah.discord.handle.impl.events.ResumedEvent;
+import sx.blah.discord.handle.impl.events.shard.ResumedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
-import sx.blah.discord.handle.obj.Status;
 import sx.blah.discord.modules.IModule;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
@@ -361,7 +360,7 @@ public class Bot {
      */
     public String getStatus() {
         
-        return client.getOurUser().getStatus().getStatusMessage();
+        return client.getOurUser().getPresence().getPlayingText().orElse( "" );
         
     }
     
@@ -417,16 +416,10 @@ public class Bot {
      * @param server Target server.
      * @return The nickname of the bot owner in the server, or null if it doesn't
      *         exist.
-     * @throws DiscordException if the nickname could not be retrieved.
      */
-    public String getOwner( IGuild server ) throws DiscordException {
+    public String getOwner( IGuild server ) {
         
-        try {
-            return client.getApplicationOwner().getNicknameForGuild( server ).orElse( null );
-        } catch ( DiscordException e ) {
-            log.warn( "Could not get owner nickname.", e );
-            throw e;
-        }
+        return client.getApplicationOwner().getNicknameForGuild( server );
         
     }
     
@@ -470,7 +463,7 @@ public class Bot {
      */
     public void setStatus( String newStatus ) {
         
-        client.changeStatus( Status.game( newStatus ) );
+        client.online( newStatus );
         log.info( "Changed bot status to " + newStatus );
         
     }
@@ -483,7 +476,11 @@ public class Bot {
      */
     public void setIdle( boolean isIdle ) {
         
-        client.changePresence( isIdle );
+        if ( isIdle ) {
+            client.idle();
+        } else {
+            client.online();
+        }
         log.info( "Changed bot presence to " + ( isIdle ? "idle" : "online" )
                 + "." );
         
