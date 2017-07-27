@@ -18,12 +18,12 @@
 package com.github.thiagotgm.blakebot.module.status;
 
 import java.awt.Color;
-import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.FailureReason;
 import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
+import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.EmbedBuilder;
 
 /**
@@ -47,20 +47,16 @@ public class OwnerCommand {
     )
     public void ownerCommand( CommandContext context ) {
         
-        String name;
-        String nick;
-        String image;
-        Bot bot = Bot.getInstance();
-        name = bot.getOwner();
-        nick = bot.getOwner( context.getMessage().getGuild() );
-        image = bot.getOwnerImage();
+        IUser owner = context.getEvent().getClient().getApplicationOwner();
         EmbedBuilder embedBuilder = new EmbedBuilder();
-        embedBuilder.withThumbnail( image );
-        embedBuilder.appendField( "Username", name, false );
-        if ( nick == null ) {
-            nick = "None found in this server";
+        embedBuilder.withThumbnail( owner.getAvatarURL() );
+        embedBuilder.appendField( "Username", owner.getName(), false );
+        if ( context.getGuild() != null ) { // Command executed in a guild.
+            String nick = owner.getNicknameForGuild( context.getGuild() );
+            if ( nick != null ) { // Owner uses a nickname in the guild.
+                embedBuilder.appendField( "Nickname", nick, false ); // Show it too.
+            }
         }
-        embedBuilder.appendField( "Nickname", nick, false );
         embedBuilder.withColor( Color.RED );
         context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
 
