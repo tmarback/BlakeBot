@@ -111,7 +111,7 @@ public class AutoRoleManager {
      */
     public void set( IGuild guild, IRole role ) {
         
-        roles.setProperty( guild.getID(), role.getID() );
+        roles.setProperty( String.valueOf( guild.getLongID() ), String.valueOf( role.getLongID() ) );
         save();
         
     }
@@ -124,8 +124,8 @@ public class AutoRoleManager {
      */
     public IRole get( IGuild guild ) {
         
-        String roleID = roles.getProperty( guild.getID() );
-        return ( roleID != null ) ? guild.getRoleByID( roleID ) : null;
+        String roleID = roles.getProperty( String.valueOf( guild.getLongID() ) );
+        return ( roleID != null ) ? guild.getRoleByID( Long.valueOf( roleID ) ) : null;
         
     }
     
@@ -138,7 +138,7 @@ public class AutoRoleManager {
      */
     public boolean remove( IGuild guild ) {
         
-        Object roleID = roles.remove( guild.getID() );
+        Object roleID = roles.remove( String.valueOf( guild.getLongID() ) );
         save();
         return ( roleID == null ) ? false : true;
         

@@ -18,23 +18,18 @@
 package com.github.thiagotgm.blakebot.module.status;
 
 import java.awt.Color;
-import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.ConnectionStatusListener;
 import com.github.thiagotgm.blakebot.Time;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.api.FailureReason;
+import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Command that displays advanced bot information.
@@ -46,6 +41,7 @@ import sx.blah.discord.util.RequestBuffer;
 public class StatusCommand implements ConnectionStatusListener {
     
     private static final String NAME = "Status";
+    private static final String FAILURE_HANDLER = "handler";
     private static final Logger log = LoggerFactory.getLogger( StatusCommand.class );
     
     private long bootTime;
@@ -65,51 +61,51 @@ public class StatusCommand implements ConnectionStatusListener {
     }
     
     @MainCommand(
-            prefix = StatusModule.PREFIX,
             name = NAME,
-            alias = "status",
+            aliases = "status",
             description = "retrieves advanced information on bot status",
-            usage = StatusModule.PREFIX + "status"
+            usage = "{}status",
+            requiresOwner = true,
+            failureHandler = FAILURE_HANDLER
     )
-    public void statusCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void statusCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                /* Gets status values */
-                Bot bot = Bot.getInstance();
-                int publicAmount = bot.getPublicChannels().size();
-                int privateAmount = bot.getPrivateChannels().size();
-                int serverAmount = bot.getGuilds().size();
-                String runtime = getRuntime().toString();
-                String uptime = Bot.getInstance().getUptime().toString();
-                String averageUptime = averageUptime().toString();
-                String highestUptime = maxUptime.toString();
-                String lowestUptime = minUptime.toString();
-                
-                /* Structures status message */
-                EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.appendField( "Public channels", publicAmount + " channels", false );
-                embedBuilder.appendField( "Private channels", privateAmount + " channels", false );
-                embedBuilder.appendField( "Servers", serverAmount + " servers", false );
-                embedBuilder.appendField( "Program runtime", runtime, false );
-                embedBuilder.appendField( "Current uptime", uptime, false );
-                embedBuilder.appendField( "Average uptime", averageUptime, false );
-                embedBuilder.appendField( "Highest uptime", highestUptime, false );
-                embedBuilder.appendField( "Lowest uptime", lowestUptime, false );
-                embedBuilder.appendField( "Disconnects", String.valueOf( disconnects ), false );
-                embedBuilder.withColor( Color.RED );
-                
-                /* Sends status message */ 
-                msgBuilder.withEmbed( embedBuilder.build() );
-                msgBuilder.build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME, e );
-            }
-            
-        });
+        /* Gets status values */
+        Bot bot = Bot.getInstance();
+        int publicAmount = bot.getPublicChannels().size();
+        int privateAmount = bot.getPrivateChannels().size();
+        int serverAmount = bot.getGuilds().size();
+        String runtime = getRuntime().toString();
+        String uptime = Bot.getInstance().getUptime().toString();
+        String averageUptime = averageUptime().toString();
+        String highestUptime = maxUptime.toString();
+        String lowestUptime = minUptime.toString();
         
-
+        /* Structures status message */
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.appendField( "Public channels", publicAmount + " channels", false );
+        embedBuilder.appendField( "Private channels", privateAmount + " channels", false );
+        embedBuilder.appendField( "Servers", serverAmount + " servers", false );
+        embedBuilder.appendField( "Program runtime", runtime, false );
+        embedBuilder.appendField( "Current uptime", uptime, false );
+        embedBuilder.appendField( "Average uptime", averageUptime, false );
+        embedBuilder.appendField( "Highest uptime", highestUptime, false );
+        embedBuilder.appendField( "Lowest uptime", lowestUptime, false );
+        embedBuilder.appendField( "Disconnects", String.valueOf( disconnects ), false );
+        embedBuilder.withColor( Color.RED );
+        
+        /* Sends status message */ 
+        context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
+        
+    }
+    
+    @FailureHandler( FAILURE_HANDLER )
+    public void handler( CommandContext context, FailureReason reason ) {
+        
+        if ( reason == FailureReason.COMMAND_OPERATION_EXCEPTION ) {
+            context.getReplyBuilder().withContent( "Exception thrown." ).build();
+        }
+        
     }
     
     /**

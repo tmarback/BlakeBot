@@ -17,8 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.Ordinator;
+import com.github.thiagotgm.modular_commands.api.CommandRegistry;
+import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
@@ -31,12 +31,12 @@ import sx.blah.discord.modules.IModule;
  * @version 0.1.0
  * @since 2017-02-04
  */
+@HasPrefix( "^" )
 public class AdminModule implements IModule {
 
     private static final String MODULE_NAME = "Admin";
     
-    public static final String PREFIX = "^";
-    static IDiscordClient client;
+    IDiscordClient client;
     private static final BlacklistEnforcer enforcer = new BlacklistEnforcer();
     
     
@@ -46,18 +46,18 @@ public class AdminModule implements IModule {
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.unregisterListener( enforcer );
         TimeoutController.getInstance().terminate();
-        AdminModule.client = null;
+        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
+        client = null;
 
     }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
 
-        AdminModule.client = arg0;
+        client = arg0;
         
-        CommandHandlerD4J commandHandler;
-        commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
-        registerCommands( commandHandler );
+        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        registerCommands( registry );
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.registerListener( enforcer );
         return true;
@@ -67,13 +67,13 @@ public class AdminModule implements IModule {
     /**
      * Registers all commands in this module with the command handler.
      * 
-     * @param handler Hander the commands should be registered with.
+     * @param registry Registry the commands should be registered in.
      */
-    private void registerCommands( CommandHandlerD4J handler ) {
+    private void registerCommands( CommandRegistry registry ) {
         
-        handler.registerAnnotatedCommands( new BlacklistCommand() );
-        handler.registerAnnotatedCommands( new TimeoutCommand() );
-        handler.registerAnnotatedCommands( new AutoRoleCommand() );
+        registry.registerAnnotatedCommands( new BlacklistCommand() );
+        registry.registerAnnotatedCommands( new TimeoutCommand() );
+        registry.registerAnnotatedCommands( new AutoRoleCommand() );
         
     }
 

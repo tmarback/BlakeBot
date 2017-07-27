@@ -89,12 +89,11 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.alphahelix00</groupId>
-            <artifactId>Discordinator</artifactId>
-            <version>1.2.5</version>
+            <groupId>com.github.ThiagoTGM</groupId>
+            <artifactId>ModularCommands</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
-        <!-- Allows you to log events from Discord4J -->
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>

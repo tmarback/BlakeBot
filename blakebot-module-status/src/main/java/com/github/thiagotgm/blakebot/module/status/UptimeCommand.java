@@ -18,18 +18,11 @@
 package com.github.thiagotgm.blakebot.module.status;
 
 import java.awt.Color;
-import java.util.List;
-
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.thiagotgm.blakebot.Bot;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Command that displays how long the bot has been connected to Discord.
@@ -43,27 +36,17 @@ public class UptimeCommand {
     private static final String NAME = "Uptime";
     
     @MainCommand(
-            prefix = StatusModule.PREFIX,
             name = NAME,
-            alias = { "uptime", "up" },
+            aliases = { "uptime", "up" },
             description = "Displays how long the bot has been up.",
-            usage = StatusModule.PREFIX + "uptime|up"
+            usage = "{}uptime|up"
     )
-    public void uptimeCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void uptimeCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.appendField( "Connection uptime", Bot.getInstance().getUptime().toString(), false );
-                embedBuilder.withColor( Color.RED );
-                msgBuilder.withEmbed( embedBuilder.build() ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME, e );
-            }
-            
-        });
-        
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.appendField( "Connection uptime", Bot.getInstance().getUptime().toString(), false );
+        embedBuilder.withColor( Color.RED );
+        context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
 
     }
 

@@ -17,16 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.fun;
 
-import java.util.List;
-
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
-
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
-import sx.blah.discord.util.DiscordException;
-import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
 /**
  * Collection of commands that send different Lennys.
@@ -45,128 +37,74 @@ public class LennysCommand {
     private static final String NAME_6 = "Brawler Lenny";
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_1,
-            alias = "lenny",
+            aliases = "lenny",
             description = "Calls Lenny.",
-            usage = FunModule.PREFIX + "lenny"
+            usage = "{}lenny"
     )
-    public void lennyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void lennyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "( ͡° ͜ʖ ͡°)" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
-            }
-            
-        });      
+        context.getReplyBuilder().withContent( "( ͡° ͜ʖ ͡°)" ).build();  
 
     }
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_2,
-            alias = "sneakylenny",
+            aliases = "sneakylenny",
             description = "Calls Lenny's sneaky cousin.",
-            usage = FunModule.PREFIX + "sneakylenny"
+            usage = "{}sneakylenny"
     )
-    public void sneakyLennyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void sneakyLennyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "┬┴┬┴┤ ͜ʖ ͡°) ├┬┴┬┴" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_2, e );
-            }
-            
-        });       
+        context.getReplyBuilder().withContent( "┬┴┬┴┤ ͜ʖ ͡°) ├┬┴┬┴" ).build();      
 
     }
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_3,
-            alias = "senseilenny",
+            aliases = "senseilenny",
             description = "Calls Lenny's wise cousin.",
-            usage = FunModule.PREFIX + "senseilenny"
+            usage = "{}senseilenny"
     )
-    public void senseiLennyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void senseiLennyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "( ͡° ╭͜ʖ╮͡°)" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_3, e );
-            }
-            
-        });
+        context.getReplyBuilder().withContent( "( ͡° ╭͜ʖ╮͡°)" ).build();
 
     }
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_4,
-            alias = "lennyarmy",
+            aliases = "lennyarmy",
             description = "Calls Lenny's family.",
-            usage = FunModule.PREFIX + "lennyarmy"
+            usage = "{}lennyarmy"
     )
-    public void lennyArmyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void lennyArmyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_4, e );
-            }
-            
-        });
+        context.getReplyBuilder().withContent( "( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)" ).build();
 
     }
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_5,
-            alias = "noseylenny",
+            aliases = "noseylenny",
             description = "Calls Lenny's nosey cousin.",
-            usage = FunModule.PREFIX + "noseylenny"
+            usage = "{}noseylenny"
     )
-    public void noseyLennyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void noseyLennyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "(͡ ͡° ͜ つ ͡͡°)" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_5, e );
-            }
-            
-        });
+        context.getReplyBuilder().withContent( "(͡ ͡° ͜ つ ͡͡°)" ).build();
 
     }
     
     @MainCommand(
-            prefix = FunModule.PREFIX,
             name = NAME_6,
-            alias = "brawlerlenny",
+            aliases = "brawlerlenny",
             description = "Calls Lenny's brawler cousin.",
-            usage = FunModule.PREFIX + "brawlerlenny"
+            usage = "{}brawlerlenny"
     )
-    public void brawlerLennyCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void brawlerLennyCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "(ง ͠° ͟ل͜ ͡°)ง" ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME_6, e );
-            }
-            
-        });
+        context.getReplyBuilder().withContent( "(ง ͠° ͟ل͜ ͡°)ง" ).build();
 
     }
 

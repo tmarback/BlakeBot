@@ -23,7 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import sx.blah.discord.api.events.EventSubscriber;
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
@@ -65,10 +65,6 @@ public class BlacklistEnforcer {
         IChannel channel = message.getChannel();
         IGuild guild = message.getGuild();
         String content = message.getContent();
-        
-        if ( author.equals( AdminModule.client.getOurUser() ) ) {
-            return; // Ignores the bot's own messages.
-        }
         
         List<String> restrictions = blacklist.getAllRestrictions( author, channel );
         log.trace( "Restrictions for author " + author.getName() + " in channel " + channel.getName() + " of guild " + 

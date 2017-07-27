@@ -21,19 +21,16 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
-import com.github.alphahelix00.ordinator.commands.SubCommand;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
+import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Class with commands that timeout a user from a channel or guild, or reverse that
@@ -54,7 +51,7 @@ public class TimeoutCommand {
     private static final Permissions REQUIRED_CHANNEL = Permissions.MANAGE_MESSAGES;
     private static final Permissions REQUIRED_SERVER = Permissions.MANAGE_MESSAGES;
     
-    private final Hashtable<String, List<Executor>> executors;
+    private final Hashtable<Long, List<Executor>> executors;
     
     /**
      * Creates a new instance of this class.
@@ -66,14 +63,17 @@ public class TimeoutCommand {
     }
     
     @MainCommand(
-            prefix = AdminModule.PREFIX,
             name = NAME_1,
-            alias = { "timeout", "to" },
+            aliases = { "timeout", "to" },
             description = "Times a user out.",
-            usage = AdminModule.PREFIX + "timeout|to <time> <user(s)>",
+            usage = "{}timeout|to <time> <user(s)>",
             subCommands = { SUB_NAME }
     )
-    public void timeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void timeoutCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
    
         boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
@@ -92,28 +92,12 @@ public class TimeoutCommand {
         }
         
         if ( !permission ) {
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
-                }
-                
-            });
+            msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
             return;
         }
         
         if ( args.size() < 2 ) { // Checks minimum amount of arguments.
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Please specify a time and the user(s) to be timed out." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
-                }
-                
-            });
+            msgBuilder.withContent( "Please specify a time and the user(s) to be timed out." ).build();
             return;
         }
         
@@ -121,34 +105,18 @@ public class TimeoutCommand {
         try { // Obtains time amount.
             timeout = Long.parseLong( args.get( 0 ) );
         } catch ( NumberFormatException e1 ) {
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Invalid time amount." ).build();
-                } catch ( DiscordException | MissingPermissionsException e2 ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e2 );
-                }
-                
-            });
+            msgBuilder.withContent( "Invalid time amount." ).build();
             return;
         }
         timeout *= 1000; // Converts to milliseconds.
         
         List<IUser> targets = event.getMessage().getMentions();
         if ( targets.isEmpty() ) { // Checks if a user was specified.
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Please specify a the user(s) to be timed out." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_1, e );
-                }
-                
-            });
+            msgBuilder.withContent( "Please specify a the user(s) to be timed out." ).build();
             return;
         }
         
-        IUser thisUser = AdminModule.client.getOurUser();
+        IUser thisUser = event.getClient().getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
@@ -157,7 +125,7 @@ public class TimeoutCommand {
                 continue; // Don't affect this bot.
             }
             
-            Executor exec = new Executor( target, msgBuilder, event ).withTimeout( timeout );
+            Executor exec = new Executor( target, msgBuilder ).withTimeout( timeout );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -166,20 +134,23 @@ public class TimeoutCommand {
             
         }
         if ( !execs.isEmpty() ) {
-            executors.put( event.getMessage().getID(), execs );
+            executors.put( event.getMessage().getLongID(), execs );
         }
         
     }
     
     @MainCommand(
-            prefix = AdminModule.PREFIX,
             name = NAME_2,
-            alias = { "untimeout", "uto" },
+            aliases = { "untimeout", "uto" },
             description = "Un-times out a user.",
-            usage = AdminModule.PREFIX + "untimeout|uto <user(s)>",
+            usage = "{}untimeout|uto <user(s)>",
             subCommands = { SUB_NAME }
     )
-    public void untimeoutCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void untimeoutCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
    
         boolean permission = true;
         boolean hasSub = false; // Checks if has subcommand.
@@ -198,33 +169,16 @@ public class TimeoutCommand {
         }
         
         if ( !permission ) {
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_2, e );
-                }
-                
-            });
+            msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
             return;
         }
         
         List<IUser> targets = event.getMessage().getMentions();
         if ( targets.isEmpty() ) { // Checks if a user was specified.
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Please specify a the user(s) to be untimed out." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_2, e );
-                }
-                
-            });
-            return;
+            msgBuilder.withContent( "Please specify a the user(s) to be untimed out." ).build();
         }
         
-        IUser thisUser = AdminModule.client.getOurUser();
+        IUser thisUser = event.getClient().getOurUser();
         IChannel channel = event.getMessage().getChannel();
         List<Executor> execs = new LinkedList<>();
         for ( IUser target : targets ) {
@@ -233,7 +187,7 @@ public class TimeoutCommand {
                 continue; // Don't affect this bot.
             }
             
-            Executor exec = new Executor( target, msgBuilder, event );
+            Executor exec = new Executor( target, msgBuilder );
             if ( hasSub ) { // Has subcommand, stores for it.
                 execs.add( exec );
             } else { // No subcommand, run now.
@@ -242,21 +196,22 @@ public class TimeoutCommand {
             
         }
         if ( !execs.isEmpty() ) {
-            executors.put( event.getMessage().getID(), execs );
+            executors.put( event.getMessage().getLongID(), execs );
         }
         
     }
     
     @SubCommand(
-            prefix = AdminModule.PREFIX,
             name = SUB_NAME,
-            alias = { SUB_ALIAS },
+            aliases = { SUB_ALIAS },
             description = "Applies the (un)timeout for the entire server.",
-            usage = AdminModule.PREFIX + "timeout|to/untimeout|uto server <user>"
+            usage = "{}timeout|to/untimeout|uto server <user>"
     )
-    public void serverSubCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void serverSubCommand( CommandContext context ) {
         
-        List<Executor> execs = executors.remove( event.getMessage().getID() );
+        MessageReceivedEvent event = context.getEvent();
+        
+        List<Executor> execs = executors.remove( event.getMessage().getLongID() );
         if ( execs != null ) { // If there are users to (un)time out.
             IGuild guild = event.getMessage().getGuild();
             for ( Executor exec : execs ) {
@@ -269,14 +224,17 @@ public class TimeoutCommand {
     }
     
     @MainCommand(
-            prefix = AdminModule.PREFIX,
             name = NAME_3,
-            alias = { "istimedout", "isto" },
+            aliases = { "istimedout", "isto" },
             description = "Checks if a user is timed out. Checks current channel, or server"
                     + "if the 'server' option is used.",
-            usage = AdminModule.PREFIX + "istimeout|isto [server] <user(s)>"
+            usage = "{}istimeout|isto [server] <user(s)>"
     )
-    public void checkCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void checkCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
    
         boolean hasSub = false; // Checks if has subcommand.
         if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
@@ -286,15 +244,7 @@ public class TimeoutCommand {
         
         List<IUser> targets = event.getMessage().getMentions();
         if ( targets.isEmpty() ) { // Checks if a user was specified.
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Please specify a the user(s) to be checked." ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_3, e );
-                }
-                
-            });
+            msgBuilder.withContent( "Please specify a the user(s) to be checked." ).build();
             return;
         }
         
@@ -307,15 +257,7 @@ public class TimeoutCommand {
                                             controller.hasTimeout( target, channel );
             String message = "User " + target.mention() + " is " + ( ( timedOut ) ? "" : "not " ) +
                     "currently timed out on this " + ( ( hasSub ) ? "server" : "channel" ) + ".";
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( message ).build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, NAME_3, e );
-                }
-                
-            });
+            msgBuilder.withContent( message ).build();
             
         }
         
@@ -337,23 +279,20 @@ public class TimeoutCommand {
         private IGuild targetGuild;
         private long timeout;
         private final MessageBuilder response;
-        private final MessageReceivedEvent event;
         
         /**
          * Creates a new instance of this object with a certain user as a target.
          *
          * @param targetUser User targeted by the command.
          * @param response Message builder to be used for response messages.
-         * @param event Event that triggered the command.
          */
-        public Executor( IUser targetUser, MessageBuilder response, MessageReceivedEvent event ) {
+        public Executor( IUser targetUser, MessageBuilder response ) {
             
             this.targetUser = targetUser;
             targetChannel = null;
             targetGuild = null;
             timeout = -1;
             this.response = response;
-            this.event = event;
             
         }
         
@@ -426,15 +365,7 @@ public class TimeoutCommand {
                     success = controller.timeout( targetUser, targetChannel, timeout );
                 }
                 if ( !success ) {
-                    RequestBuffer.request( () -> {
-                        
-                        try {
-                            response.withContent( "User is already timed out." ).build();
-                        } catch ( DiscordException | MissingPermissionsException e ) {
-                            CommandHandlerD4J.logMissingPerms( event, "TIMEOUT-EXECUTOR", e );
-                        }
-                        
-                    });
+                    response.withContent( "User is already timed out." ).build();
                 }
             }
             

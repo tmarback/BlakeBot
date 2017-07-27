@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.alphahelix00.discordinator.d4j.DiscordinatorModule;
+import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -75,14 +75,14 @@ public class Bot {
     private Bot() {
         
         String token = properties.getProperty( PropertyNames.LOGIN_TOKEN );
-        DiscordinatorModule discordinator = new DiscordinatorModule();
+        ModularCommandsModule modularCommands = new ModularCommandsModule();
         try {
             this.client = new ClientBuilder().withToken( token ).build();
         } catch ( DiscordException e ) {
             log.error( "Failed to create bot.", e );
             System.exit( 5 );
         }
-        this.client.getModuleLoader().loadModule( discordinator );
+        this.client.getModuleLoader().loadModule( modularCommands );
         this.startTime = 0;
         this.lastUptime = new Time( 0 );
         

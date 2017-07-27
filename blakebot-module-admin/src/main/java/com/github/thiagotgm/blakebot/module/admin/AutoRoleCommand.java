@@ -19,16 +19,13 @@ package com.github.thiagotgm.blakebot.module.admin;
 
 import java.util.List;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
-import com.github.alphahelix00.ordinator.commands.SubCommand;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
+import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IRole;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Command set that allows joined guilds to specify a role to automatically assign
@@ -57,14 +54,13 @@ public class AutoRoleCommand {
     }
     
     @MainCommand(
-            prefix = AdminModule.PREFIX,
             name = NAME,
-            alias = { "autorole", "ar" },
+            aliases = { "autorole", "ar" },
             description = "Automatically assigns new users to a certain role.",
-            usage = AdminModule.PREFIX + "autorole|ar <subcommand>",
+            usage = "{}autorole|ar <subcommand>",
             subCommands = { SET, CHECK, REMOVE }
     )
-    public void autoRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void autoRoleCommand( CommandContext context ) {
     
         // Do nothing.
         
@@ -72,92 +68,66 @@ public class AutoRoleCommand {
     
     @SubCommand(
             name = SET,
-            alias = "set",
+            aliases = "set",
             description = "Sets the role that new users should be assigned.",
-            usage = AdminModule.PREFIX + "autorole|ar set <role>"
+            usage = "{}autorole|ar set <role>"
     )
-    public void setRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void setRoleCommand( CommandContext context ) {
+        
+        MessageBuilder msgBuilder = context.getReplyBuilder();
+        MessageReceivedEvent event = context.getEvent();
         
         List<IRole> roleList = event.getMessage().getRoleMentions(); // Obtain target role.
         if ( roleList.isEmpty() ) {
-            RequestBuffer.request( () -> {
-                
-                try {
-                    msgBuilder.withContent( "Please specify a role." );
-                    msgBuilder.build();
-                } catch ( DiscordException | MissingPermissionsException e ) {
-                    CommandHandlerD4J.logMissingPerms( event, CHECK, e );
-                }
-                
-            });
+            msgBuilder.withContent( "Please specify a role." ).build();
             return;
         }
         IRole role = roleList.get( 0 );
         
         // Register role for server.
         manager.set( event.getMessage().getGuild(), role );
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( "New users will be set to the role " + role.mention() );
-                msgBuilder.build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, CHECK, e );
-            }
-            
-        });
+        msgBuilder.withContent( "New users will be set to the role " + role.mention() ).build();
         
     }
     
     @SubCommand(
             name = CHECK,
-            alias = "check",
+            aliases = "check",
             description = "Checks what role new users are being assigned.",
-            usage = AdminModule.PREFIX + "autorole|ar check <role>"
+            usage = "{}autorole|ar check <role>"
     )
-    public void checkRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void checkRoleCommand( CommandContext context ) {
 
+        MessageReceivedEvent event = context.getEvent();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
+        
         IRole targetRole = manager.get( event.getMessage().getGuild() );
-        RequestBuffer.request( () -> {
-            
-            try {
-                if ( targetRole != null ) {    
-                    msgBuilder.withContent( "New users are being assigned the role " + targetRole.mention() );
-                } else {
-                    msgBuilder.withContent( "No role set for new users." );
-                }
-                msgBuilder.build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, CHECK, e );
-            }
-            
-        });
+        if ( targetRole != null ) {    
+            msgBuilder.withContent( "New users are being assigned the role " + targetRole.mention() );
+        } else {
+            msgBuilder.withContent( "No role set for new users." );
+        }
+        msgBuilder.build();
         
     }
     
     @SubCommand(
             name = REMOVE,
-            alias = "remove",
+            aliases = "remove",
             description = "Stops adding new users to a role.",
-            usage = AdminModule.PREFIX + "autorole|ar remove"
+            usage = "{}autorole|ar remove"
     )
-    public void removeRoleCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void removeRoleCommand( CommandContext context  ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
         
         boolean removed = manager.remove( event.getMessage().getGuild() );
-        RequestBuffer.request( () -> {
-            
-            try {
-                if ( removed ) {    
-                    msgBuilder.withContent( "Disabled automatic role assigning." );
-                } else {
-                    msgBuilder.withContent( "Automatic role assigning not enabled." );
-                }
-                msgBuilder.build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, CHECK, e );
-            }
-            
-        });
+        if ( removed ) {    
+            msgBuilder.withContent( "Disabled automatic role assigning." );
+        } else {
+            msgBuilder.withContent( "Automatic role assigning not enabled." );
+        }
         
     }
 

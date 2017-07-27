@@ -207,7 +207,7 @@ public class Blacklist {
      */
     private Element getElement( IGuild guild ) {
         
-        return getChild( root, GUILD_TAG, guild.getID() );
+        return getChild( root, GUILD_TAG, String.valueOf( guild.getLongID() ) );
         
     }
     
@@ -238,7 +238,8 @@ public class Blacklist {
      */
     private Element getElement( IChannel channel ) {
         
-        return getChild( getElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
+        return getChild( getElement( channel.getGuild() ), CHANNEL_TAG,
+                String.valueOf( channel.getLongID() ) );
         
     }
     
@@ -272,7 +273,7 @@ public class Blacklist {
         
         Element channelElem = getElement( channel );
         if ( channelElem.getName().equals( CHANNEL_TAG ) ) {
-            return getChild( channelElem, USER_TAG, user.getID() );
+            return getChild( channelElem, USER_TAG, String.valueOf( user.getLongID() ) );
         } else {
             return channelElem; // Prevents from getting server restriction when channel node does not exist.
         }
@@ -308,7 +309,7 @@ public class Blacklist {
      */
     private Element getElement( IUser user, IGuild guild ) {
         
-        return getChild( getElement( guild ), USER_TAG, user.getID() );
+        return getChild( getElement( guild ), USER_TAG, String.valueOf( user.getLongID() ) );
         
     }
     
@@ -343,7 +344,7 @@ public class Blacklist {
         
         Element channelElem =  getElement( channel );
         if ( channelElem.getName().equals( CHANNEL_TAG ) ) {
-            return getChild( channelElem, ROLE_TAG, role.getID() );
+            return getChild( channelElem, ROLE_TAG, String.valueOf( role.getLongID() ) );
         } else {
             return channelElem; // Prevents from getting server restriction when channel node does not exist.
         }
@@ -379,7 +380,7 @@ public class Blacklist {
      */
     private Element getElement( IRole role, IGuild guild ) {
         
-        return getChild( getElement( guild ), ROLE_TAG, role.getID() );
+        return getChild( getElement( guild ), ROLE_TAG, String.valueOf( role.getLongID() ) );
         
     }
     
@@ -424,7 +425,7 @@ public class Blacklist {
             restrictions.add( restriction.getText() );
             
         }
-        Element userElement = getChild( element, USER_TAG, user.getID() );
+        Element userElement = getChild( element, USER_TAG, String.valueOf( user.getLongID() ) );
         if ( userElement != element ) {
             for ( Element restriction : userElement.elements( RESTRICTION_TAG ) ) {
                 // Adds user-specific restrictions, if any.
@@ -434,7 +435,7 @@ public class Blacklist {
         }
         for ( IRole role : roles ) {
             
-            Element roleElement = getChild( element, ROLE_TAG, role.getID() );
+            Element roleElement = getChild( element, ROLE_TAG, String.valueOf( role.getLongID() ) );
             if ( roleElement != element ) {
                 for ( Element restriction : roleElement.elements( RESTRICTION_TAG ) ) {
                     // Adds role-specific restrictions, if any.
@@ -513,7 +514,7 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IGuild guild ) {
         
-        return getOrCreateChild( root, GUILD_TAG, guild.getID() );
+        return getOrCreateChild( root, GUILD_TAG, String.valueOf( guild.getLongID() ) );
         
     }
     
@@ -539,7 +540,8 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IChannel channel ) {
         
-        return getOrCreateChild( getOrCreateElement( channel.getGuild() ), CHANNEL_TAG, channel.getID() );
+        return getOrCreateChild( getOrCreateElement( channel.getGuild() ), CHANNEL_TAG,
+                String.valueOf( channel.getLongID() ) );
         
     }
     
@@ -567,7 +569,8 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IUser user, IChannel channel ) {
         
-        return getOrCreateChild( getOrCreateElement( channel ), USER_TAG, user.getID() );
+        return getOrCreateChild( getOrCreateElement( channel ), USER_TAG,
+                String.valueOf( user.getLongID() ) );
         
     }
     
@@ -596,7 +599,8 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IUser user, IGuild guild ) {
         
-        return getOrCreateChild( getOrCreateElement( guild ), USER_TAG, user.getID() );
+        return getOrCreateChild( getOrCreateElement( guild ), USER_TAG,
+                String.valueOf( user.getLongID() ) );
         
     }
     
@@ -625,7 +629,8 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IRole role, IChannel channel ) {
         
-        return getOrCreateChild( getOrCreateElement( channel ), ROLE_TAG, role.getID() );
+        return getOrCreateChild( getOrCreateElement( channel ), ROLE_TAG,
+                String.valueOf( role.getLongID() ) );
         
     }
     
@@ -654,7 +659,8 @@ public class Blacklist {
      */
     private Element getOrCreateElement( IRole role, IGuild guild ) {
         
-        return getOrCreateChild( getOrCreateElement( guild ), ROLE_TAG, role.getID() );
+        return getOrCreateChild( getOrCreateElement( guild ), ROLE_TAG,
+                String.valueOf( role.getLongID() ) );
         
     }
     

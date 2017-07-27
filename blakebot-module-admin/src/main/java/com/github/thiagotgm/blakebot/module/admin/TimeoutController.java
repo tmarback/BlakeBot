@@ -109,7 +109,7 @@ public class TimeoutController {
         
         log.debug( "Permission set " + allow + " for " + user.getName() + "@" +
                 channel.getName() + "@" + channel.getGuild().getName() );
-        IChannel.PermissionOverride overrides = channel.getUserOverrides().get( user.getID() );
+        IChannel.PermissionOverride overrides = channel.getUserOverridesLong().get( user.getLongID() );
         EnumSet<Permissions> allowed = 
                 ( overrides != null ) ? overrides.allow() : EnumSet.noneOf( Permissions.class );
         EnumSet<Permissions> denied = 
@@ -309,8 +309,8 @@ public class TimeoutController {
      */
     private static String getTaskID( IUser user, IChannel channel ) {
         
-        return user.getID() + ID_SEPARATOR + channel.getID() + ID_SEPARATOR +
-                channel.getGuild().getID();
+        return user.getLongID() + ID_SEPARATOR + channel.getLongID() + ID_SEPARATOR +
+                channel.getGuild().getLongID();
         
     }
     
@@ -323,7 +323,7 @@ public class TimeoutController {
      */
     private static String getTaskID( IUser user, IGuild guild ) {
         
-        return user.getID() + ID_SEPARATOR + guild.getID();
+        return user.getLongID() + ID_SEPARATOR + guild.getLongID();
         
     }
 

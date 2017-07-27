@@ -18,18 +18,13 @@
 package com.github.thiagotgm.blakebot.module.status;
 
 import java.awt.Color;
-import java.util.List;
-
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
 import com.github.thiagotgm.blakebot.Bot;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.api.FailureReason;
+import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
-import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Command that displays the owner of the bot account.
@@ -41,46 +36,43 @@ import sx.blah.discord.util.RequestBuffer;
 public class OwnerCommand {
     
     private static final String NAME = "Owner";
+    private static final String FAILURE_HANDLER = "handler";
     
     @MainCommand(
-            prefix = StatusModule.PREFIX,
             name = NAME,
-            alias = "owner",
+            aliases = "owner",
             description = "Displays the information of the owner of this bot account.",
-            usage = StatusModule.PREFIX + "owner"
+            usage = "{}owner",
+            failureHandler = FAILURE_HANDLER
     )
-    public void ownerCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void ownerCommand( CommandContext context ) {
         
-        RequestBuffer.request( () -> {
-            
-            String name;
-            String nick;
-            String image;
-            Bot bot = Bot.getInstance();
-            try {
-                name = bot.getOwner();
-                nick = bot.getOwner( event.getMessage().getGuild() );
-                image = bot.getOwnerImage();
-                EmbedBuilder embedBuilder = new EmbedBuilder();
-                embedBuilder.withThumbnail( image );
-                embedBuilder.appendField( "Username", name, false );
-                if ( nick == null ) {
-                    nick = "None found in this server";
-                }
-                embedBuilder.appendField( "Nickname", nick, false );
-                embedBuilder.withColor( Color.RED );
-                msgBuilder.withEmbed( embedBuilder.build() );
-            } catch ( DiscordException e ) {
-                msgBuilder.withContent( "\u200BSorry, I could not retrieve my owner's data." );
-            }
-            try {
-                msgBuilder.build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, NAME, e );
-            }
-            
-        });
+        String name;
+        String nick;
+        String image;
+        Bot bot = Bot.getInstance();
+        name = bot.getOwner();
+        nick = bot.getOwner( context.getMessage().getGuild() );
+        image = bot.getOwnerImage();
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.withThumbnail( image );
+        embedBuilder.appendField( "Username", name, false );
+        if ( nick == null ) {
+            nick = "None found in this server";
+        }
+        embedBuilder.appendField( "Nickname", nick, false );
+        embedBuilder.withColor( Color.RED );
+        context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
 
+    }
+    
+    @FailureHandler( FAILURE_HANDLER )
+    public void handler( CommandContext context, FailureReason reason ) {
+        
+        if ( reason == FailureReason.DISCORD_ERROR ) {
+            context.getReplyBuilder().withContent( "\u200BSorry, I could not retrieve my owner's data." );
+        }
+        
     }
 
 }

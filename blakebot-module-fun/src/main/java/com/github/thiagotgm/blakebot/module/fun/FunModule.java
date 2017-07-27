@@ -17,8 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.fun;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.ordinator.Ordinator;
+import com.github.thiagotgm.modular_commands.api.CommandRegistry;
+import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
@@ -30,23 +30,27 @@ import sx.blah.discord.modules.IModule;
  * @version 0.2.0
  * @since 2017-02-04
  */
+@HasPrefix( "^" )
 public class FunModule implements IModule {
 
     private static final String MODULE_NAME = "Fun";
     
-    public static final String PREFIX = "^";
+    private IDiscordClient client;
     
     @Override
     public void disable() {
+        
+        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
+        client = null;
 
     }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
 
-        CommandHandlerD4J commandHandler;
-        commandHandler = (CommandHandlerD4J) Ordinator.getCommandRegistry().getCommandHandler();
-        registerCommands( commandHandler );
+        client = arg0;
+        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        registerCommands( registry );
         return true;
         
     }
@@ -56,10 +60,10 @@ public class FunModule implements IModule {
      * 
      * @param handler Hander the commands should be registered with.
      */
-    private void registerCommands( CommandHandlerD4J handler ) {
+    private void registerCommands( CommandRegistry registry ) {
         
-        handler.registerAnnotatedCommands( new LennysCommand() );
-        handler.registerAnnotatedCommands( new SquareCommand() );
+        registry.registerAnnotatedCommands( new LennysCommand() );
+        registry.registerAnnotatedCommands( new SquareCommand() );
         
     }
 

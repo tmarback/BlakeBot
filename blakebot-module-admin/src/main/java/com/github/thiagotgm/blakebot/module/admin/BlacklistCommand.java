@@ -21,22 +21,18 @@ import java.awt.Color;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.github.alphahelix00.discordinator.d4j.handler.CommandHandlerD4J;
-import com.github.alphahelix00.discordinator.d4j.permissions.Permission;
-import com.github.alphahelix00.ordinator.commands.MainCommand;
-import com.github.alphahelix00.ordinator.commands.SubCommand;
+import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
+import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
-import sx.blah.discord.handle.impl.events.MessageReceivedEvent;
+import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
-import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.EmbedBuilder;
 import sx.blah.discord.util.MessageBuilder;
-import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
 
 /**
  * Commands that manage a word blacklist.
@@ -70,14 +66,13 @@ public class BlacklistCommand {
     }
     
     @MainCommand(
-            prefix = AdminModule.PREFIX,
             name = NAME,
-            alias = { "blacklist", "bl" },
+            aliases = { "blacklist", "bl" },
             description = "Manages the message blacklist. A subcommand must be used.",
-            usage = AdminModule.PREFIX + "blacklist|bl <subcommand>",
+            usage = "{}blacklist|bl <subcommand>",
             subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME }
     )
-    public void blacklistCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistCommand( CommandContext context ) {
     
         // Do nothing.
         
@@ -141,12 +136,12 @@ public class BlacklistCommand {
     
     @SubCommand(
             name = ADD_NAME,
-            alias = "add",
+            aliases = "add",
             description = "Adds a new blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
-            usage = AdminModule.PREFIX + "blacklist|bl add <scope> <entry>",
+            usage = "{}blacklist|bl add <scope> <entry>",
             subCommands = { ADD_SERVER_NAME, ADD_CHANNEL_NAME }
     )
-    public void blacklistAddCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistAddCommand( CommandContext context ) {
         
         // Do nothing.
         
@@ -154,13 +149,17 @@ public class BlacklistCommand {
     
     @SubCommand(
             name = ADD_SERVER_NAME,
-            alias = "server",
+            aliases = "server",
             description = "Adds a new blacklist entry that applies to the server where the " +
                           "command is used.\nIf any users or roles are @mentioned, the entry will " +
                           "only apply to them.",
-            usage = AdminModule.PREFIX + "blacklist|bl add server <entry> [@users] [@roles]"
+            usage = "{}blacklist|bl add server <entry> [@users] [@roles]"
     )
-    public void blacklistAddServerCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistAddServerCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
         
         if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_MESSAGES ) ) {
             return; // User does not have server-wide message management permissions.
@@ -261,32 +260,24 @@ public class BlacklistCommand {
             }
             
         }
-        final String finalMessage = message;
-        
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( finalMessage ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, ADD_SERVER_NAME, e );
-            }
-            
-        });
+        msgBuilder.withContent( message ).build();
         
     }
     
     @SubCommand(
             name = ADD_CHANNEL_NAME,
-            alias = "channel",
+            aliases = "channel",
             description = "Adds a new blacklist entry that applies to the channel where the " +
                           "command is used.\nIf any users or roles are @mentioned, the entry will " +
                           "only apply to them.",
-            usage = AdminModule.PREFIX + "blacklist|bl add channel <entry> [@users] [@roles]"
+            usage = "{}blacklist|bl add channel <entry> [@users] [@roles]",
+            requiredPermissions = Permissions.MANAGE_MESSAGES
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_MESSAGES }
-    )
-    public void blacklistAddChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistAddChannelCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
         
         // Extracts user and role specifiers.
         List<IUser> users = event.getMessage().getMentions();
@@ -383,17 +374,7 @@ public class BlacklistCommand {
             }
             
         }
-        final String finalMessage = message;
-        
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( finalMessage ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, ADD_CHANNEL_NAME, e );
-            }
-            
-        });
+        msgBuilder.withContent( message ).build();
         
     }
     
@@ -417,12 +398,12 @@ public class BlacklistCommand {
       
     @SubCommand(
             name = LIST_NAME,
-            alias = "list",
+            aliases = "list",
             description = "Lists blacklist entries. A scope must be specified.",
-            usage = AdminModule.PREFIX + "blacklist|bl list <scope>",
+            usage = "{}blacklist|bl list <scope>",
             subCommands = { LIST_SERVER_NAME, LIST_CHANNEL_NAME }
     )
-    public void blacklistListCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistListCommand( CommandContext context ) {
         
         // Do nothing.
         
@@ -430,13 +411,16 @@ public class BlacklistCommand {
     
     @SubCommand(
             name = LIST_SERVER_NAME,
-            alias = "server",
+            aliases = "server",
             description = "Lists entries that apply to the server where the " +
                           "command is used.\nIf any users or roles are @mentioned, displays their " +
                           "specific entries.",
-            usage = AdminModule.PREFIX + "blacklist|bl list server [@users] [@roles]"
+            usage = "{}blacklist|bl list server [@users] [@roles]"
     )
-    public void blacklistListServerCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistListServerCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
        
         // Extracts user and role specifiers.
         List<IUser> users = event.getMessage().getMentions();
@@ -467,27 +451,22 @@ public class BlacklistCommand {
             }
         }
         
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withEmbed( builder.build() ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, LIST_SERVER_NAME, e );
-            }
-            
-        });
+        msgBuilder.withEmbed( builder.build() ).build();
         
     }
     
     @SubCommand(
             name = LIST_CHANNEL_NAME,
-            alias = "channel",
+            aliases = "channel",
             description = "Lists entries that apply to the channel where the " +
                           "command is used.\nIf any users or roles are @mentioned, displays their " +
                           "specific entries.",
-            usage = AdminModule.PREFIX + "blacklist|bl list channel [@users] [@roles]"
+            usage = "{}blacklist|bl list channel [@users] [@roles]"
     )
-    public void blacklistListChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistListChannelCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
        
         // Extracts user and role specifiers.
         List<IUser> users = event.getMessage().getMentions();
@@ -518,27 +497,18 @@ public class BlacklistCommand {
                 
             }
         }
-        
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withEmbed( builder.build() ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, LIST_CHANNEL_NAME, e );
-            }
-            
-        });
+        msgBuilder.withEmbed( builder.build() ).build();
         
     }
     
     @SubCommand(
             name = REMOVE_NAME,
-            alias = { "remove", "rm" },
+            aliases = { "remove", "rm" },
             description = "Removes a blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
-            usage = AdminModule.PREFIX + "blacklist|bl remove|rm <scope> <entry>",
+            usage = "{}blacklist|bl remove|rm <scope> <entry>",
             subCommands = { REMOVE_SERVER_NAME, REMOVE_CHANNEL_NAME }
     )
-    public void blacklistRemoveCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistRemoveCommand( CommandContext context ) {
         
         // Do nothing.
         
@@ -546,13 +516,17 @@ public class BlacklistCommand {
     
     @SubCommand(
             name = REMOVE_SERVER_NAME,
-            alias = "server",
+            aliases = "server",
             description = "Removes an entry that applies to the server where the " +
                           "command is used.\nIf any users or roles are @mentioned, removes from " +
                           "their personal entries.",
-            usage = AdminModule.PREFIX + "blacklist|bl remove|rm server <entry> [@users] [@roles]"
+            usage = "{}blacklist|bl remove|rm server <entry> [@users] [@roles]"
     )
-    public void blacklistRemoveServerCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistRemoveServerCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
         
         if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_MESSAGES ) ) {
             return; // User does not have server-wide message management permissions.
@@ -653,32 +627,24 @@ public class BlacklistCommand {
             }
             
         }
-        final String finalMessage = message;
-        
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( finalMessage ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, REMOVE_SERVER_NAME, e );
-            }
-            
-        });
+        msgBuilder.withContent( message ).build();
         
     }
     
     @SubCommand(
             name = REMOVE_CHANNEL_NAME,
-            alias = "channel",
+            aliases = "channel",
             description = "Removes an entry that applies to the channel where the " +
                           "command is used.\nIf any users or roles are @mentioned, removes from " +
                           "their personal entries.",
-            usage = AdminModule.PREFIX + "blacklist|bl remove|rm channel <entry> [@users] [@roles]"
+            usage = "{}blacklist|bl remove|rm channel <entry> [@users] [@roles]",
+            requiredPermissions = Permissions.MANAGE_MESSAGES
     )
-    @Permission(
-            permissions = { Permissions.MANAGE_MESSAGES }
-    )
-    public void blacklistRemoveChannelCommand( List<String> args, MessageReceivedEvent event, MessageBuilder msgBuilder ) {
+    public void blacklistRemoveChannelCommand( CommandContext context ) {
+        
+        MessageReceivedEvent event = context.getEvent();
+        List<String> args = context.getArgs();
+        MessageBuilder msgBuilder = context.getReplyBuilder();
         
         // Extracts user and role specifiers.
         List<IUser> users = event.getMessage().getMentions();
@@ -775,17 +741,7 @@ public class BlacklistCommand {
             }
             
         }
-        final String finalMessage = message;
-        
-        RequestBuffer.request( () -> {
-            
-            try {
-                msgBuilder.withContent( finalMessage ).build();
-            } catch ( DiscordException | MissingPermissionsException e ) {
-                CommandHandlerD4J.logMissingPerms( event, REMOVE_CHANNEL_NAME, e );
-            }
-            
-        });
+        msgBuilder.withContent( message ).build();
         
     }
 
