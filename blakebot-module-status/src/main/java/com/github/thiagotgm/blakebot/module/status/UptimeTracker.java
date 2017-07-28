@@ -46,11 +46,17 @@ public class UptimeTracker {
     private static final Logger LOG = LoggerFactory.getLogger( UptimeTracker.class );
     
     private static final File UPTIME_FILE = Paths.get( "uptimes.log" ).toFile();
+    private static final File DOWNTIME_FILE = Paths.get( "downtimes.log" ).toFile();
     private static final File CONNECTION_FILE = Paths.get( "connection.log" ).toFile();
     private static final String CONNECTION_LOG_SEPARATOR = " : ";
+    
+    private static final long INITIAL_DISCONNECT_TIME = -2;
+    private static final long NO_TIME = -1;
 
-    private volatile long connectTime;
+    private long connectTime;
     private final TimeData uptimes;
+    private long disconnectTime;
+    private final TimeData downtimes;
     
     private final Writer connectionOutput;
     
@@ -59,12 +65,15 @@ public class UptimeTracker {
      */
     public UptimeTracker() {
         
-        connectTime = -1;
+        connectTime = NO_TIME;
+        disconnectTime = -2;
         
         boolean logUptimes = true; // TODO: Make this a setting
+        boolean logDowntimes = true;
         boolean logConnection = true;
         
         uptimes = new TimeData( "uptime", ( logUptimes ) ? UPTIME_FILE : null );
+        downtimes = new TimeData( "downtime", ( logDowntimes ) ? DOWNTIME_FILE : null );
         
         if ( logConnection ) { // Should log connections.
             Writer output = null;
@@ -87,12 +96,13 @@ public class UptimeTracker {
      * Logs a connection event, if an output was specified on construction.
      *
      * @param event The event to be logged.
+     * @param time The time that it happened.
      */
-    private void logConnectionEvent( Event event ) {
+    private void logConnectionEvent( Event event, long time ) {
         
         if ( connectionOutput != null ) {
             StringBuilder builder = new StringBuilder();
-            builder.append( System.currentTimeMillis() );
+            builder.append( time );
             builder.append( CONNECTION_LOG_SEPARATOR );
             if ( event instanceof DisconnectedEvent ) {
                 builder.append( "Disconnected" );
@@ -122,18 +132,23 @@ public class UptimeTracker {
     @EventSubscriber
     public synchronized void disconnected( DisconnectedEvent event ) {
         
+        disconnectTime = System.currentTimeMillis();
         LOG.debug( "Disconnected by {}.", event.getReason() );
-        logConnectionEvent( event );
+        logConnectionEvent( event, disconnectTime );
         
-        long uptime = System.currentTimeMillis() - connectTime;
-        
-        uptimes.recordTime( uptime );
-        
-        if ( LOG.isInfoEnabled() ) {
-            LOG.info( "Disconnected after " + new Time( uptime ).toString( false ) );
+        if ( connectTime == NO_TIME ) { // Was not connected.
+            LOG.warn( "Disconnected without being connected." );
+        } else { // Was currently connected.
+            long uptime = disconnectTime - connectTime;
+            
+            if ( LOG.isInfoEnabled() ) {
+                LOG.info( "Disconnected after " + new Time( uptime ).toString( false ) );
+            }
+            
+            uptimes.recordTime( uptime );
+            
+            connectTime = NO_TIME;
         }
-        
-        connectTime = -1;
         
     }
     
@@ -146,7 +161,24 @@ public class UptimeTracker {
     public synchronized void connected( ReadyEvent event ) {
         
         connectTime = System.currentTimeMillis();
-        logConnectionEvent( event );
+        logConnectionEvent( event, connectTime );
+        
+        if ( disconnectTime == NO_TIME ) { // Was not disconnected.
+            LOG.warn( "Connected without being disconnected." );
+        } else if ( disconnectTime == INITIAL_DISCONNECT_TIME ) {
+            LOG.debug( "Connecting for the first time." );
+            disconnectTime = NO_TIME;
+        } else { // Was currently disconnected.
+            long downtime = connectTime - disconnectTime;
+            
+            if ( LOG.isInfoEnabled() ) {
+                LOG.info( "Connected after " + new Time( downtime ).toString( false ) );
+            }
+            
+            downtimes.recordTime( downtime );
+            
+            disconnectTime = NO_TIME;
+        }
         
     }
     
@@ -159,9 +191,25 @@ public class UptimeTracker {
     public synchronized void resumed( ResumedEvent event ) {
         
         connectTime = System.currentTimeMillis();
-        logConnectionEvent( event );
+        logConnectionEvent( event, connectTime );
+        
+        if ( disconnectTime == NO_TIME ) { // Was not disconnected.
+            LOG.warn( "Connected without being disconnected." );
+        } else { // Was currently disconnected.
+            long downtime = connectTime - disconnectTime;
+            
+            if ( LOG.isInfoEnabled() ) {
+                LOG.info( "Reconnected after " + new Time( downtime ).toString( false ) );
+            }
+            
+            downtimes.recordTime( downtime );
+            
+            disconnectTime = NO_TIME;
+        }
         
     }
+    
+    /* Methods for retrieving uptimes */
     
     /**
      * Calculates the current uptime of the bot.
@@ -170,7 +218,7 @@ public class UptimeTracker {
      */
     private long currentUptime() {
         
-        return ( connectTime != -1 ) ? System.currentTimeMillis() - connectTime : 0;
+        return ( connectTime >= 0 ) ? System.currentTimeMillis() - connectTime : 0;
         
     }
     
@@ -188,7 +236,7 @@ public class UptimeTracker {
     /**
      * Retrieves the total uptime of the bot.
      *
-     * @return The total uptime (including the current one).
+     * @return The total uptime (including the current one, if any).
      */
     public synchronized Time getTotalUptime() {
         
@@ -196,30 +244,136 @@ public class UptimeTracker {
         
     }
     
+    /**
+     * Retrieves the smallest uptime of the bot.
+     *
+     * @return The smallest uptime.
+     */
     public synchronized Time getMinimumUptime() {
         
         return uptimes.getMinimum();
         
     }
     
+    /**
+     * Retrieves the largest uptime of the bot.
+     *
+     * @return The largest uptime.
+     */
     public synchronized Time getMaximumUptime() {
         
         return uptimes.getMaximum();
         
     }
     
+    /**
+     * Retrieves the mean uptime of the bot.
+     *
+     * @return The mean uptime.
+     */
     public synchronized Time getMeanUptime() {
         
         return uptimes.getMean();
         
     }
     
+    /**
+     * Retrieves the median uptime of the bot.
+     *
+     * @return The median uptime.
+     */
     public synchronized Time getMedianUptime() {
         
         return uptimes.getMedian();
         
     }
     
+    /* Methods for retrieving downtimes */
+    
+    /**
+     * Calculates the current downtime of the bot.
+     *
+     * @return The current downtime, in milliseconds. If not currently disconnected, returns 0.
+     */
+    private long currentDowntime() {
+        
+        return ( disconnectTime >= 0 ) ? System.currentTimeMillis() - disconnectTime : 0;
+        
+    }
+    
+    /**
+     * Retrieves the current downtime of the bot.
+     *
+     * @return The current downtime. If not currently disconnected, returns a time interval of 0.
+     */
+    public synchronized Time getCurrentDowntime() {
+        
+        return new Time( currentDowntime() );
+        
+    }
+    
+    /**
+     * Retrieves the total downtime of the bot.
+     *
+     * @return The total downtime (including the current one, if any).
+     */
+    public synchronized Time getTotalDowntime() {
+        
+        return new Time( downtimes.getTotal() + currentDowntime() );
+        
+    }
+    
+    /**
+     * Retrieves the smallest downtime of the bot.
+     *
+     * @return The smallest downtime.
+     */
+    public synchronized Time getMinimumDowntime() {
+        
+        return downtimes.getMinimum();
+        
+    }
+    
+    /**
+     * Retrieves the largest downtime of the bot.
+     *
+     * @return The largest downtime.
+     */
+    public synchronized Time getMaximumDowntime() {
+        
+        return downtimes.getMaximum();
+        
+    }
+    
+    /**
+     * Retrieves the mean downtime of the bot.
+     *
+     * @return The mean downtime.
+     */
+    public synchronized Time getMeanDowntime() {
+        
+        return downtimes.getMean();
+        
+    }
+    
+    /**
+     * Retrieves the median downtime of the bot.
+     *
+     * @return The median downtime.
+     */
+    public synchronized Time getMedianDowntime() {
+        
+        return downtimes.getMedian();
+        
+    }
+    
+    /* Other stuff */
+    
+    /**
+     * Retrieves the amount of times that the bot lost connection.
+     *
+     * @return The amount of disconnects.
+     */
     public int getDisconnectAmount() {
         
         return uptimes.getAmount();
@@ -315,10 +469,13 @@ public class UptimeTracker {
         /**
          * Retrieves the smallest time interval recorded.
          *
-         * @return The smallest time.
+         * @return The smallest time. If there is no recorded time, returns the time interval 0.
          */
         public Time getMinimum() {
             
+            if ( sortedTimes.size() == 0 ) {
+                return new Time( 0 ); // No recorded time.
+            }
             return new Time( sortedTimes.get( 0 ) );
             
         }
@@ -326,10 +483,13 @@ public class UptimeTracker {
         /**
          * Retrieves the largest time interval recorded.
          *
-         * @return The largest time.
+         * @return The largest time. If there is no recorded time, returns the time interval 0.
          */
         public Time getMaximum() {
             
+            if ( sortedTimes.size() == 0 ) {
+                return new Time( 0 ); // No recorded time.
+            }
             return new Time( sortedTimes.get( sortedTimes.size() - 1 ) );
             
         }
@@ -337,10 +497,13 @@ public class UptimeTracker {
         /**
          * Retrieves the mean time interval of this data set.
          *
-         * @return The mean.
+         * @return The mean. If there is no recorded time, returns the time interval 0.
          */
         public Time getMean() {
             
+            if ( sortedTimes.size() == 0 ) {
+                return new Time( 0 ); // No recorded time.
+            }
             return new Time( total / sortedTimes.size() );
             
         }
@@ -348,10 +511,13 @@ public class UptimeTracker {
         /**
          * Retrieves the median time interval of this data set.
          *
-         * @return The median.
+         * @return The median. If there is no recorded time, returns the time interval 0.
          */
         public Time getMedian() {
             
+            if ( sortedTimes.size() == 0 ) {
+                return new Time( 0 ); // No recorded time.
+            }
             int middle = sortedTimes.size() / 2;
             long median;
             if ( ( sortedTimes.size() % 2 ) == 1 ) { // Odd number of times.
