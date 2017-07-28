@@ -61,7 +61,9 @@ public class UptimeCommand {
         
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.withColor( Color.RED );
+        
         embedBuilder.appendField( "Connection uptime", tracker.getCurrentUptime().toString(), false );
+        
         return embedBuilder;
         
     }
@@ -71,7 +73,6 @@ public class UptimeCommand {
             aliases = { "uptime", "up" },
             description = "Displays how long the bot has been up.",
             usage = "{}uptime|up",
-            requiresOwner = true,
             subCommands = SUB_1_NAME
     )
     public void uptimeCommand( CommandContext context ) {
@@ -88,12 +89,15 @@ public class UptimeCommand {
     private EmbedBuilder statsEmbed() {
         
         EmbedBuilder embedBuilder = uptimeEmbed();
-        embedBuilder.appendField( "Average uptime", tracker.getMeanUptime().toString(), false );
-        embedBuilder.appendField( "Median uptime", tracker.getMedianUptime().toString(), false );
-        embedBuilder.appendField( "Highest uptime", tracker.getMaximumUptime().toString(), false );
-        embedBuilder.appendField( "Lowest uptime", tracker.getMinimumUptime().toString(), false );
-        embedBuilder.appendField( "Total uptime", tracker.getTotalUptime().toString(), false );
+        
+        embedBuilder.appendField( "Average uptime", tracker.getMeanUptime().toString(), true );
+        embedBuilder.appendField( "Median uptime", tracker.getMedianUptime().toString(), true );
+        embedBuilder.appendField( "Highest uptime", tracker.getMaximumUptime().toString(), true );
+        embedBuilder.appendField( "Lowest uptime", tracker.getMinimumUptime().toString(), true );
+        embedBuilder.appendField( "Total uptime", tracker.getTotalUptime().toString(), true );
+        
         embedBuilder.appendField( "Disconnects", String.valueOf( tracker.getDisconnectAmount() ), false );
+        
         return embedBuilder;
         
     }
@@ -120,14 +124,16 @@ public class UptimeCommand {
     private EmbedBuilder fullEmbed() {
         
         EmbedBuilder embedBuilder = statsEmbed();
-        embedBuilder.appendField( "Average downtime", tracker.getMeanDowntime().toString(), false );
-        embedBuilder.appendField( "Median downtime", tracker.getMedianDowntime().toString(), false );
-        embedBuilder.appendField( "Highest downtime", tracker.getMaximumDowntime().toString(), false );
-        embedBuilder.appendField( "Lowest downtime", tracker.getMinimumDowntime().toString(), false );
-        embedBuilder.appendField( "Total downtime", tracker.getTotalDowntime().toString(), false );
+        
+        embedBuilder.appendField( "Average downtime", tracker.getMeanDowntime().toString(), true );
+        embedBuilder.appendField( "Median downtime", tracker.getMedianDowntime().toString(), true );
+        embedBuilder.appendField( "Highest downtime", tracker.getMaximumDowntime().toString(), true );
+        embedBuilder.appendField( "Lowest downtime", tracker.getMinimumDowntime().toString(), true );
+        embedBuilder.appendField( "Total downtime", tracker.getTotalDowntime().toString(), true );
         
         long jvmUptime = ManagementFactory.getRuntimeMXBean().getUptime();
-        embedBuilder.appendField( "Program runtime", new Time( jvmUptime ).toString(), false );
+        embedBuilder.appendField( "JVM runtime", new Time( jvmUptime ).toString(), false );
+        
         return embedBuilder;
         
     }
