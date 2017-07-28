@@ -42,16 +42,6 @@
 
     </licenses>
 
-    <dependencies>
-
-        <dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-core</artifactId>
-            <version>1.2.1</version>
-        </dependency>
-
-    </dependencies>
-
     <build>
 
         <plugins>

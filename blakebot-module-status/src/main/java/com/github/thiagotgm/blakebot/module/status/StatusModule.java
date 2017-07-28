@@ -17,7 +17,6 @@
 
 package com.github.thiagotgm.blakebot.module.status;
 
-import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
@@ -37,13 +36,14 @@ public class StatusModule implements IModule {
     private static final String MODULE_NAME = "Status";
     
     private IDiscordClient client;
-    private StatusCommand statusCommand;
+    private UptimeTracker tracker;
     
     @Override
     public void disable() {
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this );
-        Bot.unregisterListener( statusCommand );
+        client.getDispatcher().unregisterListener( tracker );
+        tracker = null;
         client = null;
         
     }
@@ -52,10 +52,14 @@ public class StatusModule implements IModule {
     public boolean enable( IDiscordClient arg0 ) {
 
         client = arg0;
+        
+        tracker = new UptimeTracker();
+        arg0.getDispatcher().registerListener( tracker );
+        
         CommandRegistry registry;
         registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry );
-        Bot.registerListener( statusCommand );
+        
         return true;
         
     }
@@ -68,10 +72,9 @@ public class StatusModule implements IModule {
     private void registerCommands( CommandRegistry registry ) {
         
         registry.registerAnnotatedCommands( new PingCommand() );
-        registry.registerAnnotatedCommands( new UptimeCommand() );
+        registry.registerAnnotatedCommands( new UptimeCommand( tracker ) );
         registry.registerAnnotatedCommands( new OwnerCommand() );
-        statusCommand = new StatusCommand();
-        registry.registerAnnotatedCommands( statusCommand );
+        registry.registerAnnotatedCommands( new StatusCommand() );
         
     }
 
