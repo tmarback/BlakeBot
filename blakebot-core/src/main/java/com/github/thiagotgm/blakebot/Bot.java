@@ -28,21 +28,17 @@ import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.impl.events.shard.ResumedEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.modules.IModule;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
 import sx.blah.discord.util.RateLimitException;
+import sx.blah.discord.util.RequestBuffer;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Properties;
 
 /**
@@ -57,17 +53,14 @@ import java.util.Properties;
  */
 public class Bot {
 
-    private static final Logger log = LoggerFactory.getLogger( Bot.class );
+    private static final Logger LOG = LoggerFactory.getLogger( Bot.class );
     private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
-    private static final String[] TERMINATE_MODULES = { "Admin Module" };
     
     private static Properties properties = null;
     private static Bot instance = null;
     private static ArrayList<ConnectionStatusListener> listeners = new ArrayList<>();
     
     private volatile IDiscordClient client;
-    private long startTime;
-    private Time lastUptime;
     
     /**
      * Creates a new instance of the bot.
@@ -79,12 +72,10 @@ public class Bot {
         try {
             this.client = new ClientBuilder().withToken( token ).build();
         } catch ( DiscordException e ) {
-            log.error( "Failed to create bot.", e );
+            LOG.error( "Failed to create bot.", e );
             System.exit( 5 );
         }
         this.client.getModuleLoader().loadModule( modularCommands );
-        this.startTime = 0;
-        this.lastUptime = new Time( 0 );
         
     }
 
@@ -140,7 +131,7 @@ public class Bot {
     public static void registerListener( ConnectionStatusListener listener ) {
         
         listeners.add( listener );
-        log.trace( "Registered status listener." );
+        LOG.trace( "Registered status listener." );
         
     }
     
@@ -152,7 +143,7 @@ public class Bot {
     public static void unregisterListener( ConnectionStatusListener listener ) {
         
         listeners.remove( listener );
-        log.trace( "Unregistered status listener." );
+        LOG.trace( "Unregistered status listener." );
         
     }
     
@@ -163,46 +154,10 @@ public class Bot {
      */
     private void notifyListeners( boolean connectionStatus ) {
         
-        log.trace( "Notifying all listeners." );
+        LOG.trace( "Notifying all listeners." );
         for ( ConnectionStatusListener listener : listeners ) {
             
             listener.connectionChange( connectionStatus );
-            
-        }
-        
-    }
-    
-    /**
-     * Retrieves the modules that have to be terminated before disconnecting
-     * the bot.
-     * 
-     * @return The list of modules that need to be terminated.
-     */
-    private List<IModule> getTerminateModules() {
-        
-        List<String> targets = Arrays.asList( TERMINATE_MODULES );
-        List<IModule> found = new LinkedList<>();
-        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
-            
-            if ( targets.contains( module.getName() ) ) {
-                found.add( module );
-            }
-            
-        }
-        return found;
-        
-    }
-    
-    /**
-     * Reboots the modules that need to be terminated on disconnect, so no tasks will be
-     * pending.
-     */
-    private void rebootModules() {
-        
-        for ( IModule module : getTerminateModules() ) {
-            
-            module.disable();
-            module.enable( client );
             
         }
         
@@ -218,7 +173,7 @@ public class Bot {
         try {
             client.login();
         } catch ( DiscordException | RateLimitException e ) {
-            log.error( "Failed to connect!", e );
+            LOG.error( "Failed to connect!", e );
             throw e;
         }
         client.getDispatcher().registerListener( this );
@@ -233,8 +188,8 @@ public class Bot {
     @EventSubscriber
     public void onReady( ReadyEvent event ) {
 
-        connected();
-        log.info( "=== Bot READY! ===" );
+        LOG.info( "===[ Bot READY! ]===" );
+        notifyListeners( true );
 
     }
     
@@ -246,36 +201,9 @@ public class Bot {
     @EventSubscriber
     public void onResume( ResumedEvent event ) {
 
-        connected();
-        log.info( "=== Bot RECONNECTED! ===" );
-
-    }
-    
-    /**
-     * Records time that the bot connected and notifies listeners.
-     */
-    private void connected() {
-        
-        startTime = System.currentTimeMillis();
+        LOG.info( "===[ Bot RECONNECTED! ]===" );
         notifyListeners( true );
-        
-    }
-    
-    /**
-     * Resets the bot to a disconnected state and notifies the listeners
-     * for a disconnection.
-     */
-    private void disconnected() {
-      
-        if ( startTime != 0 ) {
-            lastUptime = new Time( System.currentTimeMillis() - startTime );
-            log.info( "Disconnected after " + lastUptime.toString( false ) );
-            startTime = 0;
-        } else {
-            log.debug( "Bot disconnected - but was not connected." );
-        }
-        notifyListeners( false );
-        
+
     }
 
     /**
@@ -286,8 +214,8 @@ public class Bot {
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
      
-        log.debug( "Bot disconnected." );
-        disconnected();
+        LOG.debug( "===[ Bot DISCONNECTED! ]===" );
+        notifyListeners( false );
 
     }
 
@@ -298,14 +226,29 @@ public class Bot {
      */
     public void terminate() throws DiscordException {
 
-        log.debug( "Disconnecting bot." );
+        LOG.debug( "Disconnecting bot." );
+        
+        /* Disable modules */
+        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
+            
+            module.disable();
+            
+        }
+        
+        /* Attempt disconnect */
         try {
-            rebootModules();
             client.logout();
-            log.info( "=== Bot terminated ===" );
+            LOG.info( "===[ Bot TERMINATED! ]===" );
         } catch ( DiscordException e ) {
-            log.error( "Logout failed", e );
+            LOG.error( "Logout failed", e );
             throw e;
+        }
+        
+        /* Re-enable modules */
+        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
+            
+            module.enable( client );
+            
         }
 
     }
@@ -315,16 +258,16 @@ public class Bot {
      */
     public void saveProperties() {
         
-        log.info( "Saving properties." );
+        LOG.info( "Saving properties." );
         FileOutputStream file;
         try {
             file = new FileOutputStream( PropertyNames.PROPERTIES_FILE );
             properties.storeToXML( file, PropertyNames.PROPERTIES_COMMENT );
             file.close();
         } catch ( FileNotFoundException e ) {
-            log.error( "Could not open properties file.", e );
+            LOG.error( "Could not open properties file.", e );
         } catch ( IOException e ) {
-            log.error( "Could not write to properties file.", e );
+            LOG.error( "Could not write to properties file.", e );
         }
         
         
@@ -365,124 +308,64 @@ public class Bot {
     }
     
     /**
-     * Gets the time that the bot has been connected to Discord.
-     * 
-     * @return The time elapsed, in milliseconds.
-     * @throws IllegalStateException if called when the bot is currently disconnected.
-     */
-    public Time getUptime() throws IllegalStateException {
-        
-        if ( startTime == 0 ) {
-            throw new IllegalStateException( "Tried to get uptime when the bot is disconnected." );
-        }
-        
-        Time uptime = new Time( System.currentTimeMillis() - startTime );
-        log.debug( "Uptime: " + uptime.getTotalTime() + "ms = " + uptime.toString( false ) );
-        return uptime;
-        
-    }
-    
-    /**
-     * Gets the time that the bot has been connected to Discord before the last disconnect.
-     * 
-     * @return The time elapsed, in milliseconds.
-     */
-    public Time getLastUptime() {
-        
-        return new Time( lastUptime );
-        
-    }
-    
-    /**
-     * Gets the username of the owner of the bot account.
-     * 
-     * @return The Discord username of the owner.
-     * @throws DiscordException if the name could not be retrieved.
-     */
-    public String getOwner() throws DiscordException {
-        
-        try {
-            return client.getApplicationOwner().getName();
-        } catch ( DiscordException e ) {
-            log.warn( "Could not get owner name.", e );
-            throw e;
-        }
-        
-    }
-    
-    /**
-     * Gets the nickname of the owner of the bot in a certain server.
-     * 
-     * @param server Target server.
-     * @return The nickname of the bot owner in the server, or null if it doesn't
-     *         exist.
-     */
-    public String getOwner( IGuild server ) {
-        
-        return client.getApplicationOwner().getNicknameForGuild( server );
-        
-    }
-    
-    /**
-     * Retrieves the url of the avatar image of the owner of the bot.
-     *
-     * @return The avatar of the owner of the bot.
-     * @throws DiscordException If the image could not be retrieved.
-     */
-    public String getOwnerImage() throws DiscordException {
-        
-        try {
-            return client.getApplicationOwner().getAvatarURL();
-        } catch ( DiscordException e ) {
-            log.warn( "Could not get owner image url.", e );
-            throw e;
-        }
-        
-    }
-    
-    /**
      * Sets the username of the bot.
      * 
      * @param newName New username to be set.
      */
     public void setUsername( String newName ) {
         
-        try {
+        RequestBuffer.request( () -> {
+            
             client.changeUsername( newName );
-            log.info( "Changed bot name to " + newName );
-        } catch ( DiscordException | RateLimitException e ) {
-            log.warn( "Failed to change username.", e );
-        }
+            LOG.info( "Changed bot name to {}.", newName );
+            
+        });
         
     }
     
     /**
-     * Sets the status of the bot.
+     * Sets the "playing" text of the bot.
      * 
-     * @param newStatus New status to be set.
+     * @param newText New playing text to be set.
      */
-    public void setStatus( String newStatus ) {
+    public void setPlayingText( String newText ) {
         
-        client.online( newStatus );
-        log.info( "Changed bot status to " + newStatus );
+        client.changePlayingText( newText );
+        LOG.info( "Changed bot playing text to " + newText );
         
     }
     
     /**
-     * Sets the presence of the bot.
-     * 
-     * @param isIdle If true, the bot becomes idle.
-     *               If false, becomes online.
+     * Sets the bot to be idle.
      */
-    public void setIdle( boolean isIdle ) {
+    public void setIdle() {
         
-        if ( isIdle ) {
-            client.idle();
-        } else {
-            client.online();
-        }
-        log.info( "Changed bot presence to " + ( isIdle ? "idle" : "online" )
-                + "." );
+        client.idle();
+        LOG.info( "Changed bot presence to idle." );
+        
+    }
+    
+    /**
+     * Sets the bot to be online.
+     */
+    public void setOnline() {
+        
+        client.online();
+        LOG.info( "Changed bot presence to online." );
+        
+    }
+    
+    /**
+     * Sets the bot to be streaming with the given streaming text and the given
+     * url.
+     *
+     * @param playingText The "streaming" text.
+     * @param url The stream url.
+     */
+    public void setStreaming( String playingText, String url ) {
+        
+        client.streaming( playingText, url );
+        LOG.info( "Changed bot presence to streaming {} @ {}.", playingText, url );
         
     }
     
@@ -494,7 +377,7 @@ public class Bot {
      */
     public void setImage( String url ) throws IllegalArgumentException {
         
-        log.debug( "Changing bot image to " + url );
+        LOG.debug( "Changing bot image to " + url );
         // Determines type of the image from the URL.
         String type = null;
         for ( String candidate : IMAGE_TYPES ) {
@@ -506,15 +389,15 @@ public class Bot {
             
         }
         if ( type == null ) {
-            log.warn( "Image type not recognized." );
+            LOG.warn( "Image type not recognized." );
             throw new IllegalArgumentException( "Could not identify image type from URL " + url );
         }
-        log.debug( "Detected type " + type + "." );
+        LOG.debug( "Detected type " + type + "." );
         try {
             client.changeAvatar( Image.forUrl( type, url ) );
-            log.info( "Changed bot image to " + url + " of type " + type + "." );
+            LOG.info( "Changed bot image to " + url + " of type " + type + "." );
         } catch ( DiscordException | RateLimitException e ) {
-            log.warn( "Failed to change bot image.", e );
+            LOG.warn( "Failed to change bot image.", e );
         }
         
     }
@@ -526,59 +409,13 @@ public class Bot {
      */
     public void setImage( File file ) {
         
-        log.debug( "Changing bot image to " + file.getAbsolutePath() + "." );
+        LOG.debug( "Changing bot image to " + file.getAbsolutePath() + "." );
         try {
             client.changeAvatar( Image.forFile( file ) );
-            log.info( "Changed bot image to " + file.getAbsolutePath() + "." );
+            LOG.info( "Changed bot image to " + file.getAbsolutePath() + "." );
         } catch ( RateLimitException | DiscordException e ) {
-            log.warn( "Failed to change bot image.", e );
+            LOG.warn( "Failed to change bot image.", e );
         }
-        
-    }
-    
-    /**
-     * Gets all the channels visible to the bot.
-     *
-     * @return The list of channels visible to the bot.
-     */
-    public List<IChannel> getChannels() {
-        
-        return client.getChannels( true );
-        
-    }
-    
-    /**
-     * Gets all the public channels visible to the bot.
-     *
-     * @return The list of public channels visible to the bot.
-     */
-    public List<IChannel> getPublicChannels() {
-        
-        return client.getChannels();
-        
-    }
-    
-    /**
-     * Gets all the private channels visible to the bot.
-     *
-     * @return The list of private channels visible to the bot.
-     */
-    public List<IChannel> getPrivateChannels() {
-        
-        List<IChannel> channels = client.getChannels( true );
-        channels.removeAll( client.getChannels() );
-        return channels;
-        
-    }
-    
-    /**
-     * Gets all the guilds (servers) where the bot is present.
-     *
-     * @return The list of guilds that the bot is connected to.
-     */
-    public List<IGuild> getGuilds() {
-        
-        return client.getGuilds();
         
     }
     

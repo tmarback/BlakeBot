@@ -19,8 +19,6 @@ package com.github.thiagotgm.blakebot.console;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
@@ -29,6 +27,8 @@ import java.io.File;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -59,7 +59,9 @@ import sx.blah.discord.util.RateLimitException;
 public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
     private static final long serialVersionUID = 7890114311672131502L;
-    private static final Logger log = LoggerFactory.getLogger( ConsoleGUI.class );
+    private static final Logger LOG = LoggerFactory.getLogger( ConsoleGUI.class );
+    
+    private static final int BUTTON_SPACING = 10;
 
     private final JButton connectionButton;
     private final JButton nameButton;
@@ -76,7 +78,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
      */
     private ConsoleGUI() throws IllegalStateException {
         
-        // Initializes the console.
+        /* Initializes the console */
         super( "BlakeBot Console" );
         final Bot bot = Bot.getInstance();
         setDefaultCloseOperation( JFrame.DO_NOTHING_ON_CLOSE );
@@ -85,7 +87,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             @Override
             public void windowClosed( WindowEvent arg0 ) {
 
-                log.info( "Console closed. Exiting." );
+                LOG.info( "Console closed. Exiting." );
                 bot.saveProperties();
                 System.exit( 0 );
                 
@@ -94,7 +96,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             @Override
             public void windowClosing( WindowEvent arg0 ) {
 
-                log.debug( "Closing console." );
+                LOG.debug( "Closing console." );
                 if ( bot.isConnected() ) {
                     try {
                         bot.terminate();
@@ -109,193 +111,201 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             }
             
         });
-        log.debug( "Console created." );
+        LOG.debug( "Console created." );
 
-        // Creates the output terminal.
+        /* Creates the output terminal. */
         JTextPane output = new JTextPane();
         JScrollPane scrollPane = new JScrollPane( output );
         getContentPane().add( scrollPane, BorderLayout.CENTER );
         redirectOutStream( output );
         redirectErrStream( output );
 
-        // Creates the command buttons.
+        /* Creates the command buttons */
         connectionButton = new JButton( "Connect" );
-        connectionButton.addActionListener( new ActionListener() {
+        connectionButton.addActionListener( ( e ) -> {
 
-            @Override
-            public void actionPerformed( ActionEvent ev ) {
-
-                connectionButton.setEnabled( false );
-                if ( bot.isConnected() ) {
-                    // Disconnects the bot.
-                    try {
-                        bot.terminate();
-                    } catch ( DiscordException e ) {
-                        connectionButton.setEnabled( true );
-                    }
-                } else {
-                    // Connects the bot.
-                    try {
-                        bot.login();
-                    } catch ( DiscordException | RateLimitException e ) {
-                        connectionButton.setEnabled( true );
-                    }
+            connectionButton.setEnabled( false );
+            if ( bot.isConnected() ) {
+                // Disconnects the bot.
+                try {
+                    bot.terminate();
+                } catch ( DiscordException ex ) {
+                    connectionButton.setEnabled( true );
                 }
-
+            } else {
+                // Connects the bot.
+                try {
+                    bot.login();
+                } catch ( DiscordException | RateLimitException ex ) {
+                    connectionButton.setEnabled( true );
+                }
             }
 
-        } );
+        });
         nameButton = new JButton( "Change username" );
-        nameButton.addActionListener( new ActionListener() {
+        nameButton.addActionListener( ( e ) -> {
 
-            @Override
-            public void actionPerformed( ActionEvent ev ) {
-
-                // Changes name of the bot.
-                String newName = (String) JOptionPane.showInputDialog( 
+            /* Changes name of the bot. */
+            String newName = (String) JOptionPane.showInputDialog( 
+                    ConsoleGUI.this,
+                    "Please input a new username.",
+                    "New Username",
+                    JOptionPane.QUESTION_MESSAGE );
+            while ( bot.getUsername().equals( newName ) ) {
+                
+                newName = (String) JOptionPane.showInputDialog( 
                         ConsoleGUI.this,
+                        "That is the current name!\n" +
                         "Please input a new username.",
                         "New Username",
                         JOptionPane.QUESTION_MESSAGE );
-                while ( bot.getUsername().equals( newName ) ) {
-                    
-                    newName = (String) JOptionPane.showInputDialog( 
-                            ConsoleGUI.this,
-                            "That is the current name!\n" +
-                            "Please input a new username.",
-                            "New Username",
-                            JOptionPane.QUESTION_MESSAGE );
-                    
-                }
-                if ( ( newName != null ) && ( newName.length() > 0 ) ) {
-                    bot.setUsername( newName );
-                } else {
-                    log.debug( "Name change cancelled." );
-                }
                 
+            }
+            if ( ( newName != null ) && ( newName.length() > 0 ) ) {
+                bot.setUsername( newName );
+            } else {
+                LOG.debug( "Name change cancelled." );
             }
             
         });
         statusButton = new JButton( "Change status" );
-        statusButton.addActionListener( new ActionListener() {
+        statusButton.addActionListener( ( e ) -> {
 
-            @Override
-            public void actionPerformed( ActionEvent ev ) {
-
-                // Changes status of the bot.
-                String newStatus = (String) JOptionPane.showInputDialog( 
+            /* Changes status of the bot */
+            String newStatus = (String) JOptionPane.showInputDialog( 
+                    ConsoleGUI.this,
+                    "Please input a new status.",
+                    "New Status",
+                    JOptionPane.QUESTION_MESSAGE );
+            while ( ( bot.getStatus() != null ) && ( bot.getStatus().equals( newStatus ) ) ) {
+                
+                newStatus = (String) JOptionPane.showInputDialog( 
                         ConsoleGUI.this,
+                        "That is the current status!\n" +
                         "Please input a new status.",
                         "New Status",
                         JOptionPane.QUESTION_MESSAGE );
-                while ( ( bot.getStatus() != null ) && ( bot.getStatus().equals( newStatus ) ) ) {
-                    
-                    newStatus = (String) JOptionPane.showInputDialog( 
-                            ConsoleGUI.this,
-                            "That is the current status!\n" +
-                            "Please input a new status.",
-                            "New Status",
-                            JOptionPane.QUESTION_MESSAGE );
-                    
-                }
-                if ( ( newStatus != null ) && ( newStatus.length() > 0 ) ) {
-                    bot.setStatus( newStatus );
-                } else {
-                    log.debug( "Status change cancelled." );
-                }
                 
+            }
+            if ( ( newStatus != null ) && !newStatus.isEmpty() ) {
+                bot.setPlayingText( newStatus );
+            } else {
+                LOG.debug( "Status change cancelled." );
             }
             
         });
         presenceButton = new JButton( "Change presence" );
-        presenceButton.addActionListener( new ActionListener() {
+        presenceButton.addActionListener( ( e ) -> {
 
-            @Override
-            public void actionPerformed( ActionEvent e ) {
-
-                // Changes presence of the bot.
-                String[] options = { "Online", "Idle" };
-                int choice = JOptionPane.showOptionDialog(
+            /* Changes presence of the bot */
+            String[] options = { "Online", "Idle", "Streaming" };
+            int choice = JOptionPane.showOptionDialog(
+                    ConsoleGUI.this,
+                    "Please choose a presence.",
+                    "Presence Picker",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0] );
+            if ( choice == JOptionPane.YES_OPTION ) {
+                bot.setOnline();
+            } else if ( choice == JOptionPane.NO_OPTION ) {
+                bot.setIdle();
+            } else if ( choice == JOptionPane.CANCEL_OPTION ) {
+                /* Get streaming text */
+                String text = (String) JOptionPane.showInputDialog( 
                         ConsoleGUI.this,
-                        "Please choose a presence.",
-                        "Presence Picker",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        options,
-                        options[0] );
-                if ( choice == JOptionPane.YES_OPTION ) {
-                    bot.setIdle( false );
-                } else if ( choice == JOptionPane.NO_OPTION ) {
-                    bot.setIdle( true );
-                } else {
-                    log.debug( "Presence change cancelled." );
+                        "Please input a \"streaming\" text.",
+                        "Streaming Text",
+                        JOptionPane.QUESTION_MESSAGE );
+                if ( ( text == null ) || text.isEmpty() ) {
+                    LOG.debug( "Presence change cancelled." );
+                    return;
                 }
                 
+                /* Get stream URL */
+                String url = (String) JOptionPane.showInputDialog( 
+                        ConsoleGUI.this,
+                        "Please input a stream URL.",
+                        "Stream URL",
+                        JOptionPane.QUESTION_MESSAGE );
+                if ( ( url == null ) || url.isEmpty() ) {
+                    LOG.debug( "Presence change cancelled." );
+                    return;
+                }
+                
+                /* Change presence */
+                bot.setStreaming( text, url );
+            } else {
+                LOG.debug( "Presence change cancelled." );
             }
             
         });
         imageButton = new JButton( "Change profile image" );
-        imageButton.addActionListener( new ActionListener() {
+        imageButton.addActionListener( ( e ) -> {
 
-            @Override
-            public void actionPerformed( ActionEvent ev ) {
-
-                // Changes image of the bot.
-                String[] options = { "Local File", "URL" };
-                int choice = JOptionPane.showOptionDialog(
+            /* Changes image of the bot */
+            String[] options = { "Local File", "URL" };
+            int choice = JOptionPane.showOptionDialog(
+                    ConsoleGUI.this,
+                    "Please choose where the image should be taken from.",
+                    "Origin Picker",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    options,
+                    options[0] );
+            if ( choice == JOptionPane.YES_OPTION ) {
+                // Image from local file.
+                String path = (String) JOptionPane.showInputDialog( 
                         ConsoleGUI.this,
-                        "Please choose where the image should be taken from.",
-                        "Origin Picker",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE,
-                        null,
-                        options,
-                        options[0] );
-                if ( choice == JOptionPane.YES_OPTION ) {
-                    // Image from local file.
-                    String path = (String) JOptionPane.showInputDialog( 
-                            ConsoleGUI.this,
-                            "Please input a file path.",
-                            "File Input",
-                            JOptionPane.QUESTION_MESSAGE );
-                    if ( ( path != null ) && ( path.length() > 0 ) ) {
-                        bot.setImage( new File( path ) );
-                        return;
-                    }
-                } else if ( choice == JOptionPane.NO_OPTION ) {
-                    // Image from URL.
-                    String url = (String) JOptionPane.showInputDialog( 
-                            ConsoleGUI.this,
-                            "Please input a URL.",
-                            "URL Input",
-                            JOptionPane.QUESTION_MESSAGE );
-                    if ( ( url != null ) && ( url.length() > 0 ) ) {
-                        try {
-                            bot.setImage( url );
-                        } catch ( IllegalArgumentException e ) {
-                            // Do nothing.
-                        }
-                        return;
-                    }
+                        "Please input a file path.",
+                        "File Input",
+                        JOptionPane.QUESTION_MESSAGE );
+                if ( ( path != null ) && ( path.length() > 0 ) ) {
+                    bot.setImage( new File( path ) );
+                    return;
                 }
-                log.debug( "Image change cancelled." );
-                
+            } else if ( choice == JOptionPane.NO_OPTION ) {
+                // Image from URL.
+                String url = (String) JOptionPane.showInputDialog( 
+                        ConsoleGUI.this,
+                        "Please input a URL.",
+                        "URL Input",
+                        JOptionPane.QUESTION_MESSAGE );
+                if ( ( url != null ) && ( url.length() > 0 ) ) {
+                    try {
+                        bot.setImage( url );
+                    } catch ( IllegalArgumentException ex ) {
+                        // Do nothing.
+                    }
+                    return;
+                }
             }
+            LOG.debug( "Image change cancelled." );
             
         });
 
-        // Organizes the buttons in a panel.
+        /* Organizes the buttons in a panel */
         JPanel buttons = new JPanel();
+        buttons.setLayout( new BoxLayout( buttons, BoxLayout.X_AXIS ) );
+        buttons.add( Box.createHorizontalGlue() );
         buttons.add( connectionButton );
+        buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
         buttons.add( nameButton );
+        buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
         buttons.add( statusButton );
+        buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
         buttons.add( presenceButton );
+        buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
         buttons.add( imageButton );
+        buttons.add( Box.createHorizontalGlue() );
+        
         getContentPane().add( buttons, BorderLayout.SOUTH );
         setButtonsEnabled( false ); // Needs to connect before using command buttons.
 
-        // Displays the console.
+        /* Displays the console. */
         int width = Integer.valueOf( Bot.getProperties().getProperty( PropertyNames.CONSOLE_WIDTH ) );
         int height = Integer.valueOf( Bot.getProperties().getProperty( PropertyNames.CONSOLE_HEIGHT ) );
         setSize( width, height );
@@ -313,7 +323,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
         });
         setVisible( true );
-        log.info( "Console started." );
+        LOG.info( "Console started." );
 
     }
     
