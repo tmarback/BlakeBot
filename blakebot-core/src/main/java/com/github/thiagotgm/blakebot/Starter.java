@@ -17,12 +17,12 @@
 
 package com.github.thiagotgm.blakebot;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Properties;
 
 import javax.swing.JOptionPane;
@@ -41,40 +41,66 @@ import com.github.thiagotgm.blakebot.console.ConsoleGUI;
  */
 public class Starter {
 
-    private static final String LOG_FILE = "BlakeBot";
     private static final String LOG_EXT = ".log";
-    private static final String LOG_FOLDER = "logs";
+    private static final File WORKING_DIR = new File( "." );
+    private static final File LOG_DIR = new File( "logs" );
+    private static final String LOG_SUBDIR_NAME = "BlakeBot-%d";
+    private static final int LOG_FILE_ERROR = 5;
     
     /**
-     * On program startup, creates and starts a new instance of the bot with a
-     * login key given as argument, and a console to manage it. The bot isn't
-     * immediately connected to discord, it must be ordered to do so through the
-     * console.
+     * On program startup, creates and starts a new instance of the bot, and a
+     * console to manage it. The bot isn't immediately connected to discord, it
+     * must be ordered to do so through the console.
      * 
-     * @param args Command line arguments. Must be only one, the bot login key.
+     * @param args Command line arguments.
      */
     public static void main( String[] args ) {
 
-        // If there is an existing log file, (attempts to) archives it.
-        if ( Files.exists( Paths.get( LOG_FILE + LOG_EXT ) ) ) {
-            if ( !Files.isDirectory( Paths.get( LOG_FOLDER ) ) ) {
-                try {
-                    Files.createDirectory( Paths.get( LOG_FOLDER ) );
-                } catch ( IOException e ) {
-                    logFileError( "Could not create log archive directory.", e );
+        /* Get log files */
+        File[] logFiles = WORKING_DIR.listFiles( ( dir, filename ) -> {
+            
+            return filename.endsWith( LOG_EXT );
+            
+        });
+        /* If there are existing log files, (attempts to) archive them */
+        if ( !Arrays.asList( logFiles ).isEmpty() ) {
+            if ( !LOG_DIR.exists() ) {
+                if ( !LOG_DIR.mkdir() ) {
+                    System.err.println( "Could not create log archive directory." );
+                    System.exit( LOG_FILE_ERROR );
                 }
+            } else if ( LOG_DIR.isFile() ) {
+                System.err.println( "Log archive directory name taken by file." );
+                System.exit( LOG_FILE_ERROR );
             }
-            int num = 0;
-            while ( Files.exists( Paths.get( LOG_FOLDER, LOG_FILE + "-" + num + LOG_EXT ) ) ) {
+            
+            /* Get subdir to place files in */
+            int num = -1;
+            File nextSubDir;
+            do { // Find free number.
                 
                 num++;
+                nextSubDir = new File( LOG_DIR, String.format( LOG_SUBDIR_NAME, num ) );
+                
+            } while ( nextSubDir.exists() );
+            if ( !nextSubDir.mkdir() ) { // Create subdirectory.
+                System.err.println( "Could not create log archive subdirectory." );
+                System.exit( LOG_FILE_ERROR );
+            }
+            
+            /* Move log files to subdirectory */
+            boolean error = false;
+            for ( File logFile : logFiles ) {
+                
+                System.out.println( "Moving log file " + logFile.getName() + "." );
+                if ( !logFile.renameTo( new File( nextSubDir, logFile.getName() ) ) ) {
+                    System.err.println( "Could not move log file." );
+                    error = true;
+                }
                 
             }
-            try {
-                Files.move( Paths.get( LOG_FILE + LOG_EXT ), Paths.get( LOG_FOLDER,
-                        LOG_FILE + "-" + num + LOG_EXT ) );
-            } catch ( IOException e ) {
-                logFileError( "Could not move log file.", e );
+            if ( error ) { // An error was encountered while moving some files.
+                System.exit( LOG_FILE_ERROR );
             }
         }
         
@@ -130,21 +156,6 @@ public class Starter {
         Bot.setProperties( properties );
         Bot.registerListener( ConsoleGUI.getInstance() );
 
-    }
-    
-    /**
-     * Logs an error that occurred while moving the log file (ie. before the
-     * logger object is created).
-     * 
-     * @param message Message to be logged.
-     * @param e Exception that was thrown.
-     */
-    private static void logFileError( String message, Exception e ) {
-        
-        Logger log = LoggerFactory.getLogger( Starter.class );
-        log.error( message, e );
-        log.error( "================================================" );
-        
     }
 
 }
