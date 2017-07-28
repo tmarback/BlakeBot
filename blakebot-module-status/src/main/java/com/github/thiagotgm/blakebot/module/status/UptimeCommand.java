@@ -42,13 +42,11 @@ public class UptimeCommand {
     private final UptimeTracker tracker;
     
     /**
-     * Initializes an instance that uses the given tracker to keep track of uptime.
-     *
-     * @param tracker The tracker to get uptime data from.
+     * Initializes an instance.
      */
-    public UptimeCommand( UptimeTracker tracker ) {
+    public UptimeCommand() {
         
-        this.tracker = tracker;
+        this.tracker = UptimeTracker.getInstance();
         
     }
     

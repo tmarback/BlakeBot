@@ -60,13 +60,15 @@ public class UptimeTracker {
     
     private final Writer connectionOutput;
     
+    private static UptimeTracker instance;
+    
     /**
      * Initializes a new instance.
      */
-    public UptimeTracker() {
+    private UptimeTracker() {
         
         connectTime = NO_TIME;
-        disconnectTime = -2;
+        disconnectTime = INITIAL_DISCONNECT_TIME;
         
         boolean logUptimes = true; // TODO: Make this a setting
         boolean logDowntimes = true;
@@ -89,6 +91,22 @@ public class UptimeTracker {
         } else { // Do not log.
             connectionOutput = null;
         }
+        
+    }
+    
+    /**
+     * Returns the running instance of this class.
+     * <p>
+     * If there isn't one, creates one.
+     *
+     * @return The class instance.
+     */
+    public synchronized static UptimeTracker getInstance() {
+        
+        if ( instance == null ) {
+            instance = new UptimeTracker();
+        }
+        return instance;
         
     }
     

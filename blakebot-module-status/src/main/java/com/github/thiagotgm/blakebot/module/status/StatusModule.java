@@ -36,14 +36,12 @@ public class StatusModule implements IModule {
     private static final String MODULE_NAME = "Status";
     
     private IDiscordClient client;
-    private UptimeTracker tracker;
     
     @Override
     public void disable() {
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this );
-        client.getDispatcher().unregisterListener( tracker );
-        tracker = null;
+        client.getDispatcher().unregisterListener( UptimeTracker.getInstance() );
         client = null;
         
     }
@@ -53,8 +51,7 @@ public class StatusModule implements IModule {
 
         client = arg0;
         
-        tracker = new UptimeTracker();
-        arg0.getDispatcher().registerListener( tracker );
+        arg0.getDispatcher().registerListener( UptimeTracker.getInstance() );
         
         CommandRegistry registry;
         registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
@@ -72,7 +69,7 @@ public class StatusModule implements IModule {
     private void registerCommands( CommandRegistry registry ) {
         
         registry.registerAnnotatedCommands( new PingCommand() );
-        registry.registerAnnotatedCommands( new UptimeCommand( tracker ) );
+        registry.registerAnnotatedCommands( new UptimeCommand() );
         registry.registerAnnotatedCommands( new OwnerCommand() );
         registry.registerAnnotatedCommands( new StatusCommand() );
         
