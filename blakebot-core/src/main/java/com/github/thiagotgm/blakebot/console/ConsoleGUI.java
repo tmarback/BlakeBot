@@ -62,8 +62,8 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
     private static final Logger LOG = LoggerFactory.getLogger( ConsoleGUI.class );
     
     private static final int BUTTON_SPACING = 10;
-    private static final String CONSOLE_WIDTH = "width";
-    private static final String CONSOLE_HEIGHT = "height";
+    private static final String CONSOLE_WIDTH = "Console width";
+    private static final String CONSOLE_HEIGHT = "Console height";
 
     private final JButton connectionButton;
     private final JButton nameButton;

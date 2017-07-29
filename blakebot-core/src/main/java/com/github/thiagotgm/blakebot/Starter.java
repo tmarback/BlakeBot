@@ -101,8 +101,8 @@ public class Starter {
         
         final Logger log = LoggerFactory.getLogger( Starter.class );
 
-        // Requests login token if none registered.
-        if ( Settings.hasSetting( Bot.LOGIN_TOKEN_SETTING ) ) {
+        /* Requests login token if none registered */
+        if ( !Settings.hasSetting( Bot.LOGIN_TOKEN_SETTING ) ) {
             log.info( "No registered Key. Requesting key." );
             String key;
             do {

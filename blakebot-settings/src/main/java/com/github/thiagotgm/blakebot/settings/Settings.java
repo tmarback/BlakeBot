@@ -91,28 +91,36 @@ public class Settings {
     }
     
     /**
-     * Retrieves the value of a String-valued setting.
+     * Retrieves the value of a <b>String</b>-valued setting.
      *
      * @param setting The name of the setting.
-     * @return The value of the setting, or null if not found.
+     * @return The value of the setting.
+     * @throws IllegalArgumentException if the setting does not exist.
      */
-    public synchronized static String getStringSetting( String setting ) {
+    public synchronized static String getStringSetting( String setting ) throws IllegalArgumentException {
         
+        if ( !hasSetting( setting ) ) { // Check if setting exists.
+            throw new IllegalArgumentException( "Setting does not exist." );
+        }
         return settings.getProperty( setting );
         
     }
     
     /**
-     * Retrieves the value of a long-valued setting.
+     * Retrieves the value of a <b>long</b>-valued setting.
      *
      * @param setting The name of the setting.
-     * @return The value of the setting, or null if not found.
+     * @return The value of the setting.
+     * @throws IllegalArgumentException if the setting does not exist or it does not have a
+     *                                  <b>long</b> value.
      */
     public synchronized static long getLongSetting( String setting ) throws IllegalArgumentException {
         
+        if ( !hasSetting( setting ) ) { // Check if setting exists.
+            throw new IllegalArgumentException( "Setting does not exist." );
+        }
         try {
-            String value = settings.getProperty( setting );
-            return ( value == null ) ? null : Long.valueOf( value );
+            return Long.valueOf( settings.getProperty( setting ) );
         } catch ( NumberFormatException e ) {
             throw new IllegalArgumentException( "Setting does not have a long value.", e );
         }
@@ -120,16 +128,20 @@ public class Settings {
     }
     
     /**
-     * Retrieves the value of an int-valued setting.
+     * Retrieves the value of an <b>int</b>-valued setting.
      *
      * @param setting The name of the setting.
-     * @return The value of the setting, or null if not found.
+     * @return The value of the setting.
+     * @throws IllegalArgumentException if the setting does not exist or it does not have a
+     *                                  <b>int</b> value.
      */
     public synchronized static int getIntSetting( String setting ) throws IllegalArgumentException {
         
+        if ( !hasSetting( setting ) ) { // Check if setting exists.
+            throw new IllegalArgumentException( "Setting does not exist." );
+        }
         try {
-            String value = settings.getProperty( setting );
-            return ( value == null ) ? null : Integer.valueOf( value );
+            return Integer.valueOf( settings.getProperty( setting ) );
         } catch ( NumberFormatException e ) {
             throw new IllegalArgumentException( "Setting does not have a int value.", e );
         }
@@ -137,15 +149,24 @@ public class Settings {
     }
     
     /**
-     * Retrieves the value of a boolean-valued setting.
+     * Retrieves the value of a <b>boolean</b>-valued setting.
      *
      * @param setting The name of the setting.
-     * @return The value of the setting, or null if not found.
+     * @return The value of the setting.
+     * @throws IllegalArgumentException if the setting does not exist or it does not have a
+     *                                  <b>boolean</b> value.
      */
     public synchronized static boolean getBooleanSetting( String setting ) throws IllegalArgumentException {
         
-        String value = settings.getProperty( setting );
-        return ( value == null ) ? null : Boolean.valueOf( value );
+        if ( !hasSetting( setting ) ) { // Check if setting exists.
+            throw new IllegalArgumentException( "Setting does not exist." );
+        }
+        String str = settings.getProperty( setting );
+        boolean value = Boolean.valueOf( str );
+        if ( !str.equalsIgnoreCase( String.valueOf( value ) ) ) {
+            throw new IllegalArgumentException( "Setting does not have a boolean value." );
+        }
+        return value;
         
     }
     
@@ -154,9 +175,13 @@ public class Settings {
      *
      * @param setting The name of the setting.
      * @param value The value of the setting.
+     * @throws NullPointerException if the value given is null.
      */
-    public synchronized static void setSetting( String setting, String value ) {
-        
+    public synchronized static void setSetting( String setting, String value ) throws NullPointerException {
+
+        if ( value == null ) {
+            throw new NullPointerException( "Value cannot be null." );
+        }
         settings.setProperty( setting, value );
         
     }
