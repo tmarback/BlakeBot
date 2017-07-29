@@ -130,6 +130,17 @@ public class Bot {
         }
         
     }
+    
+    /**
+     * Retrieves the client being used by the bot.
+     *
+     * @return The bot client.
+     */
+    public IDiscordClient getClient() {
+        
+        return client;
+        
+    }
 
     /**
      * Logs in to Discord.
@@ -182,7 +193,7 @@ public class Bot {
     @EventSubscriber
     public void onDisconnect( DisconnectedEvent event ) {
      
-        LOG.debug( "===[ Bot DISCONNECTED! ]===" );
+        LOG.info( "===[ Bot DISCONNECTED! ]===" );
         notifyListeners( false );
 
     }

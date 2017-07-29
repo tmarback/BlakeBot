@@ -42,7 +42,11 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.ConnectionStatusListener;
 import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
+import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
 
+import sx.blah.discord.api.events.EventDispatcher;
+import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.RateLimitException;
 
@@ -101,16 +105,39 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             public void windowClosing( WindowEvent arg0 ) {
 
                 LOG.debug( "Closing console." );
-                if ( bot.isConnected() ) {
+                if ( bot.isConnected() ) { // Needs to logout first.
+                    final EventDispatcher dispatcher = bot.getClient().getDispatcher();
+                    dispatcher.registerListener( new Object() {
+                        
+                        @EventSubscriber
+                        public void logoutSuccess( LogoutSuccessEvent event ) {
+                            
+                            /* Logout succeeded. Shutdown now */
+                            ConsoleGUI.this.setVisible( false );
+                            ConsoleGUI.this.dispose();
+                            
+                        }
+                        
+                        @EventSubscriber
+                        public void logoutFailure( LogoutFailureEvent event ) {
+                            
+                            /* Logout failed. Just remove this listener and do nothing */
+                            LOG.error( "Could not close console due to bot not logging out." );
+                            dispatcher.unregisterListener( this );
+                            
+                        }
+                        
+                    });
                     try {
                         bot.logout();
                     } catch ( DiscordException e ) {
                         // Failed to disconnect.
                         return;
                     }
+                } else { // Just shut down.
+                    ConsoleGUI.this.setVisible( false );
+                    ConsoleGUI.this.dispose();
                 }
-                ConsoleGUI.this.setVisible( false );
-                ConsoleGUI.this.dispose();
                 
             }
             
