@@ -18,19 +18,14 @@
 package com.github.thiagotgm.blakebot;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Properties;
-
 import javax.swing.JOptionPane;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.console.ConsoleGUI;
+import com.github.thiagotgm.blakebot.settings.Settings;
 
 /**
  * Starts up the bot and the control console.
@@ -105,43 +100,14 @@ public class Starter {
         }
         
         final Logger log = LoggerFactory.getLogger( Starter.class );
-        
-        // Reads default properties.
-        Properties defaults = new Properties();
-        try {
-            ClassLoader loader = Starter.class.getClassLoader();
-            InputStream input = loader.getResourceAsStream( PropertyNames.DEFAULTS_FILE );
-            defaults.loadFromXML( input );
-            input.close();
-            log.info( "Loaded default properties." );
-        } catch ( IOException e ) {
-            log.error( "Error reading default properties file.", e );
-            System.exit( 2 );
-        }
-
-        // Reads properties
-        Properties properties = new Properties( defaults );
-        try {
-            FileInputStream input = new FileInputStream( PropertyNames.PROPERTIES_FILE );
-            properties.loadFromXML( input );
-            input.close();
-            log.info( "Loaded bot properties." );
-        } catch ( FileNotFoundException e ) {
-            log.error(
-                    "Properties file not found. A new one will be created." );
-        } catch ( IOException e ) {
-            log.error( "Error reading properties file.", e );
-            System.exit( 2 );
-        }
 
         // Requests login token if none registered.
-        if ( !properties.containsKey( PropertyNames.LOGIN_TOKEN ) ) {
+        if ( Settings.hasSetting( Bot.LOGIN_TOKEN_SETTING ) ) {
             log.info( "No registered Key. Requesting key." );
             String key;
             do {
 
-                key = JOptionPane
-                        .showInputDialog( "Please enter bot login key." );
+                key = JOptionPane.showInputDialog( "Please enter bot login key." );
                 if ( key == null ) {
                     log.debug( "Setup cancelled." );
                     System.exit( 0 );
@@ -150,11 +116,11 @@ public class Starter {
 
             } while ( key.length() == 0 );
             log.debug( "Received key." );
-            properties.setProperty( PropertyNames.LOGIN_TOKEN, key );
+            Settings.setSetting( Bot.LOGIN_TOKEN_SETTING, key );
         }
 
-        Bot.setProperties( properties );
-        Bot.registerListener( ConsoleGUI.getInstance() );
+        ConsoleGUI.getInstance().setVisible( true ); // Start and show console.
+        log.info( "Console started." );
 
     }
 

@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.settings.Settings;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
 import sx.blah.discord.api.ClientBuilder;
@@ -35,17 +36,11 @@ import sx.blah.discord.util.RateLimitException;
 import sx.blah.discord.util.RequestBuffer;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Properties;
 
 /**
  * Main bot runner that manages log in/out and bot state.
  * Uses a Singleton pattern (only a single instance can exist).
- * The instance can only be started after the properties were set using the
- * {@link #setProperties(Properties) setProperties} method.
  * 
  * @author ThiagoTGM
  * @version 2.4.0
@@ -55,45 +50,38 @@ public class Bot {
 
     private static final Logger LOG = LoggerFactory.getLogger( Bot.class );
     private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
+    protected static final String LOGIN_TOKEN_SETTING = "token";
     
-    private static Properties properties = null;
     private static Bot instance = null;
-    private static ArrayList<ConnectionStatusListener> listeners = new ArrayList<>();
     
     private volatile IDiscordClient client;
+    private final ArrayList<ConnectionStatusListener> listeners;
     
     /**
      * Creates a new instance of the bot.
      */
     private Bot() {
         
-        String token = properties.getProperty( PropertyNames.LOGIN_TOKEN );
-        ModularCommandsModule modularCommands = new ModularCommandsModule();
+        String token = Settings.getStringSetting( LOGIN_TOKEN_SETTING );
         try {
             this.client = new ClientBuilder().withToken( token ).build();
         } catch ( DiscordException e ) {
             LOG.error( "Failed to create bot.", e );
             System.exit( 5 );
         }
-        this.client.getModuleLoader().loadModule( modularCommands );
+        this.client.getModuleLoader().loadModule( new ModularCommandsModule() );
+        listeners = new ArrayList<>();
         
     }
 
     /**
      * Gets the running instance of the bot. If one is not currently running,
      * creates a new one.
-     * Can only be used after setting bot properties with
-     * {@link #setProperties(Properties) setProperties} once,
-     * as the bot depends on them to function correctly.
      * 
      * @return The running instance of the bot.
-     * @throws IllegalStateException if used before bot properties are set.
      */
-    public static Bot getInstance() throws IllegalStateException {
+    public static Bot getInstance() {
         
-        if ( properties == null ) {
-            throw new IllegalStateException( "Attempted to use bot before setting properties." );
-        }
         if ( instance == null ) {
             instance = new Bot();   
         }
@@ -102,33 +90,11 @@ public class Bot {
     }
     
     /**
-     * Sets the bot properties.
-     * 
-     * @param properties Properties used by the bot.
-     */
-    public static void setProperties( Properties properties ) {
-
-        Bot.properties = properties;
-
-    }
-    
-    /**
-     * Retrieves the properties of the bot.
-     * 
-     * @return The object that contains the properties of the bot.
-     */
-    public static Properties getProperties() {
-        
-        return Bot.properties;
-        
-    }
-    
-    /**
      * Registers a new listener (for connection status updates).
      * 
      * @param listener Listener to be registered.
      */
-    public static void registerListener( ConnectionStatusListener listener ) {
+    public void registerListener( ConnectionStatusListener listener ) {
         
         listeners.add( listener );
         LOG.trace( "Registered status listener." );
@@ -140,7 +106,7 @@ public class Bot {
      * 
      * @param listener Listener to be unregistered.
      */
-    public static void unregisterListener( ConnectionStatusListener listener ) {
+    public void unregisterListener( ConnectionStatusListener listener ) {
         
         listeners.remove( listener );
         LOG.trace( "Unregistered status listener." );
@@ -251,26 +217,6 @@ public class Bot {
             
         }
 
-    }
-    
-    /**
-     * Saves the properties of the bot to the properties file.
-     */
-    public void saveProperties() {
-        
-        LOG.info( "Saving properties." );
-        FileOutputStream file;
-        try {
-            file = new FileOutputStream( PropertyNames.PROPERTIES_FILE );
-            properties.storeToXML( file, PropertyNames.PROPERTIES_COMMENT );
-            file.close();
-        } catch ( FileNotFoundException e ) {
-            LOG.error( "Could not open properties file.", e );
-        } catch ( IOException e ) {
-            LOG.error( "Could not write to properties file.", e );
-        }
-        
-        
     }
     
     /**

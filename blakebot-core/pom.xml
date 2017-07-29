@@ -41,6 +41,16 @@
         </license>
 
     </licenses>
+    
+    <dependencies>
+    
+        <dependency>
+            <groupId>com.github.thiagotgm</groupId>
+            <artifactId>blakebot-settings</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        
+    </dependencies>
 
     <build>
 
