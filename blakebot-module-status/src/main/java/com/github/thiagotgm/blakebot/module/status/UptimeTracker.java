@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +53,8 @@ public class UptimeTracker {
     private static final File UPTIME_FILE = Paths.get( "uptimes.log" ).toFile();
     private static final File DOWNTIME_FILE = Paths.get( "downtimes.log" ).toFile();
     private static final File CONNECTION_FILE = Paths.get( "connection.log" ).toFile();
-    private static final String CONNECTION_LOG_SEPARATOR = " : ";
-    private static final DateFormat timestampFormatter = DateFormat.getDateTimeInstance();
+    private static final String LOG_SEPARATOR = " : ";
+    private static final DateFormat timestampFormatter = new SimpleDateFormat( "yyyy.MM.dd HH:mm:ss:SSS" );
     
     private static final long INITIAL_DISCONNECT_TIME = -2;
     private static final long NO_TIME = -1;
@@ -130,12 +131,12 @@ public class UptimeTracker {
         if ( connectionOutput != null ) {
             StringBuilder builder = new StringBuilder();
             builder.append( timestampFormatter.format( new Date( time ) ) );
-            builder.append( CONNECTION_LOG_SEPARATOR );
+            builder.append( LOG_SEPARATOR );
             builder.append( time );
-            builder.append( CONNECTION_LOG_SEPARATOR );
+            builder.append( LOG_SEPARATOR );
             if ( event instanceof DisconnectedEvent ) {
                 builder.append( "Disconnected" );
-                builder.append( CONNECTION_LOG_SEPARATOR );
+                builder.append( LOG_SEPARATOR );
                 builder.append( ( (DisconnectedEvent) event ).getReason() );
             } else if ( event instanceof ReadyEvent ) {
                 builder.append( "Connected" );
@@ -465,8 +466,16 @@ public class UptimeTracker {
             
             /* Output to file if necessary */
             if ( output != null ) {
+                StringBuilder builder = new StringBuilder();
+                builder.append( String.valueOf( time ) );
+                builder.append( LOG_SEPARATOR );
+                Time formatted = new Time( time );
+                formatted.includeSeconds( true );
+                formatted.includeMillis( true );
+                builder.append( formatted.toString( false ) );
+                builder.append( '\n' );
                 try {
-                    output.write( String.valueOf( time ) );
+                    output.write( builder.toString() );
                     output.flush();
                 } catch ( IOException e ) {
                     LOG.error( errorString, e );
