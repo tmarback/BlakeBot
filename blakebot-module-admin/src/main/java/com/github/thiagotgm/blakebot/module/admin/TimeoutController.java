@@ -25,6 +25,9 @@ import java.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.LogoutEvent;
+
+import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
@@ -37,7 +40,7 @@ public class TimeoutController {
     
     private static final int START_SIZE = 100;
     private static final String ID_SEPARATOR = "@";
-    private static final Logger log = LoggerFactory.getLogger( TimeoutController.class );
+    private static final Logger LOG = LoggerFactory.getLogger( TimeoutController.class );
     
     private static TimeoutController instance;
     
@@ -84,16 +87,31 @@ public class TimeoutController {
     }
     
     /**
-     * Stops the Controller instance, executing all pending tasks and stopping the timer.
-     * Removes the currently running instance.
+     * Executes pending tasks before the bot logs out.
+     *
+     * @param event
+     */
+    @EventSubscriber
+    public void onLogout( LogoutEvent event ) {
+        
+        terminate();
+        
+    }
+    
+    /**
+     * Executes all pending tasks, in preparation for stopping the module.
      */
     public void terminate() {
         
+        LOG.info( "Terminating." );
         for ( TimerTask task : tasks.values() ) {
+            // Cancel and execute pending timeout reversals.
+            task.cancel();
             task.run();
-        }    
-        timer.cancel();
-        instance = null;
+            
+        }
+        tasks.clear();
+        timer.purge();
         
     }
     
@@ -107,7 +125,7 @@ public class TimeoutController {
      */
     private void setPermission( IUser user, IChannel channel, boolean allow ) {
         
-        log.debug( "Permission set " + allow + " for " + user.getName() + "@" +
+        LOG.debug( "Permission set " + allow + " for " + user.getName() + "@" +
                 channel.getName() + "@" + channel.getGuild().getName() );
         IChannel.PermissionOverride overrides = channel.getUserOverridesLong().get( user.getLongID() );
         EnumSet<Permissions> allowed = 
@@ -129,9 +147,9 @@ public class TimeoutController {
                     channel.overrideUserPermissions( user, allowed, denied );
                 }
             } catch ( DiscordException e ) {
-                log.warn( "Error encountered.", e ); 
+                LOG.warn( "Error encountered.", e ); 
             } catch ( MissingPermissionsException e ) {
-                log.info( "Missing permission to set permissions." );
+                LOG.info( "Missing permission to set permissions." );
             }
             
         });
@@ -149,7 +167,7 @@ public class TimeoutController {
      */
     public boolean timeout( IUser user, IChannel channel, long timeout ) {
         
-        log.debug( "Timing out " + user.getName() + "@" + channel.getName() + "@" +
+        LOG.debug( "Timing out " + user.getName() + "@" + channel.getName() + "@" +
                 channel.getGuild().getName()  );
         final String id = getTaskID( user, channel );
         if ( !tasks.containsKey( id ) ) {
@@ -186,7 +204,7 @@ public class TimeoutController {
      */
     public boolean timeout( IUser user, IGuild guild, long timeout ) {
         
-        log.debug( "Timing out " + user.getName() + "@" + guild.getName() );
+        LOG.debug( "Timing out " + user.getName() + "@" + guild.getName() );
         final String id = getTaskID( user, guild );
         if ( !tasks.containsKey( id ) ) {
             for ( IChannel channel : guild.getChannels() ) {
@@ -230,7 +248,7 @@ public class TimeoutController {
      */
     public void untimeout( IUser user, IChannel channel ) {
 
-        log.debug( "Untiming out " + user.getName() + "@" + channel.getName() + "@" +
+        LOG.debug( "Untiming out " + user.getName() + "@" + channel.getName() + "@" +
                 channel.getGuild().getName()  );
         // Removes and stops timeout task if any.
         TimerTask task = tasks.remove( getTaskID( user, channel ) );
@@ -251,7 +269,7 @@ public class TimeoutController {
      */
     public void untimeout( IUser user, IGuild guild ) {
         
-        log.debug( "Untiming out " + user.getName() + "@" + guild.getName() );
+        LOG.debug( "Untiming out " + user.getName() + "@" + guild.getName() );
         // Removes and stops timeout task if any.
         TimerTask task = tasks.remove( getTaskID( user, guild ) );
         if ( task != null ) {
@@ -279,7 +297,7 @@ public class TimeoutController {
      */
     public boolean hasTimeout( IUser user, IChannel channel ) {
         
-        log.trace( "Checking to for " + user.getName() + "@" + channel.getName() + "@" +
+        LOG.trace( "Checking to for " + user.getName() + "@" + channel.getName() + "@" +
                 channel.getGuild().getName()  );
         return tasks.containsKey( getTaskID( user, channel ) );
         
@@ -295,7 +313,7 @@ public class TimeoutController {
      */
     public boolean hasTimeout( IUser user, IGuild guild ) {
         
-        log.trace( "Checking to for " + user.getName() + "@" + guild.getName() );
+        LOG.trace( "Checking to for " + user.getName() + "@" + guild.getName() );
         return tasks.containsKey( getTaskID( user, guild ) );
         
     }

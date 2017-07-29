@@ -25,10 +25,11 @@
     <modules>
 
         <module>blakebot-core</module>
+        <module>blakebot-common</module>
         <module>blakebot-module-status</module>
         <module>blakebot-module-fun</module>
         <module>blakebot-module-admin</module>
-        <module>blakebot-settings</module>
+        
   </modules>
 
     <name>BlakeBot</name>

@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.LogoutEvent;
 import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
@@ -29,7 +30,6 @@ import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.impl.events.shard.ResumedEvent;
-import sx.blah.discord.modules.IModule;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
 import sx.blah.discord.util.RateLimitException;
@@ -194,13 +194,9 @@ public class Bot {
 
         LOG.debug( "Disconnecting bot." );
         
-        /* Disable modules */
-        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
-            
-            module.disable();
-            
-        }
-        
+        /* Let all modules know logout is coming */
+        client.getDispatcher().dispatch( new LogoutEvent( client ) );
+
         /* Attempt disconnect */
         try {
             client.logout();
@@ -208,13 +204,6 @@ public class Bot {
         } catch ( DiscordException e ) {
             LOG.error( "Logout failed", e );
             throw e;
-        }
-        
-        /* Re-enable modules */
-        for ( IModule module : client.getModuleLoader().getLoadedModules() ) {
-            
-            module.enable( client );
-            
         }
 
     }

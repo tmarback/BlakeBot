@@ -45,7 +45,11 @@ public class AdminModule implements IModule {
         
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.unregisterListener( enforcer );
-        TimeoutController.getInstance().terminate();
+        
+        TimeoutController controller = TimeoutController.getInstance();
+        dispatcher.unregisterListener( controller );
+        controller.terminate(); // Ensure timeouts are reverted.
+        
         CommandRegistry.getRegistry( client ).removeSubRegistry( this );
         client = null;
 
@@ -60,6 +64,7 @@ public class AdminModule implements IModule {
         registerCommands( registry );
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.registerListener( enforcer );
+        dispatcher.registerListener( TimeoutController.getInstance() );
         return true;
         
     }

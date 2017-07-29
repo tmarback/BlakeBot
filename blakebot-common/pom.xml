@@ -31,7 +31,7 @@
     <artifactId>blakebot-common</artifactId>
     <version>1.0.0</version>
     
-    <name>blakebot-settings</name>
+    <name>blakebot-common</name>
 
     <licenses>
 
