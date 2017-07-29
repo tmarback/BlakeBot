@@ -27,7 +27,13 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.event.LogoutEvent;
+import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
+import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
+import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
+
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.util.DiscordException;
 
@@ -45,7 +51,7 @@ import sx.blah.discord.util.DiscordException;
  * @author ThiagoTGM
  * @since 2017-07-29
  */
-public class LogoutManager implements IListener<LogoutEvent> {
+public class LogoutManager implements IListener<LogoutRequestedEvent> {
     
     private static final Map<IDiscordClient, LogoutManager> managers = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger( LogoutManager.class );
@@ -53,7 +59,7 @@ public class LogoutManager implements IListener<LogoutEvent> {
     private static final ExecutorService executor = Executors.newFixedThreadPool( THREADS );
     
     private final IDiscordClient client;
-    private final List<IListener<LogoutEvent>> listeners;
+    private final List<IListener<LogoutRequestedEvent>> listeners;
     
     /**
      * Constructs a new manager for the given client.
@@ -94,7 +100,7 @@ public class LogoutManager implements IListener<LogoutEvent> {
      *
      * @param listener The listener to be registered.
      */
-    public synchronized void registerListener( IListener<LogoutEvent> listener ) {
+    public synchronized void registerListener( IListener<LogoutRequestedEvent> listener ) {
         
         listeners.add( listener );
         
@@ -105,7 +111,7 @@ public class LogoutManager implements IListener<LogoutEvent> {
      *
      * @param listener The listener to be unregistered.
      */
-    public synchronized void unregisterListener( IListener<LogoutEvent> listener ) {
+    public synchronized void unregisterListener( IListener<LogoutRequestedEvent> listener ) {
         
         listeners.remove( listener );
         
@@ -117,13 +123,13 @@ public class LogoutManager implements IListener<LogoutEvent> {
      * @param event The event fired.
      */
     @Override
-    public synchronized void handle( LogoutEvent event ) {
+    public synchronized void handle( LogoutRequestedEvent event ) {
 
         LOG.info( "Logout request received." );
         
         /* Executes logout queue */
         List<Callable<Object>> tasks = new LinkedList<>();
-        for ( IListener<LogoutEvent> listener : listeners ) { // Build queue.
+        for ( IListener<LogoutRequestedEvent> listener : listeners ) { // Build queue.
             
             tasks.add( Executors.callable( () -> {
             
@@ -132,10 +138,13 @@ public class LogoutManager implements IListener<LogoutEvent> {
             }) );
             
         }
+        EventDispatcher dispatcher = client.getDispatcher(); // Get dispatcher for the result event.
         try {
             executor.invokeAll( tasks ); // Execute and wait for queue.
         } catch ( InterruptedException e ) {
             LOG.error( "Logout queue interrupted.", e );
+            dispatcher.dispatch( // Dispatch failure event.
+                    new LogoutFailureEvent( client, LogoutFailureEvent.Reason.QUEUE_INTERRUPTED ) );
             return;
         }
         LOG.debug( "Logout queue finished." );
@@ -144,9 +153,11 @@ public class LogoutManager implements IListener<LogoutEvent> {
         try {
             client.logout();
             LOG.info( "===[ Bot LOGGED OUT! ]===" );
+            dispatcher.dispatch( new LogoutSuccessEvent( client ) ); // Dispatch success event.
         } catch ( DiscordException e ) {
             LOG.error( "Logout failed", e );
-            throw e;
+            dispatcher.dispatch( // Dispatch failure event.
+                    new LogoutFailureEvent( client, LogoutFailureEvent.Reason.LOGOUT_FAILED ) );
         }
         
     }

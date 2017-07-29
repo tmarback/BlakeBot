@@ -20,9 +20,9 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.LogoutEvent;
 import com.github.thiagotgm.blakebot.common.LogoutManager;
 import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
 import sx.blah.discord.api.ClientBuilder;
@@ -197,7 +197,7 @@ public class Bot {
         LOG.debug( "Disconnecting bot." );
         
         /* Send logout request */
-        client.getDispatcher().dispatch( new LogoutEvent( client ) );
+        client.getDispatcher().dispatch( new LogoutRequestedEvent( client ) );
 
     }
     

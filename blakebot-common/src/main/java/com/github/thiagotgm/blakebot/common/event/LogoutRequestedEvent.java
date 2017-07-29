@@ -15,26 +15,26 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common;
+package com.github.thiagotgm.blakebot.common.event;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.Event;
 
 /**
- * Event fired when the bot is about to be logged out.
+ * Event fired when a logout is requested to the bot.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-07-29
  */
-public class LogoutEvent extends Event {
+public class LogoutRequestedEvent extends Event {
     
     /**
      * Builds a new instance fired by the given client.
      *
      * @param client The client that is being logged out.
      */
-    public LogoutEvent( IDiscordClient client ) {
+    public LogoutRequestedEvent( IDiscordClient client ) {
         
         this.client = client;
         

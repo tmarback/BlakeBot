@@ -25,7 +25,7 @@ import java.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.LogoutEvent;
+import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
 
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.obj.IChannel;
@@ -36,7 +36,7 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RequestBuffer;
 
-public class TimeoutController implements IListener<LogoutEvent> {
+public class TimeoutController implements IListener<LogoutRequestedEvent> {
     
     private static final int START_SIZE = 100;
     private static final String ID_SEPARATOR = "@";
@@ -91,7 +91,7 @@ public class TimeoutController implements IListener<LogoutEvent> {
      *
      * @param event Event fired.
      */
-    public void handle( LogoutEvent event ) {
+    public void handle( LogoutRequestedEvent event ) {
         
         terminate();
         
