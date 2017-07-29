@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import com.github.thiagotgm.blakebot.common.LogoutManager;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
@@ -47,7 +48,7 @@ public class AdminModule implements IModule {
         dispatcher.unregisterListener( enforcer );
         
         TimeoutController controller = TimeoutController.getInstance();
-        dispatcher.unregisterListener( controller );
+        LogoutManager.getManager( client ).unregisterListener( controller );
         controller.terminate(); // Ensure timeouts are reverted.
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this );
@@ -62,9 +63,12 @@ public class AdminModule implements IModule {
         
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry );
+        
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.registerListener( enforcer );
-        dispatcher.registerListener( TimeoutController.getInstance() );
+        
+        LogoutManager.getManager( client ).registerListener( TimeoutController.getInstance() );
+        
         return true;
         
     }

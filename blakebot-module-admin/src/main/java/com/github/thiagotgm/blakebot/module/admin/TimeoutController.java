@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.LogoutEvent;
 
-import sx.blah.discord.api.events.EventSubscriber;
+import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
@@ -36,7 +36,7 @@ import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
 import sx.blah.discord.util.RequestBuffer;
 
-public class TimeoutController {
+public class TimeoutController implements IListener<LogoutEvent> {
     
     private static final int START_SIZE = 100;
     private static final String ID_SEPARATOR = "@";
@@ -89,10 +89,9 @@ public class TimeoutController {
     /**
      * Executes pending tasks before the bot logs out.
      *
-     * @param event
+     * @param event Event fired.
      */
-    @EventSubscriber
-    public void onLogout( LogoutEvent event ) {
+    public void handle( LogoutEvent event ) {
         
         terminate();
         
@@ -112,6 +111,7 @@ public class TimeoutController {
         }
         tasks.clear();
         timer.purge();
+        LOG.debug( "Terminated." );
         
     }
     

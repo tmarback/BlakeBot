@@ -103,7 +103,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
                 LOG.debug( "Closing console." );
                 if ( bot.isConnected() ) {
                     try {
-                        bot.terminate();
+                        bot.logout();
                     } catch ( DiscordException e ) {
                         // Failed to disconnect.
                         return;
@@ -132,7 +132,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             if ( bot.isConnected() ) {
                 // Disconnects the bot.
                 try {
-                    bot.terminate();
+                    bot.logout();
                 } catch ( DiscordException ex ) {
                     connectionButton.setEnabled( true );
                 }
