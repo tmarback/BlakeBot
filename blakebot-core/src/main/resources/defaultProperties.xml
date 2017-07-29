@@ -4,4 +4,7 @@
 <comment>Default values for bot properties.</comment>
 <entry key="width">1000</entry>
 <entry key="height">800</entry>
+<entry key="Log uptimes">false</entry>
+<entry key="Log downtimes">false</entry>
+<entry key="Log connection events">false</entry>
 </properties>

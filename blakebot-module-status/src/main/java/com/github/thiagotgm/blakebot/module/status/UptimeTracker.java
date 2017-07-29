@@ -28,6 +28,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.settings.Settings;
+
 import sx.blah.discord.api.events.Event;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
@@ -52,6 +54,10 @@ public class UptimeTracker {
     
     private static final long INITIAL_DISCONNECT_TIME = -2;
     private static final long NO_TIME = -1;
+    
+    private static final String LOG_UPTIMES_SETTING = "Log uptimes";
+    private static final String LOG_DOWNTIMES_SETTING = "Log downtimes";
+    private static final String LOG_CONNECTIONS_SETTING = "Log connection events";
 
     private long connectTime;
     private final TimeData uptimes;
@@ -70,9 +76,9 @@ public class UptimeTracker {
         connectTime = NO_TIME;
         disconnectTime = INITIAL_DISCONNECT_TIME;
         
-        boolean logUptimes = true; // TODO: Make this a setting
-        boolean logDowntimes = true;
-        boolean logConnection = true;
+        boolean logUptimes = Settings.getBooleanSetting( LOG_UPTIMES_SETTING );
+        boolean logDowntimes = Settings.getBooleanSetting( LOG_DOWNTIMES_SETTING );
+        boolean logConnection = Settings.getBooleanSetting( LOG_CONNECTIONS_SETTING );
         
         uptimes = new TimeData( "uptime", ( logUptimes ) ? UPTIME_FILE : null );
         downtimes = new TimeData( "downtime", ( logDowntimes ) ? DOWNTIME_FILE : null );
