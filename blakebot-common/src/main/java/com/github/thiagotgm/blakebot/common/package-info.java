@@ -16,9 +16,9 @@
  */
 
 /**
- * Shared class to keep track of settings across all modules.
+ * Shared classes used across all modules.
  * 
  * @author ThiagoTGM
  * @since 2016-12-28
  */
-package com.github.thiagotgm.blakebot.settings;
+package com.github.thiagotgm.blakebot.common;

@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.settings;
+package com.github.thiagotgm.blakebot.common;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

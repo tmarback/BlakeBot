@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.settings.Settings;
+import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
 import sx.blah.discord.api.ClientBuilder;

@@ -22,13 +22,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Paths;
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.settings.Settings;
+import com.github.thiagotgm.blakebot.common.Settings;
 
 import sx.blah.discord.api.events.Event;
 import sx.blah.discord.api.events.EventSubscriber;
@@ -51,6 +53,7 @@ public class UptimeTracker {
     private static final File DOWNTIME_FILE = Paths.get( "downtimes.log" ).toFile();
     private static final File CONNECTION_FILE = Paths.get( "connection.log" ).toFile();
     private static final String CONNECTION_LOG_SEPARATOR = " : ";
+    private static final DateFormat timestampFormatter = DateFormat.getDateTimeInstance();
     
     private static final long INITIAL_DISCONNECT_TIME = -2;
     private static final long NO_TIME = -1;
@@ -126,6 +129,8 @@ public class UptimeTracker {
         
         if ( connectionOutput != null ) {
             StringBuilder builder = new StringBuilder();
+            builder.append( timestampFormatter.format( new Date( time ) ) );
+            builder.append( CONNECTION_LOG_SEPARATOR );
             builder.append( time );
             builder.append( CONNECTION_LOG_SEPARATOR );
             if ( event instanceof DisconnectedEvent ) {
@@ -139,8 +144,10 @@ public class UptimeTracker {
             } else {
                 builder.append( "<?>" );
             }
+            builder.append( '\n' );
             try {
                 connectionOutput.write( builder.toString() );
+                connectionOutput.flush();
             } catch ( IOException e ) {
                 LOG.error( "Could not write to connection log file." );
             }
@@ -460,6 +467,7 @@ public class UptimeTracker {
             if ( output != null ) {
                 try {
                     output.write( String.valueOf( time ) );
+                    output.flush();
                 } catch ( IOException e ) {
                     LOG.error( errorString, e );
                 }

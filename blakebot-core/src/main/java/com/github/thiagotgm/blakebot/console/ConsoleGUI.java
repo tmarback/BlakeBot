@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.ConnectionStatusListener;
-import com.github.thiagotgm.blakebot.settings.Settings;
+import com.github.thiagotgm.blakebot.common.Settings;
 
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.RateLimitException;

@@ -28,7 +28,7 @@
         <version>0.2.1</version>
     </parent>
     
-    <artifactId>blakebot-settings</artifactId>
+    <artifactId>blakebot-common</artifactId>
     <version>1.0.0</version>
     
     <name>blakebot-settings</name>

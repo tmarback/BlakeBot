@@ -46,7 +46,7 @@
     
         <dependency>
             <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-settings</artifactId>
+            <artifactId>blakebot-common</artifactId>
             <version>1.0.0</version>
         </dependency>
         

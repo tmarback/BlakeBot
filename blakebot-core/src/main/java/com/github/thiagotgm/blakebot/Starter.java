@@ -24,8 +24,8 @@ import javax.swing.JOptionPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.blakebot.console.ConsoleGUI;
-import com.github.thiagotgm.blakebot.settings.Settings;
 
 /**
  * Starts up the bot and the control console.
