@@ -92,6 +92,8 @@ public class UptimeCommand {
         embedBuilder.appendField( "Median uptime", tracker.getMedianUptime().toString(), true );
         embedBuilder.appendField( "Highest uptime", tracker.getMaximumUptime().toString(), true );
         embedBuilder.appendField( "Lowest uptime", tracker.getMinimumUptime().toString(), true );
+        embedBuilder.appendField( "Uptime std. deviation", tracker.getUptimeStdDev().toString(),
+                true );
         embedBuilder.appendField( "Total uptime", tracker.getTotalUptime().toString(), true );
         
         embedBuilder.appendField( "Disconnects", String.valueOf( tracker.getDisconnectAmount() ), false );
@@ -127,6 +129,8 @@ public class UptimeCommand {
         embedBuilder.appendField( "Median downtime", tracker.getMedianDowntime().toString(), true );
         embedBuilder.appendField( "Highest downtime", tracker.getMaximumDowntime().toString(), true );
         embedBuilder.appendField( "Lowest downtime", tracker.getMinimumDowntime().toString(), true );
+        embedBuilder.appendField( "Downtime std. deviation", tracker.getDowntimeStdDev().toString(),
+                true );
         embedBuilder.appendField( "Total downtime", tracker.getTotalDowntime().toString(), true );
         
         long jvmUptime = ManagementFactory.getRuntimeMXBean().getUptime();

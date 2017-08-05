@@ -320,6 +320,17 @@ public class UptimeTracker {
         
     }
     
+    /**
+     * Retrieves the standard deviation of the bot uptime.
+     *
+     * @return The uptime standard deviation.
+     */
+    public synchronized Time getUptimeStdDev() {
+        
+        return uptimes.getStdDev();
+        
+    }
+    
     /* Methods for retrieving downtimes */
     
     /**
@@ -396,6 +407,17 @@ public class UptimeTracker {
     public synchronized Time getMedianDowntime() {
         
         return downtimes.getMedian();
+        
+    }
+    
+    /**
+     * Retrieves the standard deviation of the bot downtime.
+     *
+     * @return The downtime standard deviation.
+     */
+    public synchronized Time getDowntimeStdDev() {
+        
+        return downtimes.getStdDev();
         
     }
     
@@ -567,6 +589,28 @@ public class UptimeTracker {
                 median = ( sortedTimes.get( middle - 1 ) + sortedTimes.get( middle ) ) / 2;
             }
             return new Time( median );
+            
+        }
+        
+        /**
+         * Retrieves the standard deviation of this data set.
+         *
+         * @return The standard deviation. If there is no recorded time, returns the time interval 0.
+         */
+        public Time getStdDev() {
+            
+            if ( sortedTimes.size() == 0 ) {
+                return new Time( 0 ); // No recorded time.
+            }
+            long devSum = 0;
+            long mean = getMean().getTotalTime();
+            for ( long time : sortedTimes ) {
+                
+                devSum += Math.pow( time - mean, 2 );
+                
+            }
+            long stdDev = Math.round( Math.sqrt( devSum / sortedTimes.size() ) );
+            return new Time( stdDev );
             
         }
         
