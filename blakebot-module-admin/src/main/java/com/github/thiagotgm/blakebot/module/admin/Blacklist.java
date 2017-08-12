@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
@@ -57,13 +58,13 @@ import sx.blah.discord.handle.obj.IUser;
  */
 public class Blacklist {
     
-    private static final String FILENAME = "Blacklist.xml";
-    private static final String FILEPATH = Paths.get( "data" ).toString();
-    private static final String PATH = Paths.get( FILEPATH, FILENAME ).toString();
+    private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
+    
+    private static final Path DEFAULT_PATH = Paths.get( "data", "Blacklist.xml" );
     private static final String ROOT_TAG = "blacklist";
     private static final String RESTRICTION_TAG = "restriction";
     private static final String ID_ATTRIBUTE = "id";
-    private static final Map<Class<? extends IIDLinkedObject>, String> TAGS;
+    protected static final Map<Class<? extends IIDLinkedObject>, String> TAGS;
     
     static { // Make object-tag map.
         
@@ -74,12 +75,11 @@ public class Blacklist {
         tags.put( IUser.class, "user" );
         tags.put( IRole.class, "role" );
         
-        TAGS = Collections.unmodifiableMap( tags );
+        TAGS = Collections.synchronizedMap( tags );
         
     }
     
-    private static final Logger log = LoggerFactory.getLogger( Blacklist.class );
-    
+    private final Path filePath;
     private final Document document;
     private final Element root;
     
@@ -88,9 +88,14 @@ public class Blacklist {
     /**
      * Creates a new instance using data loaded from the blacklist file.<br>
      * If the file doesn't exist, starts a new document.
+     * 
+     * @param filePath The path of the file to load the blacklist from and save
+     *                 it in. If it does not exist, a new file and empty blacklist
+     *                 are created.
      */
-    private Blacklist() {
+    protected Blacklist( Path filePath ) {
         
+        this.filePath = filePath;
         Document document = loadDocument();
         this.document = ( document == null ) ? newDocument() : document;
         this.root = this.document.getRootElement(); 
@@ -105,7 +110,7 @@ public class Blacklist {
     public static Blacklist getInstance() {
         
         if ( instance == null ) {
-            instance = new Blacklist();
+            instance = new Blacklist( DEFAULT_PATH );
         }
         return instance;
         
@@ -132,7 +137,7 @@ public class Blacklist {
      */
     private synchronized Document loadDocument() {
         
-        File inputFile = new File( PATH );
+        File inputFile = filePath.toFile();
         if ( !inputFile.exists() ) {
             return null;
         }
@@ -140,7 +145,7 @@ public class Blacklist {
         try {
             return reader.read( inputFile );
         } catch ( DocumentException e ) {
-            log.error( "Failed to read blacklist document.", e );
+            LOG.error( "Failed to read blacklist document.", e );
             return null;
         }
         
@@ -151,22 +156,41 @@ public class Blacklist {
      */
     private synchronized void saveDocument() {
         
-        File folders = new File( FILEPATH );
-        if ( !folders.exists() ) {
-            folders.mkdirs();
+        /*
+        Path folders = filePath.getParent();
+        if ( folders != null ) {
+            try {
+                Files.createDirectories( folders );
+            } catch ( IOException e ) {
+                LOG.error( "Failed to create blacklist file directories.", e );
+                return;
+            }
         }
+        */
             
+        FileOutputStream output;
         try {
-            FileOutputStream  output = new FileOutputStream( new File( PATH ) );
-            OutputFormat format = OutputFormat.createPrettyPrint();
-            XMLWriter writer = new XMLWriter( output, format );
-            writer.write( document );
+            output = new FileOutputStream( filePath.toFile() );
         } catch ( FileNotFoundException e ) {
-            log.error( "Could not create or open blacklist file.", e );
+            LOG.error( "Could not create or open blacklist file.", e );
+            return;
+        }
+        
+        XMLWriter writer = null;
+        try {
+            OutputFormat format = OutputFormat.createPrettyPrint();
+            writer = new XMLWriter( output, format );
+            writer.write( document );
         } catch ( UnsupportedEncodingException e ) {
-            log.error( "Could not create XML writer.", e );
+            LOG.error( "Could not create XML writer.", e );
         } catch ( IOException e ) {
-            log.error( "Could not write to blacklist file.", e );
+            LOG.error( "Could not write to blacklist file.", e );
+        } finally {
+            try {
+                output.close();
+            } catch ( IOException e ) {
+                LOG.error( "Could not close blacklist output file.", e );
+            }
         }
         
     }
@@ -234,6 +258,44 @@ public class Blacklist {
     }
     
     /**
+     * Retrieves the descendant of a given element that represent the given sequence
+     * of objects.
+     *
+     * @param parent The parent element.
+     * @param path The sequence of objects that represent the descendants.
+     * @return The descendant. If no objects given, the parent.<br>
+     *         If there is not an element that corresponds to the given path, null.
+     */
+    private Element getDescendant( Element parent, IIDLinkedObject... path ) {
+        
+        Element element = parent;
+        for ( IIDLinkedObject obj : path ) {
+            
+            element = getChild( element, obj );
+            if ( element == null ) {
+                return null;
+            }
+            
+        }
+        return element;
+        
+    }
+    
+    /**
+     * Retrieves the descendant of the root element that represent the given sequence
+     * of objects.
+     *
+     * @param path The sequence of objects that represent the descendants.
+     * @return The descendant. If no objects given, the root.<br>
+     *         If there is not an element that corresponds to the given path, null.
+     */
+    protected Element getDescendant( IIDLinkedObject... path ) {
+        
+        return getDescendant( root, path );
+        
+    }
+    
+    /**
      * Retrieves the child of a given element that represents the given object.<br>
      * If the child doesn't exist, creates it.
      *
@@ -244,6 +306,43 @@ public class Blacklist {
     private Element getOrCreateChild( Element parent, IIDLinkedObject obj ) {
         
         return getOrCreateChild( parent, TAGS.get( obj.getClass() ), obj.getStringID() );
+        
+    }
+    
+    /**
+     * Retrieves the descendant of a given element that represent the given sequence
+     * of objects.<br>
+     * If the child doesn't exist, creates it (as well as intermediate descendants
+     * as necessary).
+     *
+     * @param parent The parent element.
+     * @param path The sequence of objects that represent the descendants.
+     * @return The descendant. If no objects given, the parent.
+     */
+    private Element getOrCreateDescendant( Element parent, IIDLinkedObject... path ) {
+        
+        Element element = parent;
+        for ( IIDLinkedObject obj : path ) {
+            
+            element = getOrCreateChild( element, obj );
+            
+        }
+        return element;
+        
+    }
+    
+    /**
+     * Retrieves the descendant of the root element that represent the given sequence
+     * of objects.<br>
+     * If the child doesn't exist, creates it (as well as intermediate descendants
+     * as necessary).
+     *
+     * @param path The sequence of objects that represent the descendants.
+     * @return The descendant. If no objects given, the root.
+     */
+    protected Element getOrCreateDescendant( IIDLinkedObject... path ) {
+        
+        return getOrCreateDescendant( root, path );
         
     }
     
@@ -334,7 +433,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IGuild guild ) {
         
-        Element element = getChild( root, guild );
+        Element element = getDescendant( guild );
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -351,13 +450,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, channel.getGuild() ), channel );
-        } catch ( NullPointerException e ) {
-            return new HashSet<>(); // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel );        
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -375,14 +468,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IUser user, IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( getChild( root, channel.getGuild() ),
-                    channel ), user );
-        } catch ( NullPointerException e ) {
-            return new HashSet<>(); // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel, user );
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -400,13 +486,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IUser user, IGuild guild ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, guild ), user );
-        } catch ( NullPointerException e ) {
-            return new HashSet<>(); // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( guild, user );        
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -424,14 +504,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IRole role, IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( getChild( root, channel.getGuild() ),
-                    channel ), role );
-        } catch ( NullPointerException e ) {
-            return new HashSet<>(); // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel, role );
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -449,13 +522,7 @@ public class Blacklist {
      */
     public Set<String> getRestrictions( IRole role, IGuild guild ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, guild ), role );
-        } catch ( NullPointerException e ) {
-            return new HashSet<>(); // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( guild, role );        
         if ( element != null ) {
             return getRestrictions( element );
         } else {
@@ -511,7 +578,7 @@ public class Blacklist {
      */
     public Set<String> getAllRestrictions( IUser user, IChannel channel ) {
         
-        Element channelElement = getChild( getChild( root, channel.getGuild() ), channel );
+        Element channelElement = getDescendant( channel.getGuild(), channel );
         return getAllRestrictions( channelElement, user, user.getRolesForGuild( channel.getGuild() ) );
         
     }
@@ -528,7 +595,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IGuild guild ) {
         
-        return addRestriction( getOrCreateChild( root, guild ), restriction );
+        return addRestriction( getOrCreateDescendant( guild ), restriction );
         
     }
     
@@ -542,7 +609,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IChannel channel ) {
         
-        Element element = getOrCreateChild( getOrCreateChild( root, channel.getGuild() ), channel );
+        Element element = getOrCreateDescendant( channel.getGuild(), channel );
         return addRestriction( element, restriction );
         
     }
@@ -558,8 +625,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IUser user, IChannel channel ) {
         
-        Element element = getOrCreateChild( getOrCreateChild( getOrCreateChild( root, channel.getGuild() ),
-                channel ), user );
+        Element element = getOrCreateDescendant( channel.getGuild(), channel, user );
         return addRestriction( element, restriction );
         
     }
@@ -575,7 +641,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IUser user, IGuild guild ) {
         
-        Element element = getOrCreateChild( getOrCreateChild( root, guild ), user );
+        Element element = getOrCreateDescendant( guild, user );
         return addRestriction( element, restriction );
         
     }
@@ -591,8 +657,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IRole role, IChannel channel ) {
         
-        Element element = getOrCreateChild( getOrCreateChild( getOrCreateChild( root, channel.getGuild() ),
-                channel ), role );
+        Element element = getOrCreateDescendant( channel.getGuild(), channel, role );
         return addRestriction( element, restriction );
         
     }
@@ -608,7 +673,7 @@ public class Blacklist {
      */
     public boolean addRestriction( String restriction, IRole role, IGuild guild ) {
         
-        Element element = getOrCreateChild( getOrCreateChild( root, guild ), role );
+        Element element = getOrCreateDescendant( guild, role );
         return addRestriction( element, restriction );
         
     }
@@ -625,7 +690,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IGuild guild ) {
         
-        Element element = getChild( root, guild );
+        Element element = getDescendant( guild );
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
@@ -644,13 +709,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, channel.getGuild() ), channel );
-        } catch ( NullPointerException e ) {
-            return false; // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel );
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
@@ -670,14 +729,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IUser user, IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( getChild( root, channel.getGuild() ),
-                    channel ), user );
-        } catch ( NullPointerException e ) {
-            return false; // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel, user );        
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
@@ -697,13 +749,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IUser user, IGuild guild ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, guild ), user );
-        } catch ( NullPointerException e ) {
-            return false; // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( guild, user );
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
@@ -723,14 +769,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IRole role, IChannel channel ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( getChild( root, channel.getGuild() ),
-                    channel ), role );
-        } catch ( NullPointerException e ) {
-            return false; // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( channel.getGuild(), channel, role );
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
@@ -750,13 +789,7 @@ public class Blacklist {
      */
     public boolean removeRestriction( String restriction, IRole role, IGuild guild ) {
         
-        Element element;
-        try {
-            element = getChild( getChild( root, guild ), role );
-        } catch ( NullPointerException e ) {
-            return false; // One of the parent elements does not exist.
-        }
-        
+        Element element = getDescendant( guild, role );
         if ( element != null ) {
             return removeRestriction( element, restriction );
         } else {
