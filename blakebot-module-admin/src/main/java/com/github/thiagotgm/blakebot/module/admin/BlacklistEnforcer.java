@@ -17,7 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,6 @@ import sx.blah.discord.handle.obj.IMessage;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RateLimitException;
 import sx.blah.discord.util.RequestBuffer;
 
 /**
@@ -42,10 +41,13 @@ import sx.blah.discord.util.RequestBuffer;
  */
 public class BlacklistEnforcer {
     
-    private static final Logger log = LoggerFactory.getLogger( BlacklistEnforcer.class );
+    private static final Logger LOG = LoggerFactory.getLogger( BlacklistEnforcer.class );
     
     private final Blacklist blacklist;
     
+    /**
+     * Constructs a new enforcer.
+     */
     public BlacklistEnforcer() {
         
         blacklist = Blacklist.getInstance();
@@ -66,22 +68,22 @@ public class BlacklistEnforcer {
         IGuild guild = message.getGuild();
         String content = message.getContent();
         
-        List<String> restrictions = blacklist.getAllRestrictions( author, channel );
-        log.trace( "Restrictions for author " + author.getName() + " in channel " + channel.getName() + " of guild " + 
-                guild.getName() + ": " + restrictions );
+        Set<String> restrictions = blacklist.getAllRestrictions( author, channel );
+        LOG.trace( "Restrictions for author \"{}\" in channel \"{}\" of guild \"{}\": {}.",
+                author.getName(), channel.getName(), guild.getName(), restrictions );
         for ( String restriction : restrictions ) {
             
             if ( content.contains( restriction ) ) {
-                log.debug( "Blacklist match: \"" + content + "\" from " + author.getName() + " in channel " +
-                        channel.getName() + " of guild " + guild.getName() );
+                LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\".",
+                        content, author.getName(), channel, guild.getName() );
                 RequestBuffer.request( () -> {
                     
-                    try {
+                    try { // Attempt to delete the message.
                         message.delete();
                     } catch ( MissingPermissionsException e ) {
-                        log.warn( "Does not have permissions to delete message.", e );
-                    } catch ( RateLimitException | DiscordException e ) {
-                        log.warn( "Failed to delete message.", e );
+                        LOG.debug( "Does not have permissions to delete message.", e );
+                    } catch ( DiscordException e ) {
+                        LOG.error( "Failed to delete message.", e );
                     }
                 
                 });
