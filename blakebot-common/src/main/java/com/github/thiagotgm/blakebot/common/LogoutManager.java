@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,29 +55,12 @@ public class LogoutManager implements IListener<LogoutRequestedEvent> {
     
     private static final Map<IDiscordClient, LogoutManager> managers = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger( LogoutManager.class );
-    private static final int THREAD_NUM = Runtime.getRuntime().availableProcessors() * 2;
-    private static ThreadGroup threads = new ThreadGroup( "LogoutManager" );
-    private static ThreadFactory factory = new ThreadFactory() {
-
-        private volatile int threadNum = 0; 
-        
-        @Override
-        public Thread newThread( Runnable r ) {
-
-            Thread thread = new Thread( threads, r,
-                    threads.getName() + " Queue Handler-" + threadNum++ );
-            thread.setUncaughtExceptionHandler( ( t, e ) -> {
+    private static final ThreadGroup threads = new ThreadGroup( "LogoutManager Queue Handler" );
+    private static final ExecutorService executor = AsyncTools.createFixedThreadPool( threads, ( t, e ) -> {
                 
                 LOG.error( "Uncaught exception thrown while processing logout queue.", e );
                 
             });
-            thread.setDaemon( true );
-            return thread;
-            
-        }
-        
-    };
-    private static final ExecutorService executor = Executors.newFixedThreadPool( THREAD_NUM, factory );
     
     private final IDiscordClient client;
     private final List<IListener<LogoutRequestedEvent>> listeners;
