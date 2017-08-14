@@ -18,9 +18,11 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
 import java.util.Set;
-
+import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.github.thiagotgm.blakebot.common.AsyncTools;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
@@ -43,6 +45,13 @@ public class BlacklistEnforcer {
     
     private static final Logger LOG = LoggerFactory.getLogger( BlacklistEnforcer.class );
     
+    private static final ThreadGroup threads = new ThreadGroup( "Blacklist Enforcer" );
+    private static final Executor executor = AsyncTools.createFixedThreadPool( threads, ( t, e ) -> {
+        
+        LOG.error( "Uncaught exception thrown while enforcing blacklist.", e );
+        
+    });
+    
     private final Blacklist blacklist;
     
     /**
@@ -63,34 +72,42 @@ public class BlacklistEnforcer {
     public void onMessageReceivedEvent( MessageReceivedEvent event ) {
         
         IMessage message = event.getMessage();
-        IUser author = message.getAuthor();
         IChannel channel = message.getChannel();
+        if ( channel.isPrivate() ) {
+            return; // Ignore private messages.
+        }
+        IUser author = message.getAuthor();
         IGuild guild = message.getGuild();
         String content = message.getContent();
         
-        Set<String> restrictions = blacklist.getAllRestrictions( author, channel );
-        LOG.trace( "Restrictions for author \"{}\" in channel \"{}\" of guild \"{}\": {}.",
-                author.getName(), channel.getName(), guild.getName(), restrictions );
-        for ( String restriction : restrictions ) {
+        // Check for match asynchronously.
+        executor.execute( () -> {
             
-            if ( content.contains( restriction ) ) {
-                LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\".",
-                        content, author.getName(), channel, guild.getName() );
-                RequestBuffer.request( () -> {
-                    
-                    try { // Attempt to delete the message.
-                        message.delete();
-                    } catch ( MissingPermissionsException e ) {
-                        LOG.debug( "Does not have permissions to delete message.", e );
-                    } catch ( DiscordException e ) {
-                        LOG.error( "Failed to delete message.", e );
-                    }
+            Set<String> restrictions = blacklist.getAllRestrictions( author, channel );
+            LOG.trace( "Restrictions for author \"{}\" in channel \"{}\" of guild \"{}\": {}.",
+                    author.getName(), channel.getName(), guild.getName(), restrictions );
+            for ( String restriction : restrictions ) {
                 
-                });
-                return;
+                if ( content.contains( restriction ) ) {
+                    LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\".",
+                            content, author.getName(), channel, guild.getName() );
+                    RequestBuffer.request( () -> {
+                        
+                        try { // Attempt to delete the message.
+                            message.delete();
+                        } catch ( MissingPermissionsException e ) {
+                            LOG.debug( "Does not have permissions to delete message.", e );
+                        } catch ( DiscordException e ) {
+                            LOG.error( "Failed to delete message.", e );
+                        }
+                    
+                    });
+                    return;
+                }
+                
             }
             
-        }
+        });
         
     }
 
