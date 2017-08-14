@@ -80,7 +80,7 @@ public class BlacklistCommand {
             usage = "{}blacklist|bl [server] <subcommand> <arguments>",
             ignorePrivate = true,
             ignorePublic = true,
-            subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME },
+            subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME, SERVER_MODIFIER_NAME },
             requiredPermissions = { Permissions.MANAGE_CHANNEL, Permissions.MANAGE_MESSAGES }
     )
     public void blacklistCommand( CommandContext context ) {
