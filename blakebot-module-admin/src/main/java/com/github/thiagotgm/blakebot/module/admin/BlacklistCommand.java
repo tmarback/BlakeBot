@@ -78,6 +78,8 @@ public class BlacklistCommand {
             description = "Manages the message blacklist. A subcommand must be used. "
                     + "The scope is channel-wide unless the 'server' modifier is used.",
             usage = "{}blacklist|bl [server] <subcommand> <arguments>",
+            ignorePrivate = true,
+            ignorePublic = true,
             subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME },
             requiredPermissions = { Permissions.MANAGE_CHANNEL, Permissions.MANAGE_MESSAGES }
     )
@@ -93,6 +95,8 @@ public class BlacklistCommand {
             description = "Sets the scope of the command to be server-wide "
                     + "instead of channel-wide.",
             usage = "{}blacklist|bl server <subcommand> <arguments>",
+            ignorePrivate = true,
+            ignorePublic = true,
             subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME },
             requiresParentPermissions = false,
             requiredGuildPermissions = { Permissions.MANAGE_SERVER, Permissions.MANAGE_MESSAGES }
@@ -194,6 +198,7 @@ public class BlacklistCommand {
             aliases = "add",
             description = "Adds a new blacklist entry.",
             usage = "{}blacklist|bl [server] add [user/role]... <entry> [entry]...",
+            ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
             failureHandler = FAILURE_HANDLER
@@ -279,6 +284,7 @@ public class BlacklistCommand {
             aliases = { "remove", "rm" },
             description = "Removes a blacklist entry.",
             usage = "{}blacklist|bl [server] remove|rm [user/role]... <entry> [entry]...",
+            ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
             failureHandler = FAILURE_HANDLER
@@ -366,6 +372,7 @@ public class BlacklistCommand {
             aliases = "list",
             description = "Lists blacklist entries.",
             usage = "{}blacklist|bl [server] list [user/role]...",
+            ignorePrivate = true,
             executeParent = true
     )
     public void blacklistListCommand( CommandContext context ) {
