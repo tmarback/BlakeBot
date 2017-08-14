@@ -17,17 +17,23 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.awt.Color;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
+import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.api.FailureReason;
+import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
+import com.github.thiagotgm.modular_commands.command.annotation.SuccessHandler;
 
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
@@ -37,28 +43,29 @@ import sx.blah.discord.util.MessageBuilder;
 /**
  * Commands that manage a word blacklist.
  *
- * @version 1.0
+ * @version 2.0
  * @author ThiagoTGM
  * @since 2017-02-07
  */
 public class BlacklistCommand {
     
+    private enum Scope { SERVER, CHANNEL }
+    
     private static final String NAME = "Blacklist";
+    private static final String SERVER_MODIFIER_NAME = "Server-wide blacklist";
     
     private static final String ADD_NAME = "Blacklist Add";
-    private static final String ADD_SERVER_NAME = "Blacklist Add (Server)";
-    private static final String ADD_CHANNEL_NAME = "Blacklist Add (Channel)";
-    
-    private static final String LIST_NAME = "Blacklist List";
-    private static final String LIST_SERVER_NAME = "Blacklist List (Server)";
-    private static final String LIST_CHANNEL_NAME = "Blacklist List (Channel)";
-    
     private static final String REMOVE_NAME = "Blacklist Remove";
-    private static final String REMOVE_SERVER_NAME = "Blacklist Remove (Server)";
-    private static final String REMOVE_CHANNEL_NAME = "Blacklist Remove (Channel)";
+    private static final String LIST_NAME = "Blacklist List";
+    
+    private static final String SUCCESS_HANDLER = "success";
+    private static final String FAILURE_HANDLER = "failure";
     
     private final Blacklist blacklist;
     
+    /**
+     * Constructs a new instance of the command.
+     */
     public BlacklistCommand() {
         
         blacklist = Blacklist.getInstance();
@@ -68,680 +75,517 @@ public class BlacklistCommand {
     @MainCommand(
             name = NAME,
             aliases = { "blacklist", "bl" },
-            description = "Manages the message blacklist. A subcommand must be used.",
-            usage = "{}blacklist|bl <subcommand>",
-            subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME }
+            description = "Manages the message blacklist. A subcommand must be used. "
+                    + "The scope is channel-wide unless the 'server' modifier is used.",
+            usage = "{}blacklist|bl [server] <subcommand> <arguments>",
+            subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME },
+            requiredPermissions = { Permissions.MANAGE_CHANNEL, Permissions.MANAGE_MESSAGES }
     )
     public void blacklistCommand( CommandContext context ) {
     
-        // Do nothing.
+        context.setHelper( Scope.CHANNEL );
+        
+    }
+    
+    @SubCommand(
+            name = SERVER_MODIFIER_NAME,
+            aliases = "server",
+            description = "Sets the scope of the command to be server-wide "
+                    + "instead of channel-wide.",
+            usage = "{}blacklist|bl server <subcommand> <arguments>",
+            subCommands = { ADD_NAME, LIST_NAME, REMOVE_NAME },
+            requiresParentPermissions = false,
+            requiredGuildPermissions = { Permissions.MANAGE_SERVER, Permissions.MANAGE_MESSAGES }
+            )
+    public void serverModifier( CommandContext context ) {
+        
+        context.setHelper( Scope.SERVER );
+        
+    }
+    
+    /* For editing the blacklist */
+    
+    /**
+     * Runs an operation on the full scope.
+     *
+     * @param operation The operation to run.
+     * @param entry The entry to run it with.
+     * @param message Where to put the result message in.
+     * @param successMessage The result message on a success.
+     * @param failureMessage The result message on a failure.
+     */
+    private void runOnScope( Predicate<String> operation, String entry,
+            StringBuilder message, String successMessage, String failureMessage ) {
+        
+        boolean success = operation.test( entry );
+        String resultMessage = ( success ) ? successMessage : failureMessage;
+        message.append( String.format( resultMessage, entry ) );
         
     }
     
     /**
-     * Obtains the complete restriction argument from a list of args.
+     * Runs an operation on certain users and roles.
      *
-     * @param args The list of args.
-     * @return The complete restriction argument.
+     * @param userOperation The operation to run on users.
+     * @param roleOperation The operation to run on roles.
+     * @param entry The entry to run them with.
+     * @param users The users to run it for.
+     * @param roles The roles to run it for.
+     * @param message Where to put the result message in.
+     * @param successMessage The result message on a success.
+     * @param failureMessage The result message on a failure.
      */
-    private String parseRestriction( List<String> args ) {
+    private void runOnUsersAndRoles( BiPredicate<IUser, String> userOperation, 
+            BiPredicate<IRole, String> roleOperation, String entry,
+            List<IUser> users, List<IRole> roles,
+            StringBuilder message, String successMessage, String failureMessage ) {
         
-        StringBuilder restriction = new StringBuilder();
-        for ( String arg : args ) {
-            
-            restriction.append( arg );
-            restriction.append( ' ' );
-            
-        }
-        restriction.deleteCharAt( restriction.length() - 1 );
-        return restriction.toString();
+        List<String> successes = new LinkedList<>();
+        List<String> failures = new LinkedList<>();
         
-    }
-    
-    /**
-     * Returns the list of mentions for a list of Users.
-     *
-     * @param users List of Users.
-     * @return List with a mention for each User.
-     */
-    private List<String> userMentions( List<IUser> users ) {       
-        
-        List<String> list = new LinkedList<>();
         for ( IUser user : users ) {
-            
-            list.add( user.mention().replace( "!", "" ) );
+            // Apply to users.
+            if ( userOperation.test( user, entry ) ) {
+                successes.add( user.mention() );
+            } else {
+                failures.add( user.mention() );
+            }
             
         }
-        return list;
+        
+        for ( IRole role : roles ) {
+            // Apply to roles.
+            if ( roleOperation.test( role, entry ) ) {
+                successes.add( role.mention() );
+            } else {
+                failures.add( role.mention() );
+            }
+            
+        }
+        
+        // Build message.
+        if ( !successes.isEmpty() ) {
+            message.append( String.format( successMessage, entry, String.join( ", ", successes ) ) );
+        }
+        if ( !failures.isEmpty() ) {
+            message.append( String.format( failureMessage, entry, String.join( ", ", failures ) ) );
+        }
         
     }
     
     /**
-     * Returns the list of mentions for a list of Roles.
+     * Runs an operation on a set of entries.
      *
-     * @param roles List of Roles.
-     * @return List with a mention for each Role.
+     * @param operation The operation to run.
+     * @param entries The entries to run on.
      */
-    private List<String> roleMentions( List<IRole> roles ) {       
+    private void runOnEntries( Consumer<String> operation, List<String> entries ) {
         
-        List<String> list = new LinkedList<>();
-        for ( IRole role : roles ) {
+        for ( String entry : entries ) { // Run operation on each entry.
             
-            list.add( role.mention().replace( "!", "" ) );
+            operation.accept( entry );
             
         }
-        return list;
         
     }
     
     @SubCommand(
             name = ADD_NAME,
             aliases = "add",
-            description = "Adds a new blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
-            usage = "{}blacklist|bl add <scope> <entry>",
-            subCommands = { ADD_SERVER_NAME, ADD_CHANNEL_NAME }
+            description = "Adds a new blacklist entry.",
+            usage = "{}blacklist|bl [server] add [user/role]... <entry> [entry]...",
+            executeParent = true,
+            successHandler = SUCCESS_HANDLER,
+            failureHandler = FAILURE_HANDLER
     )
-    public void blacklistAddCommand( CommandContext context ) {
+    public boolean blacklistAddCommand( CommandContext context ) {
         
-        // Do nothing.
-        
-    }
-    
-    @SubCommand(
-            name = ADD_SERVER_NAME,
-            aliases = "server",
-            description = "Adds a new blacklist entry that applies to the server where the " +
-                          "command is used.\nIf any users or roles are @mentioned, the entry will " +
-                          "only apply to them.",
-            usage = "{}blacklist|bl add server <entry> [@users] [@roles]"
-    )
-    public void blacklistAddServerCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-        
-        if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_MESSAGES ) ) {
-            return; // User does not have server-wide message management permissions.
+        Arguments args = new Arguments( context.getArguments() );
+        if ( args.getEntries().isEmpty() ) {
+            return false; // Missing any entries.
         }
         
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        args.removeAll( userMentions( users ) );
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        args.removeAll( roleMentions( roles ) );
+        Scope scope = (Scope) context.getHelper().get();
         
-        String message;
-        if ( args.isEmpty() ) {
-            message = "Please provide an entry to be added.";
+        Consumer<String> operation; // Set up operation to run.
+        StringBuilder message = new StringBuilder();
+        if ( args.getUsers().isEmpty() && args.getRoles().isEmpty() ) {
+            /* Scope-wide add */
+            Predicate<String> tempSetter = null;
+            switch ( scope ) {
+                
+                case CHANNEL:
+                    tempSetter = ( entry ) -> {
+                        return blacklist.addRestriction( entry, context.getChannel() );
+                    };
+                    break;
+                    
+                case SERVER:
+                    tempSetter = ( entry ) -> {
+                        return blacklist.addRestriction( entry, context.getGuild() );
+                    };
+                    break;
+                
+            }
+            final Predicate<String> setter = tempSetter;
+            operation = ( entry ) -> {
+                runOnScope( setter, entry, message, "Blacklisted `%s`!\n",
+                        "Failure: `%s` is already blacklisted.\n" );
+            };
         } else {
-            String restriction = parseRestriction( args );
-            if ( users.isEmpty() && roles.isEmpty() ) {
-                boolean success = blacklist.addRestriction( restriction, event.getMessage().getGuild() );
-                message = ( success ) ? ( "\u200BSuccessfully blacklisted \"" + restriction + "\" for this server!" ) :
-                                        ( "\u200BFailure: \"" + restriction + "\" is already blacklisted in this server." );
-            } else {
+            /* Add for specific users and roles. */
+            BiPredicate<IUser, String> tempUserSetter = null;
+            BiPredicate<IRole, String> tempRoleSetter = null;
+            switch ( scope ) {
                 
-                /* Adds restriction for each specified User. */
-                StringBuilder userSuccess = new StringBuilder();
-                StringBuilder userFailure = new StringBuilder();
-                for ( IUser user : users ) {
+                case CHANNEL:
+                    tempUserSetter = ( user, entry ) -> {
+                        return blacklist.addRestriction( entry, user, context.getChannel() );
+                    };
+                    tempRoleSetter = ( role, entry ) -> {
+                        return blacklist.addRestriction( entry, role, context.getChannel() );
+                    };
+                    break;
                     
-                    boolean success = blacklist.addRestriction( restriction, user, event.getMessage().getGuild() );
-                    if ( success ) {
-                        userSuccess.append( user.mention() + ", " );
-                    } else {
-                        userFailure.append( user.mention() + ", " );
-                    }
-                    
-                }
-                if ( userSuccess.length() > 0 ) {
-                    userSuccess.delete( userSuccess.length() - 2, userSuccess.length() - 1 );
-                }
-                if ( userFailure.length() > 0 ) {
-                    userFailure.delete( userFailure.length() - 2, userFailure.length() - 1 );
-                }
-                
-                /* Adds restriction for each specified Role. */
-                StringBuilder roleSuccess = new StringBuilder();
-                StringBuilder roleFailure = new StringBuilder();
-                for ( IRole role : roles ) {
-                    
-                    boolean success = blacklist.addRestriction( restriction, role, event.getMessage().getGuild() );
-                    if ( success ) {
-                        roleSuccess.append( role.mention() + ", " );
-                    } else {
-                        roleFailure.append( role.mention() + ", " );
-                    }
-                    
-                }
-                if ( roleSuccess.length() > 0 ) {
-                    roleSuccess.delete( roleSuccess.length() - 2, roleSuccess.length() - 1 );
-                }
-                if ( roleFailure.length() > 0 ) {
-                    roleFailure.delete( roleFailure.length() - 2, roleFailure.length() - 1 );
-                }
-                
-                message = "\u200B";
-                /* Adds successes to output message */
-                if ( ( userSuccess.length() > 0 ) || ( roleSuccess.length() > 0 )  ) {
-                    message += "Successfully blacklisted \"" + restriction + "\" for ";
-                    if ( userSuccess.length() > 0 ) {
-                        message += "users " + userSuccess;
-                    }
-                    if ( ( userSuccess.length() > 0 ) && ( roleSuccess.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleSuccess.length() > 0 ) {
-                        message += "roles " + roleSuccess;
-                    }
-                    message += " in this server!";
-                    
-                }
-                /* Adds failures to output message */
-                if ( ( userFailure.length() > 0 ) || ( roleFailure.length() > 0 )  ) {
-                    if ( !message.equals( "\u200B" ) ) {
-                        message += "\n";
-                    }
-                    message += "Failure: \"" + restriction + "\" is already blacklisted for ";
-                    if ( userFailure.length() > 0 ) {
-                        message += "users " + userFailure;
-                    }
-                    if ( ( userFailure.length() > 0 ) && ( roleFailure.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleFailure.length() > 0 ) {
-                        message += "roles " + roleFailure;
-                    }
-                    message += " in this server.";
-                    
-                }
+                case SERVER:
+                    tempUserSetter = ( user, entry ) -> {
+                        return blacklist.addRestriction( entry, user, context.getGuild() );
+                    };
+                    tempRoleSetter = ( role, entry ) -> {
+                        return blacklist.addRestriction( entry, role, context.getGuild() );
+                    };
+                    break;
                 
             }
-            
+            final BiPredicate<IUser, String> userSetter = tempUserSetter;
+            final BiPredicate<IRole, String> roleSetter = tempRoleSetter;
+            operation = ( entry ) -> {
+                runOnUsersAndRoles( userSetter, roleSetter, entry, 
+                        args.getUsers(), args.getRoles(), message,
+                        "Blacklisted `%s` for %s!\n",
+                        "Failure: `%s` is already blacklisted for %s.\n" );
+            };
         }
-        msgBuilder.withContent( message ).build();
-        
-    }
-    
-    @SubCommand(
-            name = ADD_CHANNEL_NAME,
-            aliases = "channel",
-            description = "Adds a new blacklist entry that applies to the channel where the " +
-                          "command is used.\nIf any users or roles are @mentioned, the entry will " +
-                          "only apply to them.",
-            usage = "{}blacklist|bl add channel <entry> [@users] [@roles]",
-            requiredPermissions = Permissions.MANAGE_MESSAGES
-    )
-    public void blacklistAddChannelCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-        
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        args.removeAll( userMentions( users ) );
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        args.removeAll( roleMentions( roles ) );
-        
-        String message;
-        if ( args.isEmpty() ) {
-            message = "Please provide an entry to be added.";
-        } else {
-            String restriction = parseRestriction( args );
-            if ( users.isEmpty() && roles.isEmpty() ) {
-                boolean success = blacklist.addRestriction( restriction, event.getMessage().getChannel() );
-                message = ( success ) ? ( "\u200BSuccessfully blacklisted \"" + restriction + "\" for this channel!" ) :
-                                        ( "\u200BFailure: \"" + restriction + "\" is already blacklisted in this channel." );
-            } else {
-                
-                /* Adds restriction for each specified User. */
-                StringBuilder userSuccess = new StringBuilder();
-                StringBuilder userFailure = new StringBuilder();
-                for ( IUser user : users ) {
-                    
-                    boolean success = blacklist.addRestriction( restriction, user, event.getMessage().getChannel() );
-                    if ( success ) {
-                        userSuccess.append( user.mention() + ", " );
-                    } else {
-                        userFailure.append( user.mention() + ", " );
-                    }
-                    
-                }
-                if ( userSuccess.length() > 0 ) {
-                    userSuccess.delete( userSuccess.length() - 2, userSuccess.length() - 1 );
-                }
-                if ( userFailure.length() > 0 ) {
-                    userFailure.delete( userFailure.length() - 2, userFailure.length() - 1 );
-                }
-                
-                /* Adds restriction for each specified Role. */
-                StringBuilder roleSuccess = new StringBuilder();
-                StringBuilder roleFailure = new StringBuilder();
-                for ( IRole role : roles ) {
-                    
-                    boolean success = blacklist.addRestriction( restriction, role, event.getMessage().getChannel() );
-                    if ( success ) {
-                        roleSuccess.append( role.mention() + ", " );
-                    } else {
-                        roleFailure.append( role.mention() + ", " );
-                    }
-                    
-                }
-                if ( roleSuccess.length() > 0 ) {
-                    roleSuccess.delete( roleSuccess.length() - 2, roleSuccess.length() - 1 );
-                }
-                if ( roleFailure.length() > 0 ) {
-                    roleFailure.delete( roleFailure.length() - 2, roleFailure.length() - 1 );
-                }
-                
-                message = "\u200B";
-                /* Adds successes to output message */
-                if ( ( userSuccess.length() > 0 ) || ( roleSuccess.length() > 0 )  ) {
-                    message += "Successfully blacklisted \"" + restriction + "\" for ";
-                    if ( userSuccess.length() > 0 ) {
-                        message += "users " + userSuccess;
-                    }
-                    if ( ( userSuccess.length() > 0 ) && ( roleSuccess.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleSuccess.length() > 0 ) {
-                        message += "roles " + roleSuccess;
-                    }
-                    message += " in this channel!";
-                    
-                }
-                /* Adds failures to output message */
-                if ( ( userFailure.length() > 0 ) || ( roleFailure.length() > 0 )  ) {
-                    if ( !message.equals( "\u200B" ) ) {
-                        message += "\n";
-                    }
-                    message += "Failure: \"" + restriction + "\" is already blacklisted for ";
-                    if ( userFailure.length() > 0 ) {
-                        message += "users " + userFailure;
-                    }
-                    if ( ( userFailure.length() > 0 ) && ( roleFailure.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleFailure.length() > 0 ) {
-                        message += "roles " + roleFailure;
-                    }
-                    message += " in this channel.";
-                    
-                }
-                
-            }
-            
-        }
-        msgBuilder.withContent( message ).build();
-        
-    }
-    
-    private String formatRestrictionList( List<String> list ) {
-        
-        StringBuilder builder = new StringBuilder();
-        for ( String restriction : list ) {
-            
-            builder.append( restriction );
-            builder.append( '\n' );
-            
-        }
-        if ( builder.length() > 0 ) {
-            builder.deleteCharAt( builder.length() - 1 );
-        } else {
-            builder.append( "\u200B\n\u200B" );
-        }
-        return builder.toString();
-        
-    }
-      
-    @SubCommand(
-            name = LIST_NAME,
-            aliases = "list",
-            description = "Lists blacklist entries. A scope must be specified.",
-            usage = "{}blacklist|bl list <scope>",
-            subCommands = { LIST_SERVER_NAME, LIST_CHANNEL_NAME }
-    )
-    public void blacklistListCommand( CommandContext context ) {
-        
-        // Do nothing.
-        
-    }
-    
-    @SubCommand(
-            name = LIST_SERVER_NAME,
-            aliases = "server",
-            description = "Lists entries that apply to the server where the " +
-                          "command is used.\nIf any users or roles are @mentioned, displays their " +
-                          "specific entries.",
-            usage = "{}blacklist|bl list server [@users] [@roles]"
-    )
-    public void blacklistListServerCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-       
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        
-        EmbedBuilder builder = new EmbedBuilder();
-        builder.withColor( Color.BLACK );
-        String restrictions;
-        IGuild guild = event.getMessage().getGuild();
-        if ( users.isEmpty() && roles.isEmpty() ) {
-            restrictions = formatRestrictionList( blacklist.getRestrictions( guild ) );
-            builder.appendField( "Server-wide blacklist", restrictions, false );
-        } else {
-            builder.withDescription( "In this server:" );
-            for ( IUser user : users ) {
-                
-                List<String> restrictionList = blacklist.getRestrictions( user, guild );
-                restrictions = formatRestrictionList( restrictionList );
-                builder.appendField( "Blacklist for " + user.getDisplayName( guild ), restrictions, false );
-                
-            }
-            for ( IRole role : roles ) {
-                
-                List<String> restrictionList = blacklist.getRestrictions( role, guild );
-                restrictions = formatRestrictionList( restrictionList );
-                builder.appendField( "Blacklist for " + role.getName(), restrictions, false );
-                
-            }
-        }
-        
-        msgBuilder.withEmbed( builder.build() ).build();
-        
-    }
-    
-    @SubCommand(
-            name = LIST_CHANNEL_NAME,
-            aliases = "channel",
-            description = "Lists entries that apply to the channel where the " +
-                          "command is used.\nIf any users or roles are @mentioned, displays their " +
-                          "specific entries.",
-            usage = "{}blacklist|bl list channel [@users] [@roles]"
-    )
-    public void blacklistListChannelCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-       
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        
-        EmbedBuilder builder = new EmbedBuilder();
-        builder.withColor( Color.BLACK );
-        String restrictions;
-        IChannel channel = event.getMessage().getChannel();
-        if ( users.isEmpty() && roles.isEmpty() ) {
-            List<String> restrictionList = blacklist.getRestrictions( channel );
-            restrictions = formatRestrictionList( restrictionList );
-            builder.appendField( "Channel-wide blacklist", restrictions, false );
-        } else {
-            builder.withDescription( "In this channel:" );
-            for ( IUser user : users ) {
-                
-                List<String> restrictionList = blacklist.getRestrictions( user, channel );
-                restrictions = formatRestrictionList( restrictionList );
-                builder.appendField( "Blacklist for " + user.getDisplayName( channel.getGuild() ), restrictions, false );
-                
-            }
-            for ( IRole role : roles ) {
-                
-                List<String> restrictionList = blacklist.getRestrictions( role, channel );
-                restrictions = formatRestrictionList( restrictionList );
-                builder.appendField( "Blacklist for " + role.getName(), restrictions, false );
-                
-            }
-        }
-        msgBuilder.withEmbed( builder.build() ).build();
+        runOnEntries( operation, args.getEntries() ); // Run on all entries.
+
+        message.deleteCharAt( message.length() - 1 ); // Remove last line break.
+        context.setHelper( message.toString() );
+        return true; // Finished adding.
         
     }
     
     @SubCommand(
             name = REMOVE_NAME,
             aliases = { "remove", "rm" },
-            description = "Removes a blacklist entry. A scope must be specified. Requires 'Manage Messages' permission.",
-            usage = "{}blacklist|bl remove|rm <scope> <entry>",
-            subCommands = { REMOVE_SERVER_NAME, REMOVE_CHANNEL_NAME }
+            description = "Removes a blacklist entry.",
+            usage = "{}blacklist|bl [server] remove|rm [user/role]... <entry> [entry]...",
+            executeParent = true,
+            successHandler = SUCCESS_HANDLER,
+            failureHandler = FAILURE_HANDLER
     )
-    public void blacklistRemoveCommand( CommandContext context ) {
+    public boolean blacklistRemoveCommand( CommandContext context ) {
         
-        // Do nothing.
+        Arguments args = new Arguments( context.getArguments() );
+        if ( args.getEntries().isEmpty() ) {
+            return false; // Missing any entries.
+        }
+        
+        Scope scope = (Scope) context.getHelper().get();
+        
+        Consumer<String> operation; // Set up operation to run.
+        StringBuilder message = new StringBuilder();
+        if ( args.getUsers().isEmpty() && args.getRoles().isEmpty() ) {
+            /* Scope-wide add */
+            Predicate<String> tempSetter = null;
+            switch ( scope ) {
+                
+                case CHANNEL:
+                    tempSetter = ( entry ) -> {
+                        return blacklist.addRestriction( entry, context.getChannel() );
+                    };
+                    break;
+                    
+                case SERVER:
+                    tempSetter = ( entry ) -> {
+                        return blacklist.addRestriction( entry, context.getGuild() );
+                    };
+                    break;
+                
+            }
+            final Predicate<String> setter = tempSetter;
+            operation = ( entry ) -> {
+                runOnScope( setter, entry, message, "Removed `%s` from the blacklist!\n",
+                        "Failure: `%s` is not blacklisted.\n" );
+            };
+        } else {
+            /* Add for specific users and roles. */
+            BiPredicate<IUser, String> tempUserSetter = null;
+            BiPredicate<IRole, String> tempRoleSetter = null;
+            switch ( scope ) {
+                
+                case CHANNEL:
+                    tempUserSetter = ( user, entry ) -> {
+                        return blacklist.addRestriction( entry, user, context.getChannel() );
+                    };
+                    tempRoleSetter = ( role, entry ) -> {
+                        return blacklist.addRestriction( entry, role, context.getChannel() );
+                    };
+                    break;
+                    
+                case SERVER:
+                    tempUserSetter = ( user, entry ) -> {
+                        return blacklist.addRestriction( entry, user, context.getGuild() );
+                    };
+                    tempRoleSetter = ( role, entry ) -> {
+                        return blacklist.addRestriction( entry, role, context.getGuild() );
+                    };
+                    break;
+                
+            }
+            final BiPredicate<IUser, String> userSetter = tempUserSetter;
+            final BiPredicate<IRole, String> roleSetter = tempRoleSetter;
+            operation = ( entry ) -> {
+                runOnUsersAndRoles( userSetter, roleSetter, entry, 
+                        args.getUsers(), args.getRoles(), message,
+                        "Removed `%s` from the blacklist for %s!\n",
+                        "Failure: `%s` is not blacklisted for %s.\n" );
+            };
+        }
+        runOnEntries( operation, args.getEntries() ); // Run on all entries.
+
+        message.deleteCharAt( message.length() - 1 ); // Remove last line break.
+        context.setHelper( message.toString() );
+        return true; // Finished adding.
         
     }
     
+    /* For displaying the blacklist */
+      
     @SubCommand(
-            name = REMOVE_SERVER_NAME,
-            aliases = "server",
-            description = "Removes an entry that applies to the server where the " +
-                          "command is used.\nIf any users or roles are @mentioned, removes from " +
-                          "their personal entries.",
-            usage = "{}blacklist|bl remove|rm server <entry> [@users] [@roles]"
+            name = LIST_NAME,
+            aliases = "list",
+            description = "Lists blacklist entries.",
+            usage = "{}blacklist|bl [server] list [user/role]...",
+            executeParent = true
     )
-    public void blacklistRemoveServerCommand( CommandContext context ) {
+    public void blacklistListCommand( CommandContext context ) {
         
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
+        Scope scope = (Scope) context.getHelper().get();
+        EmbedBuilder builder = new EmbedBuilder();
         
-        if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( Permissions.MANAGE_MESSAGES ) ) {
-            return; // User does not have server-wide message management permissions.
-        }
-        
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        args.removeAll( userMentions( users ) );
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        args.removeAll( roleMentions( roles ) );
-        
-        String message;
-        if ( args.isEmpty() ) {
-            message = "Please provide an entry to be removed.";
-        } else {
-            String restriction = parseRestriction( args );
-            if ( users.isEmpty() && roles.isEmpty() ) {
-                boolean success = blacklist.removeRestriction( restriction, event.getMessage().getGuild() );
-                message = ( success ) ? ( "\u200BSuccessfully removed \"" + restriction + "\" from this server's blacklist!" ) :
-                                        ( "\u200BFailure: \"" + restriction + "\" s not blacklisted in this server." );
-            } else {
+        List<Argument> args = context.getArguments();
+        if ( args.isEmpty() ) { // Scope-wide.
+            String text = null;
+            Set<String> restrictions = null;
+            switch ( scope ) {
                 
-                /* Adds restriction for each specified User. */
-                StringBuilder userSuccess = new StringBuilder();
-                StringBuilder userFailure = new StringBuilder();
-                for ( IUser user : users ) {
+                case CHANNEL:
+                    text = "Channel";
+                    restrictions = blacklist.getRestrictions( context.getChannel() );
+                    break;
                     
-                    boolean success = blacklist.removeRestriction( restriction, user, event.getMessage().getGuild() );
-                    if ( success ) {
-                        userSuccess.append( user.mention() + ", " );
-                    } else {
-                        userFailure.append( user.mention() + ", " );
-                    }
-                    
-                }
-                if ( userSuccess.length() > 0 ) {
-                    userSuccess.delete( userSuccess.length() - 2, userSuccess.length() - 1 );
-                }
-                if ( userFailure.length() > 0 ) {
-                    userFailure.delete( userFailure.length() - 2, userFailure.length() - 1 );
-                }
-                
-                /* Adds restriction for each specified Role. */
-                StringBuilder roleSuccess = new StringBuilder();
-                StringBuilder roleFailure = new StringBuilder();
-                for ( IRole role : roles ) {
-                    
-                    boolean success = blacklist.removeRestriction( restriction, role, event.getMessage().getGuild() );
-                    if ( success ) {
-                        roleSuccess.append( role.mention() + ", " );
-                    } else {
-                        roleFailure.append( role.mention() + ", " );
-                    }
-                    
-                }
-                if ( roleSuccess.length() > 0 ) {
-                    roleSuccess.delete( roleSuccess.length() - 2, roleSuccess.length() - 1 );
-                }
-                if ( roleFailure.length() > 0 ) {
-                    roleFailure.delete( roleFailure.length() - 2, roleFailure.length() - 1 );
-                }
-                
-                message = "\u200B";
-                /* Adds successes to output message */
-                if ( ( userSuccess.length() > 0 ) || ( roleSuccess.length() > 0 )  ) {
-                    message += "Successfully removed \"" + restriction + "\" for ";
-                    if ( userSuccess.length() > 0 ) {
-                        message += "users " + userSuccess;
-                    }
-                    if ( ( userSuccess.length() > 0 ) && ( roleSuccess.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleSuccess.length() > 0 ) {
-                        message += "roles " + roleSuccess;
-                    }
-                    message += " in this server!";
-                    
-                }
-                /* Adds failures to output message */
-                if ( ( userFailure.length() > 0 ) || ( roleFailure.length() > 0 )  ) {
-                    if ( !message.equals( "\u200B" ) ) {
-                        message += "\n";
-                    }
-                    message += "Failure: \"" + restriction + "\" is not blacklisted for ";
-                    if ( userFailure.length() > 0 ) {
-                        message += "users " + userFailure;
-                    }
-                    if ( ( userFailure.length() > 0 ) && ( roleFailure.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleFailure.length() > 0 ) {
-                        message += "roles " + roleFailure;
-                    }
-                    message += " in this server.";
-                    
-                }
+                case SERVER:
+                    text = "Server";
+                    restrictions = blacklist.getRestrictions( context.getGuild() );
+                    break;
                 
             }
+            String title = String.format( "%s-wide blacklist", text );
+            builder.appendField( title, String.join( "\n", restrictions ), false );
+        } else { // For specific users/roles.
+            String text = null;
+            Function<IUser, Set<String>> userGetter = null;
+            Function<IRole, Set<String>> roleGetter = null;
+            switch ( scope ) { // Set how to get restrictions for selected scope.
+                
+                case CHANNEL:
+                    text = "channel";
+                    userGetter = ( user ) -> {
+                        
+                        return blacklist.getRestrictions( user, context.getChannel() );
+                        
+                    };
+                    roleGetter = ( role ) -> {
+                        
+                        return blacklist.getRestrictions( role, context.getChannel() );
+                        
+                    };
+                    break;
+                    
+                case SERVER:
+                    text = "server";
+                    userGetter = ( user ) -> {
+                        
+                        return blacklist.getRestrictions( user, context.getGuild() );
+                        
+                    };
+                    roleGetter = ( role ) -> {
+                        
+                        return blacklist.getRestrictions( role, context.getGuild() );
+                        
+                    };
+                    break;
+                
+            }
+            builder.withDescription( String.format( "In this %s:", text ) );
             
+            for ( Argument arg : args ) { // Shows restrictions for each mention.
+                
+                String name;
+                Set<String> restrictions;
+                switch ( arg.getType() ) {
+                    
+                    case USER_MENTION:
+                        IUser user = (IUser) arg.getArgument();
+                        name = user.getDisplayName( context.getGuild() );
+                        restrictions = userGetter.apply( user );
+                        break;
+                        
+                    case ROLE_MENTION:
+                        IRole role = (IRole) arg.getArgument();
+                        name = role.getName();
+                        restrictions = roleGetter.apply( role );
+                        break;
+                        
+                    default: // Ignore non-mentions.
+                        continue;
+                    
+                }
+                builder.appendField( "Blacklist for " + name, String.join( "\n", restrictions ), false );
+                
+            }
         }
-        msgBuilder.withContent( message ).build();
+        context.getReplyBuilder().withEmbed( builder.build() ).build();
+        
+    }
+
+    /* Success and failure handlers */
+    
+    @SuccessHandler( SUCCESS_HANDLER )
+    public void successMessage( CommandContext context ) {
+        
+        String message = (String) context.getHelper().get();
+        context.getReplyBuilder().withContent( "\u200B" ).appendContent( message ).build();
         
     }
     
-    @SubCommand(
-            name = REMOVE_CHANNEL_NAME,
-            aliases = "channel",
-            description = "Removes an entry that applies to the channel where the " +
-                          "command is used.\nIf any users or roles are @mentioned, removes from " +
-                          "their personal entries.",
-            usage = "{}blacklist|bl remove|rm channel <entry> [@users] [@roles]",
-            requiredPermissions = Permissions.MANAGE_MESSAGES
-    )
-    public void blacklistRemoveChannelCommand( CommandContext context ) {
+    @FailureHandler( FAILURE_HANDLER )
+    public void failureMessage( CommandContext context, FailureReason reason ) {
         
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
+        MessageBuilder builder = context.getReplyBuilder().withContent( "\u200B" );
+        switch ( reason ) {
+            
+            case USER_MISSING_PERMISSIONS:
+                builder.appendContent( "You do not have the required permissions." );
+                break;
+                
+            case COMMAND_OPERATION_FAILED:
+                builder.appendContent( "Please specify at least one entry." );
+                break;
+                
+            default:
+                return; // Do nothing.
+            
+        }
+        builder.build();
         
-        // Extracts user and role specifiers.
-        List<IUser> users = event.getMessage().getMentions();
-        args.removeAll( userMentions( users ) );
-        List<IRole> roles = event.getMessage().getRoleMentions();
-        args.removeAll( roleMentions( roles ) );
+    }
+    
+    /* Helper for parsing the arguments */
+    
+    /**
+     * Encapsulates the arguments given to the command.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-12
+     */
+    private class Arguments {
         
-        String message;
-        if ( args.isEmpty() ) {
-            message = "Please provide an entry to be added.";
-        } else {
-            String restriction = parseRestriction( args );
-            if ( users.isEmpty() && roles.isEmpty() ) {
-                boolean success = blacklist.removeRestriction( restriction, event.getMessage().getChannel() );
-                message = ( success ) ? ( "\u200BSuccessfully removed \"" + restriction + "\" from this channel's blacklist!" ) :
-                                        ( "\u200BFailure: \"" + restriction + "\" is not blacklisted in this channel." );
-            } else {
+        private final List<IUser> users;
+        private final List<IRole> roles;
+        private final List<String> entries;
+        
+        /**
+         * Parses the arguments given to the command, splitting into
+         * mentioned users and roles and all text that came after.
+         *
+         * @param args The arguments received by the command.
+         */
+        public Arguments( List<Argument> args ) {
+            
+            /* Parse the target users and roles */
+            List<IUser> users = new LinkedList<>();
+            List<IRole> roles = new LinkedList<>();
+            int curr = 0;
+            mentionParser: while ( curr < args.size() ) {
                 
-                /* Adds restriction for each specified User. */
-                StringBuilder userSuccess = new StringBuilder();
-                StringBuilder userFailure = new StringBuilder();
-                for ( IUser user : users ) {
+                Argument argument = args.get( curr );
+                switch ( argument.getType() ) {
                     
-                    boolean success = blacklist.removeRestriction( restriction, user, event.getMessage().getChannel() );
-                    if ( success ) {
-                        userSuccess.append( user.mention() + ", " );
-                    } else {
-                        userFailure.append( user.mention() + ", " );
-                    }
-                    
-                }
-                if ( userSuccess.length() > 0 ) {
-                    userSuccess.delete( userSuccess.length() - 2, userSuccess.length() - 1 );
-                }
-                if ( userFailure.length() > 0 ) {
-                    userFailure.delete( userFailure.length() - 2, userFailure.length() - 1 );
-                }
-                
-                /* Adds restriction for each specified Role. */
-                StringBuilder roleSuccess = new StringBuilder();
-                StringBuilder roleFailure = new StringBuilder();
-                for ( IRole role : roles ) {
-                    
-                    boolean success = blacklist.removeRestriction( restriction, role, event.getMessage().getChannel() );
-                    if ( success ) {
-                        roleSuccess.append( role.mention() + ", " );
-                    } else {
-                        roleFailure.append( role.mention() + ", " );
-                    }
+                    case USER_MENTION:
+                        users.add( (IUser) argument.getArgument() );
+                        break;
+                        
+                    case ROLE_MENTION:
+                        roles.add( (IRole) argument.getArgument() );
+                        break;
+                        
+                    default: // Found first non-mention arg.
+                        break mentionParser;
                     
                 }
-                if ( roleSuccess.length() > 0 ) {
-                    roleSuccess.delete( roleSuccess.length() - 2, roleSuccess.length() - 1 );
-                }
-                if ( roleFailure.length() > 0 ) {
-                    roleFailure.delete( roleFailure.length() - 2, roleFailure.length() - 1 );
-                }
-                
-                message = "\u200B";
-                /* Adds successes to output message */
-                if ( ( userSuccess.length() > 0 ) || ( roleSuccess.length() > 0 )  ) {
-                    message += "Successfully removed \"" + restriction + "\" for ";
-                    if ( userSuccess.length() > 0 ) {
-                        message += "users " + userSuccess;
-                    }
-                    if ( ( userSuccess.length() > 0 ) && ( roleSuccess.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleSuccess.length() > 0 ) {
-                        message += "roles " + roleSuccess;
-                    }
-                    message += " in this channel!";
-                    
-                }
-                /* Adds failures to output message */
-                if ( ( userFailure.length() > 0 ) || ( roleFailure.length() > 0 )  ) {
-                    if ( !message.equals( "\u200B" ) ) {
-                        message += "\n";
-                    }
-                    message += "Failure: \"" + restriction + "\" is not blacklisted for ";
-                    if ( userFailure.length() > 0 ) {
-                        message += "users " + userFailure;
-                    }
-                    if ( ( userFailure.length() > 0 ) && ( roleFailure.length() > 0 )  ) {
-                        message += " and ";
-                    }
-                    if ( roleFailure.length() > 0 ) {
-                        message += "roles " + roleFailure;
-                    }
-                    message += " in this channel.";
-                    
-                }
+                curr++;
                 
             }
             
+            /* Parse the target expressions for the blacklist */
+            List<String> entries = new LinkedList<>();
+            while ( curr < args.size() ) {
+                
+                entries.add( args.get( curr++ ).getText() );
+                
+            }
+            
+            /* Store lists */
+            this.users = Collections.unmodifiableList( users );
+            this.roles = Collections.unmodifiableList( roles );
+            this.entries = Collections.unmodifiableList( entries );
+            
         }
-        msgBuilder.withContent( message ).build();
+        
+        /**
+         * Retrieves the target users.
+         *
+         * @return The users.
+         */
+        public List<IUser> getUsers() {
+            
+            return users;
+            
+        }
+        
+        /**
+         * Retrieves the target roles.
+         *
+         * @return The roles.
+         */
+        public List<IRole> getRoles() {
+            
+            return roles;
+            
+        }
+        
+        /**
+         * Retrieves the target text entries.
+         *
+         * @return The target entries.
+         */
+        public List<String> getEntries() {
+            
+            return entries;
+            
+        }
         
     }
 
