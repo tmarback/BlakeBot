@@ -253,9 +253,30 @@ public class Blacklist {
      */
     private Element getChild( Element parent, IIDLinkedObject obj ) {
         
-        return getChild( parent, TAGS.get( obj.getClass() ), obj.getStringID() );
+        Class<? extends IIDLinkedObject> objClass = obj.getClass();
+        if ( !TAGS.containsKey( objClass ) ) { // Not a supported class.
+            LOG.warn( "Given object class does not have a tag: {}", objClass.getName() );
+            return null;  
+        }
+        return getChild( parent, TAGS.get( objClass ), obj.getStringID() );
         
     }
+    
+    /**
+     * Retrieves the child of a given element that represents the given object.<br>
+     * If the child doesn't exist, creates it.
+     *
+     * @param parent Parent of the desired element.
+     * @param obj The object that the child should represent.
+     * @return The child of parent that represents the given object.
+     */
+    private Element getOrCreateChild( Element parent, IIDLinkedObject obj ) {
+        
+        return getOrCreateChild( parent, TAGS.get( obj.getClass() ), obj.getStringID() );
+        
+    }
+    
+    /* Helpers for traversing multiple elements at once */
     
     /**
      * Retrieves the descendant of a given element that represent the given sequence
@@ -296,16 +317,45 @@ public class Blacklist {
     }
     
     /**
-     * Retrieves the child of a given element that represents the given object.<br>
-     * If the child doesn't exist, creates it.
+     * Retrieves the descendant of a given element that represent the given sequence
+     * of objects.<br>
+     * If there is no descendant that corresponds to the full path, retrieves the
+     * one that corresponds to as much of it as possible (without skipping parts of
+     * the path). May be the given element itself.
      *
-     * @param parent Parent of the desired element.
-     * @param obj The object that the child should represent.
-     * @return The child of parent that represents the given object.
+     * @param parent The parent element.
+     * @param path The sequence of objects that represent the descendants.
+     * @return The farthest descendant found. If no objects given, the parent.
      */
-    private Element getOrCreateChild( Element parent, IIDLinkedObject obj ) {
+    private Element getMaxDescendant( Element parent, IIDLinkedObject... path ) {
         
-        return getOrCreateChild( parent, TAGS.get( obj.getClass() ), obj.getStringID() );
+        Element element = parent;
+        for ( IIDLinkedObject obj : path ) {
+            
+            Element child = getChild( element, obj );
+            if ( child == null ) {
+                return element;
+            }
+            element = child;
+            
+        }
+        return element;
+        
+    }
+    
+    /**
+     * Retrieves the descendant of the root element that represent the given sequence
+     * of objects.<br>
+     * If there is no descendant that corresponds to the full path, retrieves the
+     * one that corresponds to as much of it as possible (without skipping parts of
+     * the path). May be the root iself.
+     *
+     * @param path The sequence of objects that represent the descendants.
+     * @return The farthest descendant found. If no objects given, the root.
+     */
+    protected Element getMaxDescendant( IIDLinkedObject... path ) {
+        
+        return getMaxDescendant( root, path );
         
     }
     
@@ -578,8 +628,8 @@ public class Blacklist {
      */
     public Set<String> getAllRestrictions( IUser user, IChannel channel ) {
         
-        Element channelElement = getDescendant( channel.getGuild(), channel );
-        return getAllRestrictions( channelElement, user, user.getRolesForGuild( channel.getGuild() ) );
+        return getAllRestrictions( getMaxDescendant( channel.getGuild(), channel ),
+                user, user.getRolesForGuild( channel.getGuild() ) );
         
     }
     
