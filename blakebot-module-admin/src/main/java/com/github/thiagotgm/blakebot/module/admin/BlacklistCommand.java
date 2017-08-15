@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -307,13 +308,13 @@ public class BlacklistCommand {
                 
                 case CHANNEL:
                     tempSetter = ( entry ) -> {
-                        return blacklist.addRestriction( entry, context.getChannel() );
+                        return blacklist.removeRestriction( entry, context.getChannel() );
                     };
                     break;
                     
                 case SERVER:
                     tempSetter = ( entry ) -> {
-                        return blacklist.addRestriction( entry, context.getGuild() );
+                        return blacklist.removeRestriction( entry, context.getGuild() );
                     };
                     break;
                 
@@ -331,19 +332,19 @@ public class BlacklistCommand {
                 
                 case CHANNEL:
                     tempUserSetter = ( user, entry ) -> {
-                        return blacklist.addRestriction( entry, user, context.getChannel() );
+                        return blacklist.removeRestriction( entry, user, context.getChannel() );
                     };
                     tempRoleSetter = ( role, entry ) -> {
-                        return blacklist.addRestriction( entry, role, context.getChannel() );
+                        return blacklist.removeRestriction( entry, role, context.getChannel() );
                     };
                     break;
                     
                 case SERVER:
                     tempUserSetter = ( user, entry ) -> {
-                        return blacklist.addRestriction( entry, user, context.getGuild() );
+                        return blacklist.removeRestriction( entry, user, context.getGuild() );
                     };
                     tempRoleSetter = ( role, entry ) -> {
-                        return blacklist.addRestriction( entry, role, context.getGuild() );
+                        return blacklist.removeRestriction( entry, role, context.getGuild() );
                     };
                     break;
                 
@@ -366,6 +367,18 @@ public class BlacklistCommand {
     }
     
     /* For displaying the blacklist */
+    
+    /**
+     * Formats a restriction set for display.
+     *
+     * @param restrictions The restrictions to be formatted.
+     * @return The formatted list.
+     */
+    private String formatRestrictions( Collection<String> restrictions ) {
+        
+        return ( restrictions.isEmpty() ) ? "\u200B" : String.join( "\n", restrictions );
+        
+    }
       
     @SubCommand(
             name = LIST_NAME,
@@ -398,7 +411,7 @@ public class BlacklistCommand {
                 
             }
             String title = String.format( "%s-wide blacklist", text );
-            builder.appendField( title, String.join( "\n", restrictions ), false );
+            builder.appendField( title, formatRestrictions( restrictions ), false );
         } else { // For specific users/roles.
             String text = null;
             Function<IUser, Set<String>> userGetter = null;
@@ -458,7 +471,8 @@ public class BlacklistCommand {
                         continue;
                     
                 }
-                builder.appendField( "Blacklist for " + name, String.join( "\n", restrictions ), false );
+                builder.appendField( "Blacklist for " + name,
+                        formatRestrictions( restrictions ), false );
                 
             }
         }
