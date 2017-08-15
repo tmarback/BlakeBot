@@ -19,6 +19,8 @@ package com.github.thiagotgm.blakebot.module.admin;
 
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.regex.Pattern;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +53,7 @@ public class BlacklistEnforcer {
         LOG.error( "Uncaught exception thrown while enforcing blacklist.", e );
         
     });
+    private static final String PATTERN = "(?s)(?:.*\\s)?%s(?:\\s.*)?";
     
     private final Blacklist blacklist;
     
@@ -88,9 +91,9 @@ public class BlacklistEnforcer {
                     author.getName(), channel.getName(), guild.getName(), restrictions );
             for ( String restriction : restrictions ) {
                 
-                if ( content.contains( restriction ) ) {
+                if ( Pattern.matches( String.format( PATTERN, restriction ), content ) ) {
                     LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\".",
-                            content, author.getName(), channel, guild.getName() );
+                            content, author.getName(), channel.getName(), guild.getName() );
                     RequestBuffer.request( () -> {
                         
                         try { // Attempt to delete the message.
