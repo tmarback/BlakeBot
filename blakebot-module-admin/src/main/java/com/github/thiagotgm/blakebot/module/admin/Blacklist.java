@@ -22,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -42,6 +43,10 @@ import org.dom4j.io.XMLWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sx.blah.discord.handle.impl.obj.Channel;
+import sx.blah.discord.handle.impl.obj.Guild;
+import sx.blah.discord.handle.impl.obj.Role;
+import sx.blah.discord.handle.impl.obj.User;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -70,10 +75,21 @@ public class Blacklist {
         
         Map<Class<? extends IIDLinkedObject>, String> tags = new HashMap<>();
         
-        tags.put( IGuild.class, "guild" );
-        tags.put( IChannel.class, "channel" );
-        tags.put( IUser.class, "user" );
-        tags.put( IRole.class, "role" );
+        String guild = "guild";
+        tags.put( IGuild.class, guild );
+        tags.put( Guild.class, guild );
+        
+        String channel = "channel";
+        tags.put( IChannel.class, channel );
+        tags.put( Channel.class, channel );
+        
+        String user = "user";
+        tags.put( IUser.class, user );
+        tags.put( User.class, user );
+        
+        String role = "role";
+        tags.put( IRole.class, role );
+        tags.put( Role.class, role );
         
         TAGS = Collections.synchronizedMap( tags );
         
@@ -123,6 +139,7 @@ public class Blacklist {
      */
     private Document newDocument() {
         
+        LOG.info( "Creating new Blacklist document." );
         Document document = DocumentHelper.createDocument();
         document.addElement( ROOT_TAG );
         return document;
@@ -141,6 +158,7 @@ public class Blacklist {
         if ( !inputFile.exists() ) {
             return null;
         }
+        LOG.info( "Loading Blacklist document." );
         SAXReader reader = new SAXReader();
         try {
             return reader.read( inputFile );
@@ -156,9 +174,10 @@ public class Blacklist {
      */
     private synchronized void saveDocument() {
         
-        /*
+        LOG.debug( "Saving Blacklist document." );
+        
         Path folders = filePath.getParent();
-        if ( folders != null ) {
+        if ( folders != null ) { // Ensure folders exist.
             try {
                 Files.createDirectories( folders );
             } catch ( IOException e ) {
@@ -166,7 +185,6 @@ public class Blacklist {
                 return;
             }
         }
-        */
             
         FileOutputStream output;
         try {
@@ -244,6 +262,37 @@ public class Blacklist {
     /* Helpers for translating ID objects to elements */
     
     /**
+     * Retrieves the tag that represents an object of the given class.
+     *
+     * @param objClass The class of the object to be represented.
+     * @return The tag, or null if none found.
+     */
+    private String getTag( Class<? extends IIDLinkedObject> objClass ) {
+        
+        String tag = TAGS.get( objClass ); // Check class itself.
+        if ( tag != null ) { // Found tag.
+            return tag;
+        }
+        LOG.trace( "Class not recognized: {}. Looking at interfaces.",
+                objClass.getName() );
+        
+        /* Check if the class implements a recognized interface */
+        for ( Class<?> objInterface : objClass.getInterfaces() ) {
+           
+            if ( !IIDLinkedObject.class.isAssignableFrom( objInterface ) ) {
+                continue; // Not a subtype of IIDLinkedObject.
+            }
+            tag = TAGS.get( objInterface );
+            if ( tag != null ) { // Found tag.
+                return tag;
+            }
+            
+        }
+        return null;
+        
+    }
+    
+    /**
      * Retrieves the child of a given element that represents the given object.
      *
      * @param parent Parent of the desired element.
@@ -253,12 +302,13 @@ public class Blacklist {
      */
     private Element getChild( Element parent, IIDLinkedObject obj ) {
         
-        Class<? extends IIDLinkedObject> objClass = obj.getClass();
-        if ( !TAGS.containsKey( objClass ) ) { // Not a supported class.
-            LOG.warn( "Given object class does not have a tag: {}", objClass.getName() );
+        String tag = getTag( obj.getClass() );
+        if ( tag == null ) { // Not a supported class.
+            LOG.error( "Given object class does not have a tag: {}",
+                    obj.getClass().getName() );
             return null;  
         }
-        return getChild( parent, TAGS.get( objClass ), obj.getStringID() );
+        return getChild( parent, tag, obj.getStringID() );
         
     }
     
@@ -404,7 +454,7 @@ public class Blacklist {
      * @param element Element that contains the restrictions.
      * @return The list of restrictions in this element.
      */
-    private Set<String> getRestrictions( Element element ) {
+    protected Set<String> getRestrictions( Element element ) {
         
         Set<String> restrictions = new TreeSet<>();
         for ( Element restriction : element.elements( RESTRICTION_TAG ) ) {
@@ -425,7 +475,7 @@ public class Blacklist {
      * @return True if the restriction was added successfully. False if the restriction was
      *         already present in that element.
      */
-    private boolean addRestriction( Element element, String restriction ) {
+    protected boolean addRestriction( Element element, String restriction ) {
         
         for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
             
@@ -449,7 +499,7 @@ public class Blacklist {
      * @return true if the restriction was successfully removed. false if the restriction
      *         was not found on the given Element.
      */
-    private boolean removeRestriction( Element element, String restriction ) {
+    protected boolean removeRestriction( Element element, String restriction ) {
         
         for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
             
