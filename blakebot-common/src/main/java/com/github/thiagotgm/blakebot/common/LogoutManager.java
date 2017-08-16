@@ -31,6 +31,7 @@ import com.github.thiagotgm.blakebot.common.event.LogoutEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
+import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;

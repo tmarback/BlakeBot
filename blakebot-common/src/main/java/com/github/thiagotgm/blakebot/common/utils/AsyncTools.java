@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common;
+package com.github.thiagotgm.blakebot.common.utils;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ExecutorService;
