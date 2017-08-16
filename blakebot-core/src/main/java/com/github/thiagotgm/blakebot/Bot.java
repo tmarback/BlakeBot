@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.LogoutManager;
 import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 
 import sx.blah.discord.api.ClientBuilder;
@@ -72,7 +71,6 @@ public class Bot {
         }
         this.client.getModuleLoader().loadModule( new ModularCommandsModule() );
         listeners = new ArrayList<>();
-        LogoutManager.getManager( this.client ); // Ensure the logout manager was started.
         
     }
 
@@ -200,15 +198,13 @@ public class Bot {
 
     /**
      * Logs out the bot, disconnecting it from Discord.
-     * 
-     * @throws DiscordException if the logout failed.
      */
-    public void logout() throws DiscordException {
+    public void logout() {
 
         LOG.debug( "Disconnecting bot." );
         
         /* Send logout request */
-        client.getDispatcher().dispatch( new LogoutRequestedEvent( client ) );
+        LogoutManager.getManager( client ).logout();
 
     }
     

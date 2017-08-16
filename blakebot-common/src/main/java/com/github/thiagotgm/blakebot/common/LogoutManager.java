@@ -27,7 +27,6 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.event.LogoutEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
@@ -39,20 +38,17 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.util.DiscordException;
 
 /**
- * Logout manager that logs out a client after receiving a {@link LogoutEvent} from it, but only
- * after all the registered listeners have finished processing the logout event.
+ * Utility class that logs out a client, but only after all the registered listeners have
+ * finished processing the logout event.
  * <p>
  * Thus, provides a way to ensure that some objects that need to do cleanup BEFORE the connection
  * is cut are able to do so.
- * <p>
- * Objects that need to do cleanup but don't need the connection should be registered directly to
- * the client's dispatcher.
  *
- * @version 1.0
+ * @version 2.0
  * @author ThiagoTGM
  * @since 2017-07-29
  */
-public class LogoutManager implements IListener<LogoutRequestedEvent> {
+public class LogoutManager {
     
     private static final Map<IDiscordClient, LogoutManager> managers = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger( LogoutManager.class );
@@ -68,8 +64,6 @@ public class LogoutManager implements IListener<LogoutRequestedEvent> {
     
     /**
      * Constructs a new manager for the given client.
-     * <p>
-     * The manager is already registered to the client's dispatcher.
      *
      * @param client The client to manage logout for.
      */
@@ -77,8 +71,6 @@ public class LogoutManager implements IListener<LogoutRequestedEvent> {
         
         this.client = client;
         listeners = new LinkedList<>();
-        
-        client.getDispatcher().registerListener( this );
         
     }
     
@@ -123,16 +115,14 @@ public class LogoutManager implements IListener<LogoutRequestedEvent> {
     }
 
     /**
-     * On logout request, executes listener tasks then attempts to log out.
-     *
-     * @param event The event fired.
+     * Executes listener tasks then attempts to log out the client.
      */
-    @Override
-    public synchronized void handle( LogoutRequestedEvent event ) {
+    public synchronized void logout() {
 
         LOG.info( "Logout request received." );
         
         /* Executes logout queue */
+        LogoutRequestedEvent event = new LogoutRequestedEvent( client );
         List<Callable<Object>> tasks = new LinkedList<>();
         for ( IListener<LogoutRequestedEvent> listener : listeners ) { // Build queue.
             

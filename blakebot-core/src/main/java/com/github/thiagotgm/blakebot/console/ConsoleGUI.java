@@ -128,12 +128,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
                         }
                         
                     });
-                    try {
-                        bot.logout();
-                    } catch ( DiscordException e ) {
-                        // Failed to disconnect.
-                        return;
-                    }
+                    bot.logout(); // Attempt to logout.
                 } else { // Just shut down.
                     ConsoleGUI.this.setVisible( false );
                     ConsoleGUI.this.dispose();
