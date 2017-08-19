@@ -19,7 +19,10 @@ package com.github.thiagotgm.blakebot.common.utils;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Represents a directed tree graph, eg a graph where the same keys in different orders
@@ -259,8 +262,10 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * Value stored inside this Node.
          */
         protected V value;
-        
-        private final Map<K,Node> children;
+        /**
+         * Children nodes of this Node.
+         */
+        protected final Map<K,Node> children;
         
         {
             
@@ -324,6 +329,17 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
+         * Retrieves all the children of this node and the keys that are mapped to them.
+         *
+         * @return The children of this node and their keys.
+         */
+        public Set<Map.Entry<K,? extends Node>> getChildren() {
+            
+            return new HashSet<>( children.entrySet() );
+            
+        }
+        
+        /**
          * Gets the child of this node that corresponds to the given key.<br>
          * Creates it if it does not exist.
          *
@@ -375,6 +391,86 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             }
             
         }
+        
+        /**
+         * Compares this node with the specified object for equality. Returns <tt>true</tt>
+         * if the specified object is also a node, that contains the same value as this node,
+         * and whose children are equal to the children of this node.
+         *
+         * @param obj The object to compare to.
+         * @return <tt>true</tt> if the specified object is equal to this node, <tt>false</tt>
+         *         otherwise.
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            
+            if ( !( obj instanceof TreeGraph.Node ) ) {
+                return false; // Not a Node instance.
+            }
+            
+            @SuppressWarnings( "unchecked" )
+            Node node = (Node) obj;
+            if ( !( ( this.value == null ) ? node.value == null :
+                                             this.value.equals( node.value ) ) ) {
+                return false; // Different values.
+            }
+            
+            return this.getChildren().equals( node.getChildren() );
+            
+        }
+        
+        /**
+         * Calculates the hash code of the node. The code is calculated by calling
+         * {@link Objects#hash(Object...)} on the Node's {@link #getValue() value} and
+         * {@link #getChildren() children}.
+         * <p>
+         * Thus, if <tt>a</tt> and <tt>b</tt> are two instances of Node, <tt>a.equals(b)</tt>
+         * implies that <tt>a.hashCode()==b.hashCode()</tt>.
+         *
+         * @return The hash code for this TreeMap.
+         */
+        @Override
+        public int hashCode() {
+            
+            return Objects.hash( value, getChildren() );
+            
+        }
+        
+    }
+    
+    /**
+     * Compares this graph with the specified object for equality. Returns <tt>true</tt>
+     * if the specified object is also a TreeGraph, that contains the same values mapped
+     * to the same paths.
+     *
+     * @param obj The object to compare to.
+     * @return <tt>true</tt> if the specified object is equal to this graph, <tt>false</tt>
+     *         otherwise.
+     */
+    @Override
+    public boolean equals( Object obj ) {
+        
+        if ( !( obj instanceof TreeGraph ) ) {
+            return false; // Not a TreeGraph instance.
+        }
+        
+        @SuppressWarnings( "rawtypes" )
+        TreeGraph graph = (TreeGraph) obj;
+        return this.root.equals( graph.root );
+        
+    }
+    
+    /**
+     * Calculates the hash code of the graph. The hash code is the same as the hash code
+     * of the root node, that is, a composed value of all keys and values stored in
+     * this graph.
+     *
+     * @return The hash code of this TreeMap.
+     */
+    @Override
+    public int hashCode() {
+        
+        return root.hashCode();
         
     }
 
