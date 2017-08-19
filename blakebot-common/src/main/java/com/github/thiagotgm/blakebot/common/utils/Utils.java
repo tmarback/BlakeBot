@@ -69,23 +69,26 @@ public abstract class Utils {
      * Decodes a Serializable from a String.
      *
      * @param str The String to decode.
+     * @param <T> Type of the object being deserialized.
      * @return The decoded object, or null if decoding failed.
      */
-    public static Serializable stringToSerializable( String str ) {
+    public static <T extends Serializable> T stringToSerializable( String str ) {
         
         ByteArrayInputStream bytes;
         bytes = new ByteArrayInputStream( decoder.decode( str ) );
         try {
-            Object decoded = new ObjectInputStream( bytes ).readObject();
-            return (Serializable) decoded;
+            @SuppressWarnings( "unchecked" )
+            T decoded = (T) new ObjectInputStream( bytes ).readObject();
+            return decoded;
         } catch ( ClassNotFoundException e ) {
             LOG.error( "Class of encoded Serializable not found.", e );
-            return null;
         } catch ( IOException e ) {
             LOG.error( "Error on decoding Serializable from String.", e );
             e.printStackTrace();
-            return null;
+        } catch ( ClassCastException e ) {
+            LOG.error( "Deserialized object is not of the expected type.", e );
         }
+        return null; // Error encountered.
         
     }
     
@@ -111,11 +114,19 @@ public abstract class Utils {
      * Decodes an object that was encoded with {@link #encode(Object)}.
      *
      * @param str The String with the encoded object.
-     * @return The decoded object.
+     * @param <T> Type of the object being decoded.
+     * @return The decoded object, or null if decoding failed.
      */
-    public static Object decode( String str ) {
+    public static <T> T decode( String str ) {
         
-        return stringToSerializable( str );
+        try {
+            @SuppressWarnings( "unchecked" )
+            T obj = (T) stringToSerializable( str );
+            return obj;
+        } catch ( ClassCastException e ) {
+            LOG.error( "Decoded object is not of the expected type.", e );
+        }
+        return null;
         
     }
 

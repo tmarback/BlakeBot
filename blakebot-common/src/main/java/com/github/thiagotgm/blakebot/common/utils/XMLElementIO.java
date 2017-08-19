@@ -44,6 +44,7 @@ public abstract class XMLElementIO {
      *
      * @param in The input stream to read from.
      * @param objClass The class of the object being read.
+     * @param <T> The type of the element to be read.
      * @return The object that was read from the stream.
      * @throws IllegalArgumentException if the given class could not be instantiated through
      *                                  a no-arg constructor.
@@ -84,10 +85,11 @@ public abstract class XMLElementIO {
      * the metadata left by the write method.
      *
      * @param in The input stream to read from.
+     * @param <T> The type of the element to be read.
      * @return The object that was read from the stream.
      * @throws XMLStreamException if an error happened while parsing.
      */
-    static XMLElement read( XMLStreamReader in ) throws XMLStreamException {
+    static <T extends XMLElement> T read( XMLStreamReader in ) throws XMLStreamException {
         
         if ( ( in.next() != XMLStreamConstants.START_ELEMENT ) ||
                 in.getLocalName().equals( TAG ) ) { // Check start tag.
@@ -107,11 +109,15 @@ public abstract class XMLElementIO {
         
         @SuppressWarnings( "unchecked" )
         Class<? extends XMLElement> objClass = (Class<? extends XMLElement>) attributeClass;
-        XMLElement element;
+        T element;
         try {
-            element = read( in, objClass ); // Read object.
+            @SuppressWarnings( "unchecked" )
+            T obj = (T) read( in, objClass ); // Read object.
+            element = obj;
         } catch ( IllegalArgumentException e ) {
             throw new XMLStreamException( "Element class could not be instantiated.", e );
+        } catch ( ClassCastException e ) {
+            throw new XMLStreamException( "Element type is different from the expected type.", e );
         }
         
         if ( ( in.next() != XMLStreamConstants.END_ELEMENT ) ||
