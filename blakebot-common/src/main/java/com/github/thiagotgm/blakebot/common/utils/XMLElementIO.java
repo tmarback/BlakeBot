@@ -24,6 +24,11 @@ import javax.xml.stream.XMLStreamWriter;
 
 /**
  * Provides convenience methods for handling XML-ready objects.
+ * <p>
+ * Can only be used with XMLElement subclasses that declare a no-arg constructor,
+ * as {@link #read(XMLStreamReader, Class) reading} works by instantiating the class
+ * using the no-arg constructor then calling {@link XMLElement#read(XMLStreamReader)}
+ * on the created instance.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -102,7 +107,12 @@ public abstract class XMLElementIO {
         
         @SuppressWarnings( "unchecked" )
         Class<? extends XMLElement> objClass = (Class<? extends XMLElement>) attributeClass;
-        XMLElement element = read( in, objClass ); // Read object.
+        XMLElement element;
+        try {
+            element = read( in, objClass ); // Read object.
+        } catch ( IllegalArgumentException e ) {
+            throw new XMLStreamException( "Element class could not be instantiated.", e );
+        }
         
         if ( ( in.next() != XMLStreamConstants.END_ELEMENT ) ||
                 in.getLocalName().equals( TAG ) ) { // Check end tag.

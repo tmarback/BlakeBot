@@ -24,8 +24,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 /**
  * Type of object that can be stored in an XML format.
- * <p>
- * Instances of this class <b>MUST</b> specify a no-arg constructor.
  *
  * @version 1.0
  * @author ThiagoTGM
