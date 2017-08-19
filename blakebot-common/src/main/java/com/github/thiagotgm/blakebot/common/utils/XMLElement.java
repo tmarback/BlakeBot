@@ -47,5 +47,25 @@ public interface XMLElement extends Serializable {
      * @throws XMLStreamException if an error occurred while writing.
      */
     void write( XMLStreamWriter out ) throws XMLStreamException;
+    
+    /**
+     * Factory that creates instances of an XMLElement.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-19
+     * @param <T> The type of element that the factory creates.
+     */
+    @FunctionalInterface
+    interface Factory<T extends XMLElement> extends Serializable {
+        
+        /**
+         * Creates a new instance.
+         *
+         * @return A new instance.
+         */
+        T newInstance();
+        
+    }
 
 }
