@@ -295,6 +295,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
         }
         V value = cur.getValue(); // Store the value of the node of the full path.
+        cur.setValue( null ); // Delete its value.
         
         for ( int i = path.length - 1; i >= 0; i-- ) { // Cleans up any nodes that became irrelevant.
             
