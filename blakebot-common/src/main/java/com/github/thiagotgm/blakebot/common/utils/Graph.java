@@ -17,6 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils;
 
+import java.util.List;
+
 /**
  * Represents a graph that links sequences of keys to values.
  *
@@ -36,6 +38,16 @@ public interface Graph<K,V> {
      * @return The value linked to the given path, or null if there is none.
      */
     V get( K... path );
+    
+    /**
+     * Retrieves the values mapped to each step of the given sequence of keys.<br>
+     * Steps that do not exist or have no mapping are ignored.
+     *
+     * @param path The sequence of keys that map to the values.
+     * @return The values linked to each step of the given path, in the order that
+     *         the path is traversed (same order that the keys are given).
+     */
+    List<V> getAll( K...path );
     
     /**
      * Maps a value to a sequence of keys, replacing the value currently mapped
@@ -58,5 +70,5 @@ public interface Graph<K,V> {
      * @throws NullPointerException if the value given is null.
      */
     boolean add( V value, K... path ) throws NullPointerException;
-
+    
 }

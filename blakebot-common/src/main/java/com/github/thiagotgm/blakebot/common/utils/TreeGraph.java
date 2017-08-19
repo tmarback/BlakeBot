@@ -20,6 +20,8 @@ package com.github.thiagotgm.blakebot.common.utils;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -72,6 +74,18 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     public TreeGraph( V rootValue ) {
         
         this.root = new Node( rootValue );
+        
+    }
+    
+    /**
+     * Constructs a TreeGraph with no root.<br>
+     * The parameter is ignored.
+     *
+     * @param b Ignored.
+     */
+    protected TreeGraph( boolean b ) {
+        
+        this.root = null;
         
     }
     
@@ -201,10 +215,32 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     
     @Override
     @SafeVarargs
-    final public V get( K... path ) {
+    public final V get( K... path ) {
         
         Node node = getDescendant( path );
         return ( node == null ) ? null : node.getValue();
+        
+    }
+    
+    @Override
+    @SafeVarargs
+    public final List<V> getAll( K...path ) {
+        
+        Node cur = root;
+        List<V> values = new LinkedList<>();
+        for ( K key : path ) {
+            
+            cur = cur.getChild( key );
+            if ( cur != null ) { // Add child's value, if there is one.
+                if ( cur.getValue() != null ) {
+                    values.add( cur.getValue() );
+                }
+            } else {
+                break; // No child for this key.
+            }
+            
+        }
+        return values;
         
     }
     
