@@ -19,6 +19,8 @@ package com.github.thiagotgm.blakebot.common.utils;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -103,6 +105,29 @@ public class TreeGraphTester {
         
         assertEquals( "Incorrect value retrieved.", "overwrite", graph.get( "hi", "i", "am", "here" ) );
         assertEquals( "Incorrect value retrieved.", "new", graph.get( "new", "path" ) );
+        
+    }
+    
+    @Test
+    public void testGetAll() {
+        
+        String[] expected = { "value 2", "value 1", "value 3" };
+        assertEquals( "Incorrect list returned.", Arrays.asList( expected ),
+                graph.getAll( "hi", "i", "am", "here" ) );
+        
+        String[] expected2 = { "value 2", "value 1" };
+        assertEquals( "Incorrect list returned.", Arrays.asList( expected2 ),
+                graph.getAll( "hi", "i" ) );
+        
+    }
+    
+    @Test
+    public void testRemove() {
+        
+        assertEquals( "Wrong value returned by remove.", "value 1", graph.remove( "hi", "i" ) );
+        assertNull( "Value was not deleted.", graph.get( "hi", "i" ) );
+        assertNull( "Delete succeeded in deleted path.", graph.remove( "hi", "i" ) );
+        assertNull( "Deleted a value from an inexistent path.", graph.remove( "does", "not", "exist" ) );
         
     }
     
