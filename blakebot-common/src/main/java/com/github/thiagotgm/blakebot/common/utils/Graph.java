@@ -71,4 +71,13 @@ public interface Graph<K,V> {
      */
     boolean add( V value, K... path ) throws NullPointerException;
     
+    /**
+     * Removes a mapping from this graph.
+     *
+     * @param path The sequence of keys that map to the value to be removed.
+     * @return The removed value, or <tt>null</tt> if there is no mapping for the
+     *         given path.
+     */
+    V remove( K... path );
+    
 }

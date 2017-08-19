@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * Represents a directed tree graph, eg a graph where the same keys in different orders
@@ -277,6 +278,39 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
     }
     
+    @Override
+    @SafeVarargs
+    public final V remove( K... path ) {
+        
+        Stack<Node> nodes = new Stack<>();
+        Node cur = root;
+        for ( K key : path ) {
+            
+            if ( cur != null ) {
+                nodes.add( cur );
+            } else {
+                return null; // Path has no mapping.
+            }
+            cur = cur.getChild( key );
+            
+        }
+        V value = cur.getValue(); // Store the value of the node of the full path.
+        
+        for ( int i = path.length - 1; i >= 0; i-- ) { // Cleans up any nodes that became irrelevant.
+            
+            if ( ( cur.getValue() == null ) && cur.getChildren().isEmpty() ) {
+                cur = nodes.pop(); // Node has no value or children now, so delete it.
+                cur.removeChild( path[i] );
+            } else {
+                break; // Found a node that can't be deleted.
+            }
+            
+        }
+        
+        return value; // Retrieve deleted value.
+        
+    }
+    
     /**
      * A node in the tree. The exact behaviour of the graph can be changed by overriding
      * {@link #getChild(K)} and {@link #getOrCreateChild(K)}.
@@ -394,7 +428,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
-         * Sets the value of child note that corresponds to the given key to
+         * Sets the value of the child node that corresponds to the given key to
          * the given value. If there is no node that corresponds to the given key,
          * creates one.
          *
@@ -425,6 +459,18 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
                 setChild( key, value );
                 return true;
             }
+            
+        }
+        
+        /**
+         * Removes the child node that corresponds to the given key.
+         *
+         * @param key The key the child corresponds to.
+         * @return The deleted child, or null if there is no child for that key.
+         */
+        public Node removeChild( K key ) {
+            
+            return children.remove( key );
             
         }
         
