@@ -17,13 +17,14 @@
 
 package com.github.thiagotgm.blakebot.common.utils;
 
+import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 
@@ -34,8 +35,7 @@ import java.util.Stack;
  * <p>
  * The default behavior of the graph is to directly map each key to the next node in the
  * graph. Subclasses can alter this by creating a subclass of {@link Node} that overrides
- * {@link Node#getChild(K)} and {@link Node#getOrCreateChild(K)} and using an instance of
- * that subclass as root of the tree.
+ * desired behavior then using an instance of that subclass as root.
  * <p>
  * Can only be serialized properly if all the values stored are also Serializable.
  *
@@ -312,9 +312,40 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
     }
     
+    public Set<Entry<K,V>> entrySet() {
+        
+        return root.getEntries( new LinkedList<>() );
+        
+    }
+    
+    @Override
+    public boolean equals( Object obj ) {
+        
+        if ( !( obj instanceof Graph ) ) {
+            return false; // Not a Graph instance.
+        }
+        
+        Graph<?,?> graph = (Graph<?,?>) obj;
+        return this.entrySet().equals( graph.entrySet() );
+        
+    }
+    
+    @Override
+    public int hashCode() {
+        
+        int hash = 0;
+        for ( Entry<K,V> entry : entrySet() ) {
+            // Adds the hash of each entry.
+            hash += entry.hashCode();
+            
+        }
+        return hash;
+        
+    }
+    
     /**
-     * A node in the tree. The exact behaviour of the graph can be changed by overriding
-     * {@link #getChild(K)} and {@link #getOrCreateChild(K)}.
+     * A node in the tree. The exact behavior of the graph can be changed by overriding
+     * methods in a subclass then using the subclass as the root element.
      * <p>
      * Can only be serialized properly if the value stored is also Serializable.
      *
@@ -336,7 +367,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         /**
          * Children nodes of this Node.
          */
-        protected final Map<K,Node> children;
+        protected Map<K,Node> children;
         
         {
             
@@ -367,7 +398,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         /**
          * Retrieves the value of the node.
          *
-         * @return The value of the node, or <b>null</b> if none.
+         * @return The value of the node, or <tt>null</tt> if none.
          */
         public V getValue() {
             
@@ -379,10 +410,13 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * Sets the value of the node.
          *
          * @param value The new value of the node.
+         * @return The previous value of the node, or <tt>null</tt> if none.
          */
-        public void setValue( V value ) {
+        public V setValue( V value ) {
             
+            V oldValue = this.value;
             this.value = value;
+            return oldValue;
             
         }
         
@@ -390,7 +424,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * Gets the child of this node that corresponds to the given key.
          *
          * @param key The key to get the child for.
-         * @return The child that corresponds to the given key, or null if there is
+         * @return The child that corresponds to the given key, or <tt>null</tt> if there is
          *         no such child.
          */
         public Node getChild( K key ) {
@@ -435,10 +469,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          *
          * @param key The key to get the child for.
          * @param value The value to set for that child.
+         * @return The previous value in the child, or <tt>null</tt> if none.
          */
-        public final void setChild( K key, V value ) {
+        public final V setChild( K key, V value ) {
             
-            getOrCreateChild( key ).setValue( value );
+            return getOrCreateChild( key ).setValue( value );
             
         }
         
@@ -476,84 +511,171 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
-         * Compares this node with the specified object for equality. Returns <tt>true</tt>
-         * if the specified object is also a node, that contains the same value as this node,
-         * and whose children are equal to the children of this node.
+         * Retrieves the path-value mapping entries for this node and its children.
          *
-         * @param obj The object to compare to.
-         * @return <tt>true</tt> if the specified object is equal to this node, <tt>false</tt>
-         *         otherwise.
+         * @param path The path that maps to this node.
+         * @return The mapping entries for this node and its children.
          */
+        public Set<Entry<K,V>> getEntries( List<K> path ) {
+            
+            Set<Entry<K,V>> entries = new HashSet<>();
+            if ( getValue() != null ) { // This node represents a mapping.
+                entries.add( new TreeGraphEntry( path, this ) );
+            }
+            
+            /* Recursively gets entries for each child */
+            for ( Map.Entry<K,? extends Node> childEntry : getChildren() ) {
+                
+                path.add( childEntry.getKey() ); // Add child's key to path.
+                entries.addAll( childEntry.getValue().getEntries( path ) );
+                path.remove( path.size() - 1 ); // Removes the child's key afterwards.
+                
+            }
+            
+            return entries;
+            
+        }
+        
+        private void writeObject( java.io.ObjectOutputStream out ) throws IOException {
+            
+            if ( this.value != null ) {
+                out.writeBoolean( true ); // Mark that node has a value.
+                out.writeObject( this.value ); // Write the value.
+            } else {
+                out.writeBoolean( false ); // Mark that node does not have a value.
+            }
+            
+            /* Write children */
+            Set<Map.Entry<K,? extends Node>> children = getChildren();
+            out.writeInt( children.size() ); // Write amount of children.
+            for ( Map.Entry<K,? extends Node> child : children ) {
+                
+                out.writeObject( child.getKey() ); // Write child's key.
+                out.writeObject( child.getValue() ); // Write child.
+                
+            }
+            
+        }
+        
+        private void readObject( java.io.ObjectInputStream in )
+                throws IOException, ClassNotFoundException {
+            
+            if ( in.readBoolean() ) { // Check if a value is stored.
+                try {
+                    @SuppressWarnings( "unchecked" )
+                    V value = (V) in.readObject();
+                    this.value = value;
+                } catch ( ClassCastException e ) {
+                    throw new IOException( "Deserialized node value is not of the expected type.", e );
+                }
+            }
+            
+            /* Read children */
+            int childNum = in.readInt(); // Retrieve amount of children.
+            this.children = new HashMap<>();
+            for ( int i = 0; i < childNum; i++ ) { // Read each child.
+                
+                K key;
+                try { // Read key.
+                    @SuppressWarnings( "unchecked" )
+                    K tempKey = (K) in.readObject();
+                    key = tempKey;
+                } catch ( ClassCastException e ) {
+                    throw new IOException( "Deserialized node key is not of the expected type.", e );
+                }
+                Node child;
+                try { // Read child.
+                    @SuppressWarnings( "unchecked" )
+                    Node tempChild = (Node) in.readObject();
+                    child = tempChild;
+                } catch ( ClassCastException e ) {
+                    throw new IOException( "Deserialized child node is not of the expected type.", e );
+                }
+                children.put( key, child ); // Store child.
+                
+            }
+            
+        }
+        
+        @SuppressWarnings( "unused" )
+        private void readObjectNoData() throws ObjectStreamException {
+            
+            this.children = new HashMap<>();
+            this.value = null;
+            
+        }       
+        
+    }
+    
+    /**
+     * Represents an entry in the TreeGraph.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-20
+     */
+    protected class TreeGraphEntry implements Entry<K,V> {
+        
+        private final List<K> path;
+        private final Node node;
+        
+        /**
+         * Constructs a new entry for the given path that is linked to the given node.
+         *
+         * @param path The path of this entry.
+         * @param node The node that represents this entry.
+         */
+        public TreeGraphEntry( List<K> path, Node node ) {
+            
+            this.path = path;
+            this.node = node;
+            
+        }
+
+        @Override
+        public List<K> getPath() {
+
+            return path;
+            
+        }
+
+        @Override
+        public V getValue() {
+
+            return node.getValue();
+            
+        }
+
+        @Override
+        public V setValue( V value ) throws NullPointerException {
+
+            if ( value == null ) {
+                throw new NullPointerException( "Value cannot be null." );
+            }
+            
+            return node.setValue( value );
+            
+        }
+        
         @Override
         public boolean equals( Object obj ) {
             
-            if ( !( obj instanceof TreeGraph.Node ) ) {
-                return false; // Not a Node instance.
+            if ( !( obj instanceof Entry ) ) {
+                return false; // Not an Entry instance.
             }
             
-            @SuppressWarnings( "unchecked" )
-            Node node = (Node) obj;
-            if ( !( ( this.value == null ) ? node.value == null :
-                                             this.value.equals( node.value ) ) ) {
-                return false; // Different values.
-            }
-            
-            return this.getChildren().equals( node.getChildren() );
+            Entry<?,?> entry = (Entry<?,?>) obj;
+            return this.getPath().equals( entry.getPath() ) &&
+                   this.getValue().equals( entry.getValue() );
             
         }
         
-        /**
-         * Calculates the hash code of the node. The code is calculated by calling
-         * {@link Objects#hash(Object...)} on the Node's {@link #getValue() value} and
-         * {@link #getChildren() children}.
-         * <p>
-         * Thus, if <tt>a</tt> and <tt>b</tt> are two instances of Node, <tt>a.equals(b)</tt>
-         * implies that <tt>a.hashCode()==b.hashCode()</tt>.
-         *
-         * @return The hash code for this TreeMap.
-         */
         @Override
         public int hashCode() {
             
-            return Objects.hash( value, getChildren() );
+            return getPath().hashCode() ^ getValue().hashCode();
             
         }
-        
-    }
-    
-    /**
-     * Compares this graph with the specified object for equality. Returns <tt>true</tt>
-     * if the specified object is also a TreeGraph, that contains the same values mapped
-     * to the same paths.
-     *
-     * @param obj The object to compare to.
-     * @return <tt>true</tt> if the specified object is equal to this graph, <tt>false</tt>
-     *         otherwise.
-     */
-    @Override
-    public boolean equals( Object obj ) {
-        
-        if ( !( obj instanceof TreeGraph ) ) {
-            return false; // Not a TreeGraph instance.
-        }
-        
-        @SuppressWarnings( "rawtypes" )
-        TreeGraph graph = (TreeGraph) obj;
-        return this.root.equals( graph.root );
-        
-    }
-    
-    /**
-     * Calculates the hash code of the graph. The hash code is the same as the hash code
-     * of the root node, that is, a composed value of all keys and values stored in
-     * this graph.
-     *
-     * @return The hash code of this TreeMap.
-     */
-    @Override
-    public int hashCode() {
-        
-        return root.hashCode();
         
     }
 

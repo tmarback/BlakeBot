@@ -18,9 +18,12 @@
 package com.github.thiagotgm.blakebot.common.utils;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a graph that links sequences of keys to values.
+ * <p>
+ * Does not allow storing <tt>null</tt> values.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -47,37 +50,148 @@ public interface Graph<K,V> {
      * @return The values linked to each step of the given path, in the order that
      *         the path is traversed (same order that the keys are given).
      */
-    List<V> getAll( K...path );
+    List<V> getAll( K... path );
     
     /**
      * Maps a value to a sequence of keys, replacing the value currently mapped
-     * to the path, if any.
+     * to the path, if any.<br>
+     * Optional operation.
      *
      * @param value The value to be stored on the path.
      * @param path The sequence of keys that map to the value.
+     * @throws UnsupportedOperationException if the set operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
      */
-    void set( V value, K... path ) throws NullPointerException;
+    void set( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
     
     /**
      * Maps a value to a sequence of keys only if there is no current mapping
-     * for that path.
+     * for that path.<br>
+     * Optional operation.
      *
      * @param value The value to be stored on the path.
      * @param path The sequence of keys that map to the value.
      * @return true if the value was added to the graph.<br>
      *         false if there is already a value mapped to the given path.
+     * @throws UnsupportedOperationException if the add operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
      */
-    boolean add( V value, K... path ) throws NullPointerException;
+    boolean add( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
     
     /**
-     * Removes a mapping from this graph.
+     * Removes a mapping from this graph.<br>
+     * Optional operation.
      *
      * @param path The sequence of keys that map to the value to be removed.
      * @return The removed value, or <tt>null</tt> if there is no mapping for the
      *         given path.
+     * @throws UnsupportedOperationException if the remove operation is not supported by this map.
      */
-    V remove( K... path );
+    V remove( K... path ) throws UnsupportedOperationException;
+    
+    /**
+     * Returns a Set view of the path-value mappings in this graph. Changes to the set are <b>not</b>
+     * reflected in the backing graph.
+     * <p>
+     * If during an iteration through the set the graph is modified in any way other than an Entry's
+     * {@link Entry#setValue(V)} method, the rest of the iteration is undefined.
+     *
+     * @return A Set view of the Graph.
+     */
+    Set<Entry<K,V>> entrySet();
+    
+    /**
+     * Compares this graph with the specified object for equality. Returns <tt>true</tt>
+     * if the specified object is also a Graph, that contains the same values mapped
+     * to the same paths.<br>
+     * More formally, two graphs <tt>g1</tt> and <tt>g2</tt> are equal if
+     * <tt>g1.entrySet().equals(g2.entrySet())</tt>.
+     *
+     * @param obj The object to compare to.
+     * @return <tt>true</tt> if the specified object is equal to this graph, <tt>false</tt>
+     *         otherwise.
+     */
+    @Override
+    boolean equals( Object obj );
+    
+    /**
+     * Calculates the hash code of the graph. The hash code of a graph is defined to be the sum of the hash codes
+     * of each entry in the graph's entrySet() view. This ensures that <tt>g1.equals(g2)</tt> implies that
+     * <tt>g1.hashCode()==g2.hashCode()</tt> for any two graphs <tt>g1</tt> and <tt>g2</tt>.
+     *
+     * @return The hash code of this Graph.
+     */
+    @Override
+    int hashCode();
+    
+    /**
+     * A path-value entry in a Graph. The {@link Graph#entrySet()} method returns a Collection view
+     * of the graph with members of this class. The only way to obtain an entry is through the 
+     * iterator of that set.<br>
+     * If the backing graph is modified in any way other than the {@link #setValue(V)} method of an
+     * Entry, the behavior is undefined.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-20
+     * @param <K> Type of the keys that form a path.
+     * @param <V> Type of the values stored in the graph.
+     */
+    static interface Entry<K,V> {
+        
+        /**
+         * Retrieves the path represented by this Entry.
+         *
+         * @return The path of this entry. Will never be null, but may be empty.
+         */
+        List<K> getPath();
+        
+        /**
+         * Retrieves the value corresponding to this entry.
+         *
+         * @return The value of this entry.
+         */
+        V getValue();
+        
+        /**
+         * Sets the value of this entry (reflects on the backing Graph).<br>
+         * Optional operation.
+         *
+         * @param value The value to set for this entry.
+         * @return The previous value.
+         * @throws UnsupportedOperationException if the backing graph does not support the set operation.
+         * @throws NullPointerException if the value given is null.
+         */
+        V setValue( V value ) throws UnsupportedOperationException, NullPointerException;
+        
+        /**
+         * Compares the specified object with this entry for equality. Returns <tt>true</tt>
+         * if the given object is also an Entry and both entries correspond to the same mapping.
+         * That is, if they have both the same path and the same value.
+         *
+         * @param obj The object to compare to.
+         * @return <tt>true</tt> if this and the given object are entries that correspond to the
+         *         same mapping. <tt>false</tt> otherwise.
+         */
+        @Override
+        boolean equals( Object obj );
+        
+        /**
+         * Generates the hash code of this entry.<br>
+         * The hash code of a graph entry <tt>e</tt> is defined to be:
+         * <p>
+         * <code>
+         * e.getPath().hashCode() ^ e.getValue().hashCode()
+         * </code>
+         * <p>
+         * This ensures that <tt>e1.equals(e2)</tt> implies <tt>e1.hashCode()==e2.hashCode()</tt>
+         * for any two Entries <tt>e1</tt> and <tt>e2</tt>.
+         *
+         * @return The hash code of this entry.
+         */
+        @Override
+        int hashCode();
+        
+    }
     
 }
