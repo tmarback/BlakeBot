@@ -343,6 +343,16 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
     }
     
+    @Override
+    public String toString() {
+        
+        StringBuilder builder = new StringBuilder( entrySet().toString() );
+        builder.setCharAt( 0, '{' ); // Set ends of mapping list.
+        builder.setCharAt( builder.length() - 1, '}' );
+        return builder.toString();
+        
+    }
+    
     /**
      * A node in the tree. The exact behavior of the graph can be changed by overriding
      * methods in a subclass then using the subclass as the root element.
@@ -674,6 +684,13 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         public int hashCode() {
             
             return getPath().hashCode() ^ getValue().hashCode();
+            
+        }
+        
+        @Override
+        public String toString() {
+            
+            return String.format( "%s=%s", getPath().toString(), getValue().toString() );
             
         }
         
