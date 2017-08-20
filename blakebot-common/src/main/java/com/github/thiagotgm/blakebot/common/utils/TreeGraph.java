@@ -20,6 +20,8 @@ package com.github.thiagotgm.blakebot.common.utils;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -546,6 +548,12 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
         }
         
+        /**
+         * Writes the state of this instance to a stream.
+         *
+         * @param out The stream to write data to.
+         * @throws IOException if there is an error while writing the state.
+         */
         private void writeObject( java.io.ObjectOutputStream out ) throws IOException {
             
             if ( this.value != null ) {
@@ -567,6 +575,14 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
         }
         
+        /**
+         * Reads the state of this instance from a stream.
+         *
+         * @param in The stream to read data from.
+         * @throws IOException if there is an error while reading the state.
+         * @throws ClassNotFoundException if the class of a serialized value object cannot
+         *                                be found.
+         */
         private void readObject( java.io.ObjectInputStream in )
                 throws IOException, ClassNotFoundException {
             
@@ -607,13 +623,19 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
         }
         
+        /**
+         * Initializes instance data when this class is needed for deserialization
+         * but there is no data available.
+         *
+         * @throws ObjectStreamException if an error occurred.
+         */
         @SuppressWarnings( "unused" )
         private void readObjectNoData() throws ObjectStreamException {
             
             this.children = new HashMap<>();
             this.value = null;
             
-        }       
+        }
         
     }
     
@@ -637,7 +659,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          */
         public TreeGraphEntry( List<K> path, Node node ) {
             
-            this.path = path;
+            this.path = Collections.unmodifiableList( new ArrayList<>( path ) );
             this.node = node;
             
         }
