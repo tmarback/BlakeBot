@@ -32,23 +32,21 @@ import javax.xml.stream.XMLStreamWriter;
  * @author ThiagoTGM
  * @since 2017-08-18
  */
-public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
+public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T> {
 
     /**
      * UID that represents this class.
      */
-    private static final long serialVersionUID = -3139290597523050550L;
+    private static final long serialVersionUID = -3875253346127541487L;
 
     private static final String SERIALIZED_TAG = "serialized";
-    
-    private T obj;
     
     /**
      * Initializes a Serializer with no wrapped object.
      */
     public XMLSerializer() {
         
-        this.obj = null;
+        super();
         
     }
     
@@ -59,21 +57,7 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
      */
     public XMLSerializer( T obj ) {
         
-        this.obj = obj;
-        
-    }
-    
-    @Override
-    public T getObject() {
-        
-        return obj;
-        
-    }
-    
-    @Override
-    public void setObject( T obj ) {
-        
-        this.obj = obj;
+        super( obj );
         
     }
     
@@ -98,7 +82,7 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
         try {
             @SuppressWarnings( "unchecked" ) // Decode from string and check if castable
             T obj = (T) Utils.stringToSerializable( encoded );      // to expected type.
-            this.obj = obj;
+            setObject( obj );
         } catch ( ClassCastException e ) {
             throw new XMLStreamException( "Encoded object does not correspond to expected type." );
         }
@@ -108,37 +92,17 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
     @Override
     public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
         
-        if ( obj == null ) {
+        if ( getObject() == null ) {
             throw new IllegalStateException( "No object to write." );
         }
         
         out.writeStartElement( SERIALIZED_TAG );
         try { // Encode into a Serializable string.
-            out.writeCharacters( Utils.encode( obj ) );
+            out.writeCharacters( Utils.encode( getObject() ) );
         } catch ( NotSerializableException e ) {
             throw new XMLStreamException( "Element could not be serialized for encoding." );
         }
         out.writeEndElement();
-        
-    }
-    
-    @Override
-    public boolean equals( Object obj ) {
-        
-        if ( !( obj instanceof XMLWrapper ) ) {
-            return false; // Not a wrapper.
-        }
-        
-        XMLWrapper<?> wrapper = (XMLWrapper<?>) obj;
-        return this.getObject() == null ? wrapper.getObject() == null
-                : this.getObject().equals( wrapper.getObject() );
-        
-    }
-    
-    @Override
-    public int hashCode() {
-        
-        return getObject() == null ? 0 : getObject().hashCode();
         
     }
     

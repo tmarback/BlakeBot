@@ -27,6 +27,7 @@ import javax.xml.stream.XMLStreamWriter;
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-08-18
+ * @param <T> The type of object being wrapped.
  */
 public interface XMLWrapper<T> extends XMLElement {
     
