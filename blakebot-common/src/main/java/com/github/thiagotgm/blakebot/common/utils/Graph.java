@@ -161,17 +161,36 @@ public interface Graph<K,V> {
      * @version 1.0
      * @author ThiagoTGM
      * @since 2017-08-20
-     * @param <K> Type of the keys that form a path.
+     * @param <K> Type of the keys that form the path.
      * @param <V> Type of the values stored in the graph.
      */
     static interface Entry<K,V> {
         
         /**
-         * Retrieves the path represented by this Entry.
+         * Retrieves the path represented by this Entry.<br>
+         * The returned list is unmodifiable.
          *
          * @return The path of this entry. Will never be null, but may be empty.
          */
         List<K> getPath();
+        
+        /**
+         * Retrieves the path represented by this Entry, stored in an array.<br>
+         * Changes to the returned array are not reflected on the entry.
+         * <p>
+         * Convenience method for using the path directly into a Graph's vararg methods.
+         *
+         * @return An array containing the path of this entry. Will never be null, but may
+         *         be empty.
+         * @see #getPath()
+         */
+        default K[] getPathArray() {
+            
+            List<K> path = getPath();
+            K[] array = (K[]) new Object[ path.size() ];
+            return path.toArray( array );
+            
+        }
         
         /**
          * Retrieves the value corresponding to this entry.

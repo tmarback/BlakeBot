@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -318,7 +319,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @Override
     public Set<Entry<K,V>> entrySet() {
         
-        List<Entry<K,V>> entries = new ArrayList<>( size() );
+        Collection<Entry<K,V>> entries = new ArrayList<>( size() );
         root.getEntries( entries, new Stack<>() ); // Get entries.
         return new HashSet<>( entries ); // Store in a set and return.
         
@@ -543,14 +544,13 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
         /**
          * Retrieves the path-value mapping entries for this node and its children,
-         * placing them into the given entry list.
+         * placing them into the given entry collection.
          *
-         * @param entries The list to place the entries in.
+         * @param entries The collection to place the entries in.
          * @param path The path that maps to this node, where the bottom of the stack is
          *             the beginning of the path.
-         * @return The mapping entries for this node and its children.
          */
-        public void getEntries( List<Entry<K,V>> entries, Stack<K> path ) {
+        public void getEntries( Collection<Entry<K,V>> entries, Stack<K> path ) {
             
             if ( getValue() != null ) { // This node represents a mapping.
                 entries.add( new TreeGraphEntry( path, this ) );
