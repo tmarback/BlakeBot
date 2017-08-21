@@ -30,7 +30,7 @@ import org.junit.Test;
  * @author ThiagoTGM
  * @since 2017-08-19
  */
-public class TreeGraphTester {
+public class TreeGraphTest {
     
     private TreeGraph<String,String> graph;
 
