@@ -122,6 +122,26 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
         
     }
     
+    @Override
+    public boolean equals( Object obj ) {
+        
+        if ( !( obj instanceof XMLWrapper ) ) {
+            return false; // Not a wrapper.
+        }
+        
+        XMLWrapper<?> wrapper = (XMLWrapper<?>) obj;
+        return this.getObject() == null ? wrapper.getObject() == null
+                : this.getObject().equals( wrapper.getObject() );
+        
+    }
+    
+    @Override
+    public int hashCode() {
+        
+        return getObject() == null ? 0 : getObject().hashCode();
+        
+    }
+    
     /**
      * Creates a wrapper factory that produces instances of this class.
      *

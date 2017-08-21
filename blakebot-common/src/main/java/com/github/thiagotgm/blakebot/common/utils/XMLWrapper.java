@@ -48,7 +48,7 @@ public interface XMLWrapper<T> extends XMLElement {
      * Reads an object from the given XML stream, wrapping it.
      */
     @Override
-    public abstract void read( XMLStreamReader in ) throws XMLStreamException;
+    void read( XMLStreamReader in ) throws XMLStreamException;
 
     /**
      * Writes the wrapped object to a stream.
@@ -56,8 +56,40 @@ public interface XMLWrapper<T> extends XMLElement {
      * @throws IllegalStateException if there is no object currently wrapped.
      */
     @Override
-    public abstract void write( XMLStreamWriter out )
+    void write( XMLStreamWriter out )
             throws XMLStreamException, IllegalStateException;
+    
+    /**
+     * Determines if the given object is equal to this. Returns <tt>true</tt> if the given
+     * object is also an XMLWrapper, and it wraps the same object. That is, two XML wrappers
+     * <tt>w1</tt> and <tt>w2</tt> are equal if:
+     * <p>
+     * <code>
+     * w1.getObject()==null ? w2.getObject()==null : w1.getObject().equals(w2.getObject())
+     * </code>
+     *
+     * @param obj The object to check for equality.
+     * @return <tt>true</tt> if the given object is an XMLWrapper that wraps the same object
+     *         as this wrapper. <tt>false</tt> otherwise.
+     */
+    @Override
+    boolean equals( Object obj );
+    
+    /**
+     * Calculates the hash code of this wrapper. The hash code of a wrapper is defined as the
+     * same hash code of the object it wraps, or 0 if it does not wrap any object. That is:
+     * <p>
+     * <code>
+     * getObject()==null ? 0 : getObject().hashCode()
+     * </code>
+     * <p>
+     * This ensures that <tt>w1.equals(w2)</tt> implies <tt>w1.hashCode()==w2.hashCode()</tt>
+     * for any two XMLWrappers <tt>w1</tt> and <tt>w2</tt>.
+     *
+     * @return The hash code of the wrapper.
+     */
+    @Override
+    int hashCode();
     
     /**
      * Factory that creates instances of a wrapper for a certain type

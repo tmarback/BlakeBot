@@ -212,8 +212,13 @@ public interface Graph<K,V> {
         
         /**
          * Compares the specified object with this entry for equality. Returns <tt>true</tt>
-         * if the given object is also an Entry and both entries correspond to the same mapping.
-         * That is, if they have both the same path and the same value.
+         * if the given object is also an Entry and both entries represent the same mapping.
+         * Two entries <tt>e1</tt> and <tt>e2</tt> represent the same mapping if they have both
+         * the same path and the same value:
+         * <p>
+         * <code>
+         * e1.getPath().equals(e2.getPath()) && e1.getValue().equals(e2.getValue())
+         * </code>
          *
          * @param obj The object to compare to.
          * @return <tt>true</tt> if this and the given object are entries that correspond to the
