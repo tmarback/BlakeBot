@@ -60,6 +60,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     protected Node root;
     
     /**
+     * How many mappings are stored in this graph.
+     */
+    protected int nMappings;
+    
+    /**
      * Constructs a TreeGraph with an empty root (the root node exists, but is empty).<br>
      * Same as calling {@link #TreeGraph(V)} with argument <b>null</b>.
      */
@@ -73,22 +78,12 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * Constructs a TreeGraph where the root contains the given value.
      *
      * @param rootValue The value to be stored in the root of the tree.
+     *                  If <tt>null</tt>, no value is stored in the root.
      */
     public TreeGraph( V rootValue ) {
         
         this.root = new Node( rootValue );
-        
-    }
-    
-    /**
-     * Constructs a TreeGraph with no root.<br>
-     * The parameter is ignored.
-     *
-     * @param b Ignored.
-     */
-    protected TreeGraph( boolean b ) {
-        
-        this.root = null;
+        this.nMappings = ( rootValue == null ) ? 0 : 1;
         
     }
     
@@ -249,13 +244,17 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     
     @Override
     @SafeVarargs
-    public final void set( V value, K... path ) throws NullPointerException {
+    public final V set( V value, K... path ) throws NullPointerException {
         
         if ( value == null ) {
             throw new NullPointerException( "Value cannot be null." );
         }
         
-        getOrCreateDescendant( path ).setValue( value );
+        V old = getOrCreateDescendant( path ).setValue( value );
+        if ( old == null ) { // There wasn't a mapping to this path yet,
+            nMappings++;     // so a new mapping was added.
+        }
+        return old;
         
     }
     
@@ -267,15 +266,12 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             throw new NullPointerException( "Value cannot be null." );
         }
         
-        Node node = getDescendant( path );
-        if ( node != null ) { // Node already exists.
-            if ( node.getValue() != null ) {
-                return false; // Already has an element.
-            }
-        } else { // Node does not exist.
-            node = getOrCreateDescendant( path );
+        Node node = getOrCreateDescendant( path );
+        if ( node.getValue() != null ) {
+            return false; // Already has a value.
         }
         node.setValue( value );
+        nMappings++; // A mapping was added.
         return true;
         
     }
@@ -296,7 +292,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             cur = cur.getChild( key );
             
         }
+        
         V value = cur.getValue(); // Store the value of the node of the full path.
+        if ( value == null ) {
+            return null; // There is already no value for this path.
+        }
         cur.setValue( null ); // Delete its value.
         
         for ( int i = path.length - 1; i >= 0; i-- ) { // Cleans up any nodes that became irrelevant.
@@ -310,13 +310,30 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
         }
         
+        nMappings--; // A mapping was removed.
         return value; // Retrieve deleted value.
         
     }
     
+    @Override
     public Set<Entry<K,V>> entrySet() {
         
         return root.getEntries( new LinkedList<>() );
+        
+    }
+    
+    @Override
+    public int size() {
+        
+        return nMappings;
+        
+    }
+    
+    @Override
+    public void clear() {
+        
+        this.root = new Node(); // Delete all nodes.
+        this.nMappings = 0; // Reset counter.
         
     }
     

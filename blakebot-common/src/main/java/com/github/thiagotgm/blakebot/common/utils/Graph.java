@@ -59,10 +59,12 @@ public interface Graph<K,V> {
      *
      * @param value The value to be stored on the path.
      * @param path The sequence of keys that map to the value.
+     * @return The value previously mapped to that path, or <tt>null</tt> if there
+     *         was none.
      * @throws UnsupportedOperationException if the set operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
      */
-    void set( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
+    V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
     
     /**
      * Maps a value to a sequence of keys only if there is no current mapping
@@ -99,6 +101,31 @@ public interface Graph<K,V> {
      * @return A Set view of the Graph.
      */
     Set<Entry<K,V>> entrySet();
+    
+    /**
+     * Retrieves the amount of path-value mappings that are stored in
+     * this graph.
+     *
+     * @return The amount of mappings in this graph.
+     */
+    int size();
+    
+    /**
+     * Determines whether the graph is empty.
+     *
+     * @return <tt>true</tt> if this map contains no path-value mappings.
+     *         <tt>false</tt> otherwise.
+     */
+    default boolean isEmpty() {
+        
+        return size() == 0;
+        
+    }
+    
+    /**
+     * Removes all mappings from this graph.
+     */
+    void clear();
     
     /**
      * Compares this graph with the specified object for equality. Returns <tt>true</tt>
