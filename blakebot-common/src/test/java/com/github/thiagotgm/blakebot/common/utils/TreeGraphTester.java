@@ -20,7 +20,6 @@ package com.github.thiagotgm.blakebot.common.utils;
 import static org.junit.Assert.*;
 
 import java.util.Arrays;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -100,8 +99,10 @@ public class TreeGraphTester {
     @Test
     public void testSet() {
 
-        graph.set( "overwrite", "hi", "i", "am", "here" );
-        graph.set( "new", "new", "path" );
+        assertEquals( "Incorrect old value.", "value 3",
+                graph.set( "overwrite", "hi", "i", "am", "here" ) );
+        assertNull( "There should be no old value.",
+                graph.set( "new", "new", "path" ) );
         
         assertEquals( "Incorrect value retrieved.", "overwrite", graph.get( "hi", "i", "am", "here" ) );
         assertEquals( "Incorrect value retrieved.", "new", graph.get( "new", "path" ) );
@@ -128,6 +129,38 @@ public class TreeGraphTester {
         assertNull( "Value was not deleted.", graph.get( "hi", "i" ) );
         assertNull( "Delete succeeded in deleted path.", graph.remove( "hi", "i" ) );
         assertNull( "Deleted a value from an inexistent path.", graph.remove( "does", "not", "exist" ) );
+        
+    }
+    
+    @Test
+    public void testSize() {
+        
+        assertEquals( "Incorrect graph size.", 3, graph.size() );
+        graph.remove( "hi" );
+        assertEquals( "Incorrect graph size.", 2, graph.size() );
+        assertEquals( "Incorrect graph size.", 0,
+                new TreeGraph<String,String>().size() );
+        assertEquals( "Incorrect graph size.", 1,
+                new TreeGraph<String,String>( "one" ).size() );
+        
+    }
+    
+    @Test
+    public void testIsEmpty() {
+        
+        assertFalse( "Graph should not be empty.", graph.isEmpty() );
+        assertTrue( "Graph should be empty.",
+                new TreeGraph<String,String>().isEmpty() );
+        assertFalse( "Graph should not be empty.",
+                new TreeGraph<String,String>( "one" ).isEmpty() );
+        
+    }
+    
+    @Test
+    public void testClear() {
+        
+        graph.clear();
+        assertTrue( "Graph should become empty.", graph.isEmpty() );
         
     }
     
