@@ -71,6 +71,13 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
     }
     
     @Override
+    public void setObject( T obj ) {
+        
+        this.obj = obj;
+        
+    }
+    
+    @Override
     public void read( XMLStreamReader in ) throws XMLStreamException {
         
         if ( ( in.next() != XMLStreamConstants.START_ELEMENT ) ||
@@ -112,6 +119,42 @@ public class XMLSerializer<T extends Serializable> implements XMLWrapper<T> {
             throw new XMLStreamException( "Element could not be serialized for encoding." );
         }
         out.writeEndElement();
+        
+    }
+    
+    /**
+     * Creates a wrapper factory that produces instances of this class.
+     *
+     * @param <T> The type of object that the created wrappers wrap.
+     * @return A new factory.
+     */
+    public static <T extends Serializable> XMLWrapper.Factory<T> newFactory() {
+        
+        return new Factory<>();
+        
+    }
+    
+    /**
+     * Factory for new instances of the class.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-21
+     * @param <T> The type of object that the created wrapper instances wrap.
+     */
+    private static class Factory<T extends Serializable> implements XMLWrapper.Factory<T> {
+
+        /**
+         * UID that represents this class.
+         */
+        private static final long serialVersionUID = -7998089274806104807L;
+
+        @Override
+        public XMLWrapper<T> newInstance() {
+
+            return new XMLSerializer<>();
+            
+        }
         
     }
 

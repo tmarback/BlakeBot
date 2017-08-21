@@ -57,7 +57,7 @@ public interface XMLElement extends Serializable {
      * @param <T> The type of element that the factory creates.
      */
     @FunctionalInterface
-    interface Factory<T extends XMLElement> extends Serializable {
+    static interface Factory<T extends XMLElement> extends Serializable {
         
         /**
          * Creates a new instance.

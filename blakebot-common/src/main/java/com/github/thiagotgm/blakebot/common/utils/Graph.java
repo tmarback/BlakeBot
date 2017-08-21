@@ -96,7 +96,7 @@ public interface Graph<K,V> {
      * reflected in the backing graph.
      * <p>
      * If during an iteration through the set the graph is modified in any way other than an Entry's
-     * {@link Entry#setValue(V)} method, the rest of the iteration is undefined.
+     * {@link Entry#setValue(Object) setValue} method, the rest of the iteration is undefined.
      *
      * @return A Set view of the Graph.
      */
@@ -155,8 +155,8 @@ public interface Graph<K,V> {
      * A path-value entry in a Graph. The {@link Graph#entrySet()} method returns a Collection view
      * of the graph with members of this class. The only way to obtain an entry is through the 
      * iterator of that set.<br>
-     * If the backing graph is modified in any way other than the {@link #setValue(V)} method of an
-     * Entry, the behavior is undefined.
+     * If the backing graph is modified in any way other than the {@link #setValue(Object) setValue}
+     * method of an Entry, the behavior is undefined.
      *
      * @version 1.0
      * @author ThiagoTGM

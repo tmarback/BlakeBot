@@ -66,7 +66,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     
     /**
      * Constructs a TreeGraph with an empty root (the root node exists, but is empty).<br>
-     * Same as calling {@link #TreeGraph(V)} with argument <b>null</b>.
+     * Same as calling {@link #TreeGraph(Object) TreeGraph(V)} with argument <b>null</b>.
      */
     public TreeGraph() {
         

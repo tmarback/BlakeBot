@@ -31,11 +31,18 @@ import javax.xml.stream.XMLStreamWriter;
 public interface XMLWrapper<T> extends XMLElement {
     
     /**
-    * Retrieves the wrapped object.
-    *
-    * @return The wrapped object, or null if there is none.
-    */
+     * Retrieves the wrapped object.
+     *
+     * @return The wrapped object, or null if there is none.
+     */
     T getObject();
+    
+    /**
+     * Sets the wrapped object.
+     *
+     * @param obj The object to be wrapped.
+     */
+    void setObject( T obj );
 
     /**
      * Reads an object from the given XML stream, wrapping it.
@@ -51,5 +58,17 @@ public interface XMLWrapper<T> extends XMLElement {
     @Override
     public abstract void write( XMLStreamWriter out )
             throws XMLStreamException, IllegalStateException;
+    
+    /**
+     * Factory that creates instances of a wrapper for a certain type
+     * of object.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-21
+     * @param <T> The type of object that the created wrapper instances wrap.
+     */
+    @FunctionalInterface
+    static interface Factory<T> extends XMLElement.Factory<XMLWrapper<T>> {}
 
 }
