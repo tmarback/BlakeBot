@@ -318,7 +318,9 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @Override
     public Set<Entry<K,V>> entrySet() {
         
-        return root.getEntries( new LinkedList<>() );
+        List<Entry<K,V>> entries = new ArrayList<>( size() );
+        root.getEntries( entries, new Stack<>() ); // Get entries.
+        return new HashSet<>( entries ); // Store in a set and return.
         
     }
     
@@ -540,14 +542,16 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
-         * Retrieves the path-value mapping entries for this node and its children.
+         * Retrieves the path-value mapping entries for this node and its children,
+         * placing them into the given entry list.
          *
-         * @param path The path that maps to this node.
+         * @param entries The list to place the entries in.
+         * @param path The path that maps to this node, where the bottom of the stack is
+         *             the beginning of the path.
          * @return The mapping entries for this node and its children.
          */
-        public Set<Entry<K,V>> getEntries( List<K> path ) {
+        public void getEntries( List<Entry<K,V>> entries, Stack<K> path ) {
             
-            Set<Entry<K,V>> entries = new HashSet<>();
             if ( getValue() != null ) { // This node represents a mapping.
                 entries.add( new TreeGraphEntry( path, this ) );
             }
@@ -555,13 +559,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             /* Recursively gets entries for each child */
             for ( Map.Entry<K,? extends Node> childEntry : getChildren() ) {
                 
-                path.add( childEntry.getKey() ); // Add child's key to path.
-                entries.addAll( childEntry.getValue().getEntries( path ) );
-                path.remove( path.size() - 1 ); // Removes the child's key afterwards.
+                path.push( childEntry.getKey() ); // Add child's key to path.
+                childEntry.getValue().getEntries( entries, path );
+                path.pop(); // Removes the child's key afterwards.
                 
             }
-            
-            return entries;
             
         }
         
