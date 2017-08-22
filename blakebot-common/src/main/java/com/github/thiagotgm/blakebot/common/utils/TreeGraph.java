@@ -650,6 +650,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
         /**
          * Writes the state of this instance to a stream.
+         * <p>
+         * Writes the key and value if they exist (using a boolean for each to identify
+         * whether they do or not exist), then the number of children, then each child
+         * node. In this way, the internal Map of children is not serialized, reducing
+         * the space overhead.
          *
          * @param out The stream to write data to.
          * @throws IOException if there is an error while writing the state.
@@ -687,6 +692,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * @throws IOException if there is an error while reading the state.
          * @throws ClassNotFoundException if the class of a serialized value object cannot
          *                                be found.
+         * @see #writeObject(java.io.ObjectOutputStream)
          */
         private void readObject( java.io.ObjectInputStream in )
                 throws IOException, ClassNotFoundException {
@@ -732,6 +738,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         /**
          * Initializes instance data when this class is needed for deserialization
          * but there is no data available.
+         * <p>
+         * Key and value are initialized to null, and the map of children is empty.
          *
          * @throws ObjectStreamException if an error occurred.
          */
