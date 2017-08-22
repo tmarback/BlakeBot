@@ -71,7 +71,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      */
     public TreeGraph() {
         
-        this( null );
+        this.root = new Node();
+        this.nMappings = 0;
         
     }
     
@@ -83,8 +84,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      */
     public TreeGraph( V rootValue ) {
         
-        this.root = new Node( rootValue );
-        this.nMappings = ( rootValue == null ) ? 0 : 1;
+        this();
+        this.root.setValue( rootValue );
+        if ( rootValue != null ) {
+            this.nMappings++;
+        }
         
     }
     
@@ -377,7 +381,10 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     
     /**
      * A node in the tree. The exact behavior of the graph can be changed by overriding
-     * methods in a subclass then using the subclass as the root element.
+     * methods in a subclass then using the subclass as the root element.<br>
+     * If no change to the {@link #getOrCreateChild(Object) getOrCreateChild} method is
+     * desired other than using instances of the subclass for new nodes, it is easier
+     * to override {@link #newInstance()} instead.
      * <p>
      * Can only be serialized properly if the value stored is also Serializable.
      *
@@ -391,6 +398,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * UID that represents this class.
          */
         private static final long serialVersionUID = -2696663106727592184L;
+        
+        /**
+         * Key that identifies this node in its parent.
+         */
+        protected K key;
         
         /**
          * Value stored inside this Node.
@@ -408,22 +420,73 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
-         * Constructs a Node with no value.
+         * Constructs a Node with no value or key.
          */
         public Node() {
             
+            this.key = null;
             this.value = null;
             
         }
         
         /**
-         * Constructs a Node with the given value.
+         * Constructs a Node with the given key.
          *
-         * @param value The initial value of the node.
+         * @param value The key of the node.
+         * @throws NullPointerException if the given key is null.
          */
-        public Node( V value ) {
+        public Node( K key ) throws NullPointerException {
             
+            if ( key == null ) {
+                throw new NullPointerException( "Node key cannot be null." );
+            }
+            
+            this.key = key;
+            this.value = null;
+            
+        }
+        
+        /**
+         * Constructs a Node with the given value and key.
+         *
+         * @param value The key of the node.
+         * @param value The initial value of the node.
+         * @throws NullPointerException if the given key is null.
+         */
+        public Node( K key, V value ) throws NullPointerException {
+            
+            this( key );
             this.value = value;
+            
+        }
+        
+        /**
+         * Retrieves the key that identifies this node.
+         *
+         * @return The key of the node.
+         */
+        public K getKey() {
+            
+            return key;
+            
+        }
+        
+        /**
+         * Sets the key of this node.
+         *
+         * @param key The new value of the key.
+         * @return The previous value of the key, or <tt>null</tt> if none.
+         * @throws NullPointerException if the given key is null.
+         */
+        protected K setKey( K key ) throws NullPointerException {
+            
+            if ( key == null ) {
+                throw new NullPointerException( "Node key cannot be null." );
+            }
+            
+            K oldKey = this.key;
+            this.key = key;
+            return oldKey;
             
         }
         
@@ -466,13 +529,24 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         }
         
         /**
-         * Retrieves all the children of this node and the keys that are mapped to them.
+         * Retrieves all the children of this node.
          *
-         * @return The children of this node and their keys.
+         * @return The children of this node.
          */
-        public Set<Map.Entry<K,? extends Node>> getChildren() {
+        public Collection<? extends Node> getChildren() {
             
-            return new HashSet<>( children.entrySet() );
+            return children.values();
+            
+        }
+        
+        /**
+         * Creates a new node.
+         *
+         * @return The newly created node.
+         */
+        public Node newInstance() {
+            
+            return new Node();
             
         }
         
@@ -487,7 +561,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             
             Node child = children.get( key );
             if ( child == null ) {
-                child = new Node();
+                child = newInstance();
+                child.setKey( key );
                 children.put( key, child );
             }
             return child;
@@ -552,17 +627,23 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          */
         public void getEntries( Collection<Entry<K,V>> entries, Stack<K> path ) {
             
+            if ( getKey() != null ) {
+                path.push( getKey() ); // Add this node's path.
+            }
+            
             if ( getValue() != null ) { // This node represents a mapping.
                 entries.add( new TreeGraphEntry( path, this ) );
             }
             
             /* Recursively gets entries for each child */
-            for ( Map.Entry<K,? extends Node> childEntry : getChildren() ) {
+            for ( Node child : getChildren() ) {
                 
-                path.push( childEntry.getKey() ); // Add child's key to path.
-                childEntry.getValue().getEntries( entries, path );
-                path.pop(); // Removes the child's key afterwards.
+                child.getEntries( entries, path );
                 
+            }
+            
+            if ( getKey() != null ) {
+                path.pop(); // Remove this node's path.
             }
             
         }
@@ -575,6 +656,12 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          */
         private void writeObject( java.io.ObjectOutputStream out ) throws IOException {
             
+            if ( this.key != null ) {
+                out.writeBoolean( true ); // Mark that node has a key.
+                out.writeObject( key ); // Write the key.
+            } else {
+                out.writeBoolean( false ); // Mark that node does not have a key.
+            }
             if ( this.value != null ) {
                 out.writeBoolean( true ); // Mark that node has a value.
                 out.writeObject( this.value ); // Write the value.
@@ -583,12 +670,11 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             }
             
             /* Write children */
-            Set<Map.Entry<K,? extends Node>> children = getChildren();
+            Collection<? extends Node> children = getChildren();
             out.writeInt( children.size() ); // Write amount of children.
-            for ( Map.Entry<K,? extends Node> child : children ) {
+            for ( Node child : children ) {
                 
-                out.writeObject( child.getKey() ); // Write child's key.
-                out.writeObject( child.getValue() ); // Write child.
+                out.writeObject( child ); // Write child.
                 
             }
             
@@ -605,6 +691,15 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         private void readObject( java.io.ObjectInputStream in )
                 throws IOException, ClassNotFoundException {
             
+            if ( in.readBoolean() ) { // Check if a key is stored.
+                try {
+                    @SuppressWarnings( "unchecked" )
+                    K key = (K) in.readObject();
+                    this.key = key;
+                } catch ( ClassCastException e ) {
+                    throw new IOException( "Deserialized node key is not of the expected type.", e );
+                }
+            }
             if ( in.readBoolean() ) { // Check if a value is stored.
                 try {
                     @SuppressWarnings( "unchecked" )
@@ -620,14 +715,6 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             this.children = new HashMap<>();
             for ( int i = 0; i < childNum; i++ ) { // Read each child.
                 
-                K key;
-                try { // Read key.
-                    @SuppressWarnings( "unchecked" )
-                    K tempKey = (K) in.readObject();
-                    key = tempKey;
-                } catch ( ClassCastException e ) {
-                    throw new IOException( "Deserialized node key is not of the expected type.", e );
-                }
                 Node child;
                 try { // Read child.
                     @SuppressWarnings( "unchecked" )
@@ -636,7 +723,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
                 } catch ( ClassCastException e ) {
                     throw new IOException( "Deserialized child node is not of the expected type.", e );
                 }
-                children.put( key, child ); // Store child.
+                children.put( child.getKey(), child ); // Store child.
                 
             }
             
@@ -652,6 +739,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         private void readObjectNoData() throws ObjectStreamException {
             
             this.children = new HashMap<>();
+            this.key = null;
             this.value = null;
             
         }
