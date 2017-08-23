@@ -33,10 +33,13 @@ public interface XMLElement extends Serializable {
     
     /**
      * Reads instance data from an XML stream.
+     * <p>
+     * The position of the stream cursor when the method starts should be the opening tag
+     * of the element to read, and after the method ends its position is the closing tag of
+     * the element to read.
      *
-     * @param in The stream to read the instance data from. The <b>current</b> position of
-     *           the stream should be the opening tag of the element to read.
-     * @throws XMLStreamException if an error occurred while parsing.
+     * @param in The stream to read the instance data from.
+     * @throws XMLStreamException if an error occurred while reading.
      */
     void read( XMLStreamReader in ) throws XMLStreamException;
     
