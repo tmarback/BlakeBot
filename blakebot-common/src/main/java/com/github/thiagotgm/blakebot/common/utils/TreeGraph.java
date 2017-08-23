@@ -58,7 +58,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     /**
      * Node that is the root of the tree.
      */
-    protected Node root;
+    protected Node<?> root;
     
     /**
      * How many mappings are stored in this graph.
@@ -71,7 +71,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      */
     public TreeGraph() {
         
-        this.root = new Node();
+        this.root = new TreeNode();
         this.nMappings = 0;
         
     }
@@ -102,9 +102,9 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      *         If there is not an element that corresponds to the given path, null.
      */
     @SafeVarargs
-    protected final Node getDescendant( Node parent, K... path ) {
+    protected final Node<?> getDescendant( Node<?> parent, K... path ) {
         
-        Node element = parent;
+        Node<?> element = parent;
         for ( K next : path ) {
             
             element = element.getChild( next );
@@ -126,7 +126,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      *         If there is not an element that corresponds to the given path, null.
      */
     @SafeVarargs
-    protected final Node getDescendant( K... path ) {
+    protected final Node<?> getDescendant( K... path ) {
         
         return getDescendant( root, path );
         
@@ -144,12 +144,12 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * @return The farthest descendant found. If no keys given, the parent.
      */
     @SafeVarargs
-    protected final Node getMaxDescendant( Node parent, K... path ) {
+    protected final Node<?> getMaxDescendant( Node<?> parent, K... path ) {
         
-        Node element = parent;
+        Node<?> element = parent;
         for ( K obj : path ) {
             
-            Node child = element.getChild( obj );
+            Node<?> child = element.getChild( obj );
             if ( child == null ) {
                 return element;
             }
@@ -171,7 +171,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * @return The farthest descendant found. If no keys given, the root.
      */
     @SafeVarargs
-    protected final Node getMaxDescendant( K... path ) {
+    protected final Node<?> getMaxDescendant( K... path ) {
         
         return getMaxDescendant( root, path );
         
@@ -188,9 +188,9 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * @return The descendant. If no objects given, the parent.
      */
     @SafeVarargs
-    protected final Node getOrCreateDescendant( Node parent, K... path ) {
+    protected final Node<?> getOrCreateDescendant( Node<?> parent, K... path ) {
         
-        Node element = parent;
+        Node<?> element = parent;
         for ( K obj : path ) {
             
             element = element.getOrCreateChild( obj );
@@ -210,7 +210,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * @return The descendant. If no objects given, the root.
      */
     @SafeVarargs
-    protected final Node getOrCreateDescendant( K... path ) {
+    protected final Node<?> getOrCreateDescendant( K... path ) {
         
         return getOrCreateDescendant( root, path );
         
@@ -220,7 +220,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @SafeVarargs
     public final V get( K... path ) {
         
-        Node node = getDescendant( path );
+        Node<?> node = getDescendant( path );
         return ( node == null ) ? null : node.getValue();
         
     }
@@ -229,7 +229,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @SafeVarargs
     public final List<V> getAll( K...path ) {
         
-        Node cur = root;
+        Node<?> cur = root;
         List<V> values = new LinkedList<>();
         for ( K key : path ) {
             
@@ -271,7 +271,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             throw new NullPointerException( "Value cannot be null." );
         }
         
-        Node node = getOrCreateDescendant( path );
+        Node<?> node = getOrCreateDescendant( path );
         if ( node.getValue() != null ) {
             return false; // Already has a value.
         }
@@ -285,8 +285,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @SafeVarargs
     public final V remove( K... path ) {
         
-        Stack<Node> nodes = new Stack<>();
-        Node cur = root;
+        Stack<Node<?>> nodes = new Stack<>();
+        Node<?> cur = root;
         for ( K key : path ) {
             
             if ( cur != null ) {
@@ -339,7 +339,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     @Override
     public void clear() {
         
-        this.root = new Node(); // Delete all nodes.
+        this.root = root.newInstance(); // Delete all nodes.
         this.nMappings = 0; // Reset counter.
         
     }
@@ -381,85 +381,86 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     
     /**
      * A node in the tree. The exact behavior of the graph can be changed by overriding
-     * methods in a subclass then using the subclass as the root element.<br>
-     * If no change to the {@link #getOrCreateChild(Object) getOrCreateChild} method is
-     * desired other than using instances of the subclass for new nodes, it is easier
-     * to override {@link #newInstance()} instead.
+     * methods in a subclass then using the subclass as the root element.
+     * <p>
+     * All children of a node are the same type as the node or a subclass of it.
      * <p>
      * Can only be serialized properly if the value stored is also Serializable.
      *
      * @version 1.0
      * @author ThiagoTGM
      * @since 2017-08-17
+     * @param <SELF> The type of the node.
      */
-    protected class Node implements Serializable {
+    protected abstract class Node<SELF extends Node<SELF>> implements Serializable {
         
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -2696663106727592184L;
-        
-        /**
-         * Key that identifies this node in its parent.
-         */
-        protected K key;
-        
-        /**
-         * Value stored inside this Node.
-         */
-        protected V value;
-        /**
-         * Children nodes of this Node.
-         */
-        protected Map<K,Node> children;
-        
-        {
-            
-            children = new HashMap<>();
-            
-        }
-        
-        /**
-         * Constructs a Node with no value or key.
-         */
-        public Node() {
-            
-            this.key = null;
-            this.value = null;
-            
-        }
-        
-        /**
-         * Constructs a Node with the given key.
-         *
-         * @param value The key of the node.
-         * @throws NullPointerException if the given key is null.
-         */
-        public Node( K key ) throws NullPointerException {
-            
-            if ( key == null ) {
-                throw new NullPointerException( "Node key cannot be null." );
-            }
-            
-            this.key = key;
-            this.value = null;
-            
-        }
-        
-        /**
-         * Constructs a Node with the given value and key.
-         *
-         * @param value The key of the node.
-         * @param value The initial value of the node.
-         * @throws NullPointerException if the given key is null.
-         */
-        public Node( K key, V value ) throws NullPointerException {
-            
-            this( key );
-            this.value = value;
-            
-        }
-        
+       /**
+        * UID that represents this class.
+        */
+       private static final long serialVersionUID = 8085251836873812411L;
+
+       /**
+        * Key that identifies this node in its parent.
+        */
+       protected K key;
+       
+       /**
+        * Value stored inside this Node.
+        */
+       protected V value;
+       
+       /**
+        * Children nodes of this Node.
+        */
+       protected Map<K,SELF> children;
+       
+       {
+           
+           children = new HashMap<>();
+           
+       }
+       
+       /**
+        * Constructs a Node with no value or key.
+        */
+       public Node() {
+           
+           this.key = null;
+           this.value = null;
+           
+       }
+       
+       /**
+        * Constructs a Node with the given key.
+        *
+        * @param value The key of the node.
+        * @throws NullPointerException if the given key is null.
+        */
+       public Node( K key ) throws NullPointerException {
+           
+           if ( key == null ) {
+               throw new NullPointerException( "Node key cannot be null." );
+           }
+           
+           this.key = key;
+           this.value = null;
+           
+       }
+       
+       /**
+        * Constructs a Node with the given value and key.
+        *
+        * @param value The key of the node.
+        * @param value The initial value of the node.
+        * @throws NullPointerException if the given key is null.
+        */
+       public Node( K key, V value ) throws NullPointerException {
+           
+           this( key );
+           this.value = value;
+           
+       }
+              
         /**
          * Retrieves the key that identifies this node.
          *
@@ -522,7 +523,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * @return The child that corresponds to the given key, or <tt>null</tt> if there is
          *         no such child.
          */
-        public Node getChild( K key ) {
+        public SELF getChild( K key ) {
             
             return children.get( key );
             
@@ -533,33 +534,33 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          *
          * @return The children of this node.
          */
-        public Collection<? extends Node> getChildren() {
+        public Collection<SELF> getChildren() {
             
             return children.values();
             
         }
         
         /**
-         * Creates a new node.
+         * Creates a new node instance.
          *
          * @return The newly created node.
          */
-        public Node newInstance() {
-            
-            return new Node();
-            
-        }
+        public abstract SELF newInstance();
         
         /**
          * Gets the child of this node that corresponds to the given key.<br>
          * Creates it if it does not exist.
+         * <p>
+         * If a subclass requires no change other than using instances of the subclass for
+         * new nodes, it is easier to just override {@link #newInstance()}.
          *
          * @param key The key to get the child for.
          * @return The child that corresponds to the given key.
+         * @see #newInstance()
          */
-        public Node getOrCreateChild( K key ) {
+        public SELF getOrCreateChild( K key ) {
             
-            Node child = children.get( key );
+            SELF child = children.get( key );
             if ( child == null ) {
                 child = newInstance();
                 child.setKey( key );
@@ -595,7 +596,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          */
         public final boolean addChild( K key, V value ) {
             
-            Node child = getChild( key );
+            SELF child = getChild( key );
             if ( child != null ) {
                 return false; // Child with that key already exists.
             } else {
@@ -611,7 +612,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * @param key The key the child corresponds to.
          * @return The deleted child, or null if there is no child for that key.
          */
-        public Node removeChild( K key ) {
+        public SELF removeChild( K key ) {
             
             return children.remove( key );
             
@@ -636,7 +637,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             }
             
             /* Recursively gets entries for each child */
-            for ( Node child : getChildren() ) {
+            for ( SELF child : getChildren() ) {
                 
                 child.getEntries( entries, path );
                 
@@ -675,9 +676,9 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             }
             
             /* Write children */
-            Collection<? extends Node> children = getChildren();
+            Collection<? extends SELF> children = getChildren();
             out.writeInt( children.size() ); // Write amount of children.
-            for ( Node child : children ) {
+            for ( SELF child : children ) {
                 
                 out.writeObject( child ); // Write child.
                 
@@ -721,10 +722,10 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             this.children = new HashMap<>();
             for ( int i = 0; i < childNum; i++ ) { // Read each child.
                 
-                Node child;
+                SELF child;
                 try { // Read child.
                     @SuppressWarnings( "unchecked" )
-                    Node tempChild = (Node) in.readObject();
+                    SELF tempChild = (SELF) in.readObject();
                     child = tempChild;
                 } catch ( ClassCastException e ) {
                     throw new IOException( "Deserialized child node is not of the expected type.", e );
@@ -755,6 +756,63 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     }
     
     /**
+     * Basic implementation of a node in the tree.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-23
+     */
+    protected class TreeNode extends Node<TreeNode> {
+        
+        /**
+         * UID that represents this class.
+         */
+        private static final long serialVersionUID = 8655661294630464533L;
+
+        /**
+         * Constructs a TreeNode with no value or key.
+         */
+        public TreeNode() {
+            
+            super();
+            
+        }
+        
+        /**
+         * Constructs a TreeNode with the given key.
+         *
+         * @param value The key of the node.
+         * @throws NullPointerException if the given key is null.
+         */
+        public TreeNode( K key ) throws NullPointerException {
+            
+            super( key );
+            
+        }
+        
+        /**
+         * Constructs a TreeNode with the given value and key.
+         *
+         * @param value The key of the node.
+         * @param value The initial value of the node.
+         * @throws NullPointerException if the given key is null.
+         */
+        public TreeNode( K key, V value ) throws NullPointerException {
+            
+            super( key, value );
+            
+        }
+        
+        @Override
+        public TreeNode newInstance() {
+            
+            return new TreeNode();
+            
+        }
+        
+    }
+    
+    /**
      * Represents an entry in the TreeGraph.
      *
      * @version 1.0
@@ -764,7 +822,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     protected class TreeGraphEntry implements Entry<K,V> {
         
         private final List<K> path;
-        private final Node node;
+        private final Node<?> node;
         
         /**
          * Constructs a new entry for the given path that is linked to the given node.
@@ -772,7 +830,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          * @param path The path of this entry.
          * @param node The node that represents this entry.
          */
-        public TreeGraphEntry( List<K> path, Node node ) {
+        public TreeGraphEntry( List<K> path, Node<?> node ) {
             
             this.path = Collections.unmodifiableList( new ArrayList<>( path ) );
             this.node = node;
