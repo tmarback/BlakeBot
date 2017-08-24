@@ -37,8 +37,17 @@ import java.util.Stack;
  * (represented by an empty path). 
  * <p>
  * The default behavior of the graph is to directly map each key to the next node in the
- * graph. Subclasses can alter this by creating a subclass of {@link Node} that overrides
- * desired behavior then using an instance of that subclass as root.
+ * graph. Subclasses can alter or tweak the graph's behavior by creating a subclass of {@link Node}
+ * that overrides the desired behavior. An instance of the node subclass should then be used as root
+ * of the tree by providing the instance to {@link #setRoot(Node)}. The root will remain retrievable only
+ * as a general {@link Node}, so subclass-specific methods will not be available on the root unless casted
+ * to the subclass.<br>
+ * They may be made available by overriding {@link #getRoot()} to use the subclass. May be done by
+ * either reusing the original (<tt>super</tt>) method and just casting the return, or by using a
+ * new instance variable of the subclassed node type. In the latter case, {@link #setRoot(Node)}
+ * must also be overriden, and the <tt>super</tt>'s root may be set to <tt>null</tt> on construction
+ * to avoid storing an unused node.<br>
+ * The new root must ensure to keep the value of the original root if there is any.
  * <p>
  * Can only be serialized properly if all the values stored are also Serializable.
  *
@@ -58,7 +67,7 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
     /**
      * Node that is the root of the tree.
      */
-    protected Node<?> root;
+    private Node<?> root;
     
     /**
      * How many mappings are stored in this graph.
@@ -89,6 +98,28 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         if ( rootValue != null ) {
             this.nMappings++;
         }
+        
+    }
+    
+    /**
+     * Retrieves the root of the tree.
+     *
+     * @return The root of the tree.
+     */
+    protected Node<?> getRoot() {
+        
+        return root;
+        
+    }
+    
+    /**
+     * Sets the root of the tree.
+     *
+     * @param root The new root of the tree. May be null.
+     */
+    protected void setRoot( Node<?> root ) {
+        
+        this.root = root;
         
     }
     
