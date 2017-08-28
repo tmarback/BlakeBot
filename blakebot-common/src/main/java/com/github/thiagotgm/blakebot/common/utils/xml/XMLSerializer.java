@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common.utils;
+package com.github.thiagotgm.blakebot.common.utils.xml;
 
 import java.io.NotSerializableException;
 import java.io.Serializable;
@@ -24,6 +24,11 @@ import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+
+import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
+import com.github.thiagotgm.blakebot.common.utils.XMLWrapper;
+import com.github.thiagotgm.blakebot.common.utils.XMLWrapper.Factory;
 
 /**
  * XML Wrapper for {@link Serializable} objects.
