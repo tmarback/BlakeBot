@@ -22,7 +22,6 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -57,7 +56,7 @@ import java.util.Stack;
  * @param <K> The type of the keys that define connections on the graph.
  * @param <V> The type of the values to be stored.
  */
-public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
+public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
     
     /**
      * UID that represents the class.
@@ -372,41 +371,6 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
         
         this.root = root.newInstance(); // Delete all nodes.
         this.nMappings = 0; // Reset counter.
-        
-    }
-    
-    @Override
-    public boolean equals( Object obj ) {
-        
-        if ( !( obj instanceof Graph ) ) {
-            return false; // Not a Graph instance.
-        }
-        
-        Graph<?,?> graph = (Graph<?,?>) obj;
-        return this.entrySet().equals( graph.entrySet() );
-        
-    }
-    
-    @Override
-    public int hashCode() {
-        
-        int hash = 0;
-        for ( Entry<K,V> entry : entrySet() ) {
-            // Adds the hash of each entry.
-            hash += entry.hashCode();
-            
-        }
-        return hash;
-        
-    }
-    
-    @Override
-    public String toString() {
-        
-        StringBuilder builder = new StringBuilder( entrySet().toString() );
-        builder.setCharAt( 0, '{' ); // Set ends of mapping list.
-        builder.setCharAt( builder.length() - 1, '}' );
-        return builder.toString();
         
     }
     
@@ -850,9 +814,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
      * @author ThiagoTGM
      * @since 2017-08-20
      */
-    protected class TreeGraphEntry implements Entry<K,V> {
+    protected class TreeGraphEntry extends AbstractEntry {
         
-        private final List<K> path;
         private final Node<?> node;
         
         /**
@@ -863,15 +826,8 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
          */
         public TreeGraphEntry( List<K> path, Node<?> node ) {
             
-            this.path = Collections.unmodifiableList( new ArrayList<>( path ) );
+            super( path );
             this.node = node;
-            
-        }
-
-        @Override
-        public List<K> getPath() {
-
-            return path;
             
         }
 
@@ -890,33 +846,6 @@ public class TreeGraph<K,V> implements Graph<K,V>, Serializable {
             }
             
             return node.setValue( value );
-            
-        }
-        
-        @Override
-        public boolean equals( Object obj ) {
-            
-            if ( !( obj instanceof Entry ) ) {
-                return false; // Not an Entry instance.
-            }
-            
-            Entry<?,?> entry = (Entry<?,?>) obj;
-            return this.getPath().equals( entry.getPath() ) &&
-                   this.getValue().equals( entry.getValue() );
-            
-        }
-        
-        @Override
-        public int hashCode() {
-            
-            return getPath().hashCode() ^ getValue().hashCode();
-            
-        }
-        
-        @Override
-        public String toString() {
-            
-            return String.format( "%s=%s", getPath().toString(), getValue().toString() );
             
         }
         

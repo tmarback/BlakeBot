@@ -73,8 +73,8 @@ public interface Graph<K,V> {
      *
      * @param value The value to be stored on the path.
      * @param path The sequence of keys that map to the value.
-     * @return true if the value was added to the graph.<br>
-     *         false if there is already a value mapped to the given path.
+     * @return <tt>true</tt> if the value was added to the graph.<br>
+     *         <tt>false</tt> if there is already a value mapped to the given path.
      * @throws UnsupportedOperationException if the add operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
      */
