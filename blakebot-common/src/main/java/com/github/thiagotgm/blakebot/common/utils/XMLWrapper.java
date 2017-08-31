@@ -91,17 +91,5 @@ public interface XMLWrapper<T> extends XMLElement {
      */
     @Override
     int hashCode();
-    
-    /**
-     * Factory that creates instances of a wrapper for a certain type
-     * of object.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-21
-     * @param <T> The type of object that the created wrapper instances wrap.
-     */
-    @FunctionalInterface
-    static interface Factory<T> extends XMLElement.Factory<XMLWrapper<T>> {}
 
 }

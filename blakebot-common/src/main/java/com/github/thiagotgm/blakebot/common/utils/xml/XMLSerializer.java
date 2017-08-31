@@ -27,8 +27,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
-import com.github.thiagotgm.blakebot.common.utils.XMLWrapper;
-import com.github.thiagotgm.blakebot.common.utils.XMLWrapper.Factory;
+import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 
 /**
  * XML Wrapper for {@link Serializable} objects.
@@ -112,12 +111,12 @@ public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T>
     }
     
     /**
-     * Creates a wrapper factory that produces instances of this class.
+     * Creates a factory that produces instances of this class.
      *
      * @param <T> The type of object that the created wrappers wrap.
      * @return A new factory.
      */
-    public static <T extends Serializable> XMLWrapper.Factory<T> newFactory() {
+    public static <T extends Serializable> XMLElement.Factory<XMLSerializer<T>> newFactory() {
         
         return new Factory<>();
         
@@ -131,7 +130,7 @@ public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T>
      * @since 2017-08-21
      * @param <T> The type of object that the created wrapper instances wrap.
      */
-    private static class Factory<T extends Serializable> implements XMLWrapper.Factory<T> {
+    private static class Factory<T extends Serializable> implements XMLElement.Factory<XMLSerializer<T>> {
 
         /**
          * UID that represents this class.
@@ -139,7 +138,7 @@ public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T>
         private static final long serialVersionUID = -7998089274806104807L;
 
         @Override
-        public XMLWrapper<T> newInstance() {
+        public XMLSerializer<T> newInstance() {
 
             return new XMLSerializer<>();
             

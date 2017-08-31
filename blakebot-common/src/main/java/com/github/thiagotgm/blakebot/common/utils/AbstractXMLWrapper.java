@@ -87,5 +87,15 @@ public abstract class AbstractXMLWrapper<T> implements XMLWrapper<T> {
         return getObject() == null ? 0 : getObject().hashCode();
         
     }
+    
+    /**
+     * Returns the string representation of the wrapped object, or <tt>null</tt> if no wrapped object.
+     */
+    @Override
+    public String toString() {
+        
+        return getObject().toString();
+        
+    }
 
 }
