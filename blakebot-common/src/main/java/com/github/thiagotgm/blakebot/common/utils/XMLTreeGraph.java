@@ -163,9 +163,6 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
      * Reads a treeGraph from the given stream. If a factory for either key or value instances is
      * specified on the stream, and one wasn't specified on construction, the factory read from the
      * stream is used.
-     *
-     * @param in The stream to read graph data from.
-     * @throws XMLStreamException if an error was encountered while reading.
      */
     @Override
     public void read( XMLStreamReader in ) throws XMLStreamException {
@@ -255,6 +252,10 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
     
     /**
      * Writes the state of the graph to an XML stream.
+     * <p>
+     * In situations where the graph will always have key and value factories specified on construction,
+     * calling this method with second argument <tt>false</tt> avoids writing unnecessary data, as the
+     * written factories would be discarded when reading.
      *
      * @param out The stream to write data to.
      * @param includeFactories Whether the key and value factories, if any, should be included
@@ -277,13 +278,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
      * Writes the state of the graph to an XML stream. The key and value factories are
      * included in the stream, if they exist.
      * <p>
-     * Subclasses that always have the same key and value factories may override this and call
-     * {@link #write(XMLStreamWriter, boolean)} with <tt>false</tt> as the second parameter to
-     * avoid saving unnecessary data (if the factories are always the same, there is no need to
-     * save them).
-     *
-     * @param out The stream to write data to.
-     * @throws XMLStreamException if an error happened while writing.
+     * Same as calling {@link #write(XMLStreamWriter, boolean)} with second argument <tt>true</tt>.
      */
     @Override
     public void write( XMLStreamWriter out ) throws XMLStreamException {
