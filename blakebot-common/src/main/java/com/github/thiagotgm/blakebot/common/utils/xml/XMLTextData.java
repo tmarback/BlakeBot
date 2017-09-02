@@ -95,6 +95,10 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
     @Override
     public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
 
+        if ( getObject() == null ) {
+            throw new IllegalStateException( "No object currently wrapped." );
+        }
+        
         out.writeCharacters( toString( getObject() ) );
         
     }
