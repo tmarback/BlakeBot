@@ -42,6 +42,8 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      */
     private static final long serialVersionUID = -8288837938236407742L;
 
+    private static final String ID_ATTRIBUTE = "id";
+    
     private static final String GUILD_ATTRIBUTE = "guild";
     
     /**
@@ -102,7 +104,21 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
             }
         }
         
+        /* Get object */
         T obj = null;
+        String id = in.getAttributeValue( null, ID_ATTRIBUTE );
+        if ( id == null ) {
+            throw new XMLStreamException( "Missing object ID." );
+        }
+        try {
+            obj = getObject( Long.parseUnsignedLong( id ), guild );
+        } catch ( NumberFormatException e ) {
+            throw new XMLStreamException( "Invalid object ID.", e );
+        }
+        if ( obj == null ) {
+            throw new XMLStreamException( "Could not get object." );
+        }
+        
         while ( in.hasNext() ) {
             
             switch ( in.next() ) {
@@ -117,17 +133,6 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
                     } else {
                         throw new XMLStreamException( "Unexpected closing tag found." );
                     }
-                    
-                case XMLStreamConstants.CHARACTERS:
-                    try {
-                        obj = getObject( Long.parseUnsignedLong( in.getText() ), guild );
-                    } catch ( NumberFormatException e ) {
-                        throw new XMLStreamException( "Invalid object ID.", e );
-                    }
-                    if ( obj == null ) {
-                        throw new XMLStreamException( "Could not get object." );
-                    }
-                    break;
                 
             }
             
@@ -166,7 +171,7 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
         if ( guild != null ) {
             out.writeAttribute( GUILD_ATTRIBUTE, Long.toUnsignedString( guild.getLongID() ) );
         }
-        out.writeCharacters( Long.toUnsignedString( getObject().getLongID() ) );
+        out.writeAttribute( ID_ATTRIBUTE, Long.toUnsignedString( getObject().getLongID() ) );
         out.writeEndElement();
         
     }
