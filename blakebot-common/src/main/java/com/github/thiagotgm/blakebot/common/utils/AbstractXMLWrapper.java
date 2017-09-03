@@ -39,7 +39,7 @@ public abstract class AbstractXMLWrapper<T> implements XMLWrapper<T> {
      */
     public AbstractXMLWrapper() {
         
-        this.obj = null;
+        setObject( null );
         
     }
     
@@ -50,7 +50,7 @@ public abstract class AbstractXMLWrapper<T> implements XMLWrapper<T> {
      */
     public AbstractXMLWrapper( T obj ) {
         
-        this.obj = obj;
+        setObject( obj );
         
     }
     

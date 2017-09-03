@@ -1,0 +1,174 @@
+/*
+ * This file is part of BlakeBot.
+ *
+ * BlakeBot is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BlakeBot is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package com.github.thiagotgm.blakebot.common.utils.xml;
+
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+
+import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
+import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IIDLinkedObject;
+
+/**
+ * Shared implementation for wrappers for objects with an ID.
+ *
+ * @version 1.0
+ * @author ThiagoTGM
+ * @since 2017-09-02
+ * @param <T> Type of object being wrapped.
+ */
+abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends AbstractXMLWrapper<T> {
+    
+    /**
+     * UID that represents this class.
+     */
+    private static final long serialVersionUID = -8288837938236407742L;
+
+    private static final String GUILD_ATTRIBUTE = "guild";
+    
+    /**
+     * Client to use for obtaining objects from their IDs.
+     */
+    protected final IDiscordClient client;
+    
+    /**
+     * Instantiates a wrapper with no object.
+     *
+     * @param client The client to use for obtaining objects.
+     */
+    public AbstractXMLIDLinkedObject( IDiscordClient client ) {
+        
+        this( client, null );
+        
+    }
+    
+    /**
+     * Instantiates a wrapper with the given object.
+     *
+     * @param client The client to use for obtaining objects.
+     * @param obj The object to wrap initially.
+     */
+    public AbstractXMLIDLinkedObject( IDiscordClient client, T obj ) {
+        
+        super( obj );
+        this.client = client;
+        
+    }
+    
+    /**
+     * Obtains the object from its ID.
+     *
+     * @param id The ID of the object to retrieve.
+     * @param guild The guild of the object. May be <tt>null</tt> if one is not specified
+                    when writing due to not being necessary.
+     * @return The object with the given ID.
+     */
+    protected abstract T getObject( long id, IGuild guild );
+
+    @Override
+    public void read( XMLStreamReader in ) throws XMLStreamException {
+
+        if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
+              !in.getLocalName().equals( getTag() ) ) {
+            throw new XMLStreamException( "Did not find element start." );
+        }
+        
+        /* Get guild, if any */
+        String guildID = in.getAttributeValue( null, GUILD_ATTRIBUTE );
+        IGuild guild = null;
+        if ( guildID != null ) {
+            try {
+                guild = client.getGuildByID( Long.parseUnsignedLong( guildID ) );
+            } catch ( NumberFormatException e ) {
+                throw new XMLStreamException( "Invalid guild ID.", e );
+            }
+        }
+        
+        T obj = null;
+        while ( in.hasNext() ) {
+            
+            switch ( in.next() ) {
+                
+                case XMLStreamConstants.START_ELEMENT:
+                    throw new XMLStreamException( "Unexpected subelement found." );
+                
+                case XMLStreamConstants.END_ELEMENT:
+                    if ( in.getLocalName().equals( getTag() ) ) {
+                        setObject( obj );
+                        return;
+                    } else {
+                        throw new XMLStreamException( "Unexpected closing tag found." );
+                    }
+                    
+                case XMLStreamConstants.CHARACTERS:
+                    try {
+                        obj = getObject( Long.parseUnsignedLong( in.getText() ), guild );
+                    } catch ( NumberFormatException e ) {
+                        throw new XMLStreamException( "Invalid object ID.", e );
+                    }
+                    if ( obj == null ) {
+                        throw new XMLStreamException( "Could not get object." );
+                    }
+                    break;
+                
+            }
+            
+        }
+        
+        throw new XMLStreamException( "Unexpected end of document encountered." );
+        
+    }
+    
+    /**
+     * Retrieves the tag that identifies the object.
+     *
+     * @return The object tag.
+     */
+    protected abstract String getTag();
+    
+    /**
+     * Retrieves the guild that the object is in.
+     * <p>
+     * If the guild is not necessary for obtaining the object from its ID (eg it can be obtained
+     * directly from an <tt>IDiscordClient</tt>), <tt>null</tt> may be retrieved.
+     *
+     * @return The associated guild, or <tt>null</tt> if not necessary.
+     */
+    protected abstract IGuild getGuild();
+
+    @Override
+    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
+
+        if ( getObject() == null ) {
+            throw new IllegalStateException( "No object currently wrapped." );
+        }
+        
+        out.writeStartElement( getTag() );
+        IGuild guild = getGuild();
+        if ( guild != null ) {
+            out.writeAttribute( GUILD_ATTRIBUTE, Long.toUnsignedString( guild.getLongID() ) );
+        }
+        out.writeCharacters( Long.toUnsignedString( getObject().getLongID() ) );
+        out.writeEndElement();
+        
+    }
+
+}
