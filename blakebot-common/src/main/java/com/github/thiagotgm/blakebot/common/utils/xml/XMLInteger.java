@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot.common.utils.xml;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 
 /**
- * XML wrapper for integers.
+ * XML wrapper for <tt>int</tt>egers.
  *
  * @version 1.0
  * @author ThiagoTGM

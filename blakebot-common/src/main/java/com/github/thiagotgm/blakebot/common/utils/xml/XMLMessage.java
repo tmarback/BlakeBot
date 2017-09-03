@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IMessage;
 
 /**
- * XML wrapper for IMessage objects.
+ * XML wrapper for <tt>IMessage</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

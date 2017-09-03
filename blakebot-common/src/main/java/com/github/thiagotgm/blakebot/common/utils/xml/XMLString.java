@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot.common.utils.xml;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 
 /**
- * XML wrapper for strings.
+ * XML wrapper for <tt>String</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM

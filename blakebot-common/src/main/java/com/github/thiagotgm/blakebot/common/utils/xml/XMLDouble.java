@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot.common.utils.xml;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 
 /**
- * XML wrapper for doubles.
+ * XML wrapper for <tt>double</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM

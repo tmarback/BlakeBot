@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
 
 /**
- * XML wrapper for IUser objects.
+ * XML wrapper for <tt>IUser</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

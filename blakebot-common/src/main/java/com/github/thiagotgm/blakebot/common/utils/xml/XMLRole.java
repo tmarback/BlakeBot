@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
 
 /**
- * XML wrapper for IRole objects.
+ * XML wrapper for <tt>IRole</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

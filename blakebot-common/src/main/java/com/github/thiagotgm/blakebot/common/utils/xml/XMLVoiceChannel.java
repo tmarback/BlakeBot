@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IVoiceChannel;
 
 /**
- * XML wrapper for IVoiceChannel objects.
+ * XML wrapper for <tt>IVoiceChannel</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

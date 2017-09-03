@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IEmoji;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
- * XML wrapper for IEmoji objects.
+ * XML wrapper for <tt>IEmoji</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

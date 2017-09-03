@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IWebhook;
 
 /**
- * XML wrapper for IWebhook objects.
+ * XML wrapper for <tt>IWebhook</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

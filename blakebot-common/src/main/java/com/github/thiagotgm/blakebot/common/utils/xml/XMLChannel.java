@@ -24,7 +24,7 @@ import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
- * XML wrapper for IChannel objects.
+ * XML wrapper for <tt>IChannel</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM

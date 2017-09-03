@@ -198,7 +198,7 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
          * @param path The path of this entry.
          * @param entry The entry in the wrapped graph that backs this entry.
          */
-        public WrappedEntry( List<K> path, Entry<XMLWrapper<K>,XMLWrapper<V>> entry ) {
+        public WrappedEntry( List<K> path, Entry<XMLWrapper<K>, XMLWrapper<V>> entry ) {
             
             super( path );
             this.entry = entry;

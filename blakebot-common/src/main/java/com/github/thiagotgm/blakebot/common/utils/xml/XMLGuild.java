@@ -23,7 +23,7 @@ import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
- * XML wrapper for IGuild objects.
+ * XML wrapper for <tt>IGuild</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM
