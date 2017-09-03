@@ -447,7 +447,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                         
                         if ( reading ) {
                             throw new XMLStreamException(
-                                    "Encountered start of element while another lement was being read." );
+                                    "Encountered start of element while another element was being read." );
                         }
                         switch ( in.getLocalName() ) {
                             
@@ -478,6 +478,9 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                                 in.next(); // Move to start of value element.
                                 value = readValue( in );
                                 break;
+                                
+                            default: // Unrecognized.
+                                throw new XMLStreamException( "Unexpected subelement." );
                             
                         }
                         break;
