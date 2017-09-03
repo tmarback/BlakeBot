@@ -50,7 +50,7 @@ public abstract class XMLElementIO {
      *                                  a no-arg constructor.
      * @throws XMLStreamException if an error happened while parsing.
      */
-    static <T extends XMLElement> T read( XMLStreamReader in, Class<T> objClass )
+    public static <T extends XMLElement> T read( XMLStreamReader in, Class<T> objClass )
             throws IllegalArgumentException, XMLStreamException {
         
         try {
@@ -71,7 +71,8 @@ public abstract class XMLElementIO {
      * @param element The element to write.
      * @throws XMLStreamException if there was an error while writing.
      */
-    static void write( XMLStreamWriter out, XMLElement element ) throws XMLStreamException {
+    public static void write( XMLStreamWriter out, XMLElement element )
+            throws XMLStreamException {
         
         out.writeStartElement( TAG );
         out.writeAttribute( CLASS_ATTRIBUTE, element.getClass().getName() );
@@ -89,7 +90,8 @@ public abstract class XMLElementIO {
      * @return The object that was read from the stream.
      * @throws XMLStreamException if an error happened while parsing.
      */
-    static <T extends XMLElement> T read( XMLStreamReader in ) throws XMLStreamException {
+    public static <T extends XMLElement> T read( XMLStreamReader in )
+            throws XMLStreamException {
         
         if ( ( in.next() != XMLStreamConstants.START_ELEMENT ) ||
                 in.getLocalName().equals( TAG ) ) { // Check start tag.
