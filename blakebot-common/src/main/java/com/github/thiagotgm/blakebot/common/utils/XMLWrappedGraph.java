@@ -46,18 +46,44 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
     private final XMLGraph<XMLWrapper<K>, XMLWrapper<V>> graph;
     private final XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory;
     private final XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory;
-
-    public XMLWrappedGraph( XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory,
+    
+    /**
+     * Instantiates a wrapped graph that is backed by the given graph.
+     *
+     * @param graph The graph that should back the wrapped graph.
+     * @param keyWrapperFactory The factory to use to instantiate key wrappers.
+     * @param valueWrapperFactory The factory to use to instantiate value wrappers.
+     * @throws NullPointerException if any of the arguments is <tt>null</tt>.
+     */
+    public XMLWrappedGraph( XMLGraph<XMLWrapper<K>, XMLWrapper<V>> graph,
+            XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory,
             XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory )
                     throws NullPointerException {
         
-        if ( ( keyWrapperFactory == null ) || ( valueWrapperFactory == null ) ) {
-            throw new NullPointerException( "Wrapper factories cannot be null." );
+        if ( ( graph == null ) || 
+             ( keyWrapperFactory == null ) || ( valueWrapperFactory == null ) ) {
+            throw new NullPointerException( "Arguments cannot be null." );
         }
         
         this.keyWrapperFactory = keyWrapperFactory;
         this.valueWrapperFactory = valueWrapperFactory;
-        graph = new XMLTreeGraph<>( keyWrapperFactory, valueWrapperFactory );
+        this.graph = graph;
+        
+    }
+
+    /**
+     * Instantiates a wrapped graph.
+     *
+     * @param keyWrapperFactory The factory to use to instantiate key wrappers.
+     * @param valueWrapperFactory The factory to use to instantiate value wrappers.
+     * @throws NullPointerException if any of the arguments is <tt>null</tt>.
+     */
+    public XMLWrappedGraph( XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory,
+            XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory )
+                    throws NullPointerException {
+        
+        this( new XMLTreeGraph<>( keyWrapperFactory, valueWrapperFactory ),
+                keyWrapperFactory, valueWrapperFactory );
         
     }
 
