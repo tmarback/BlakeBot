@@ -340,7 +340,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
         /**
          * Constructs a XMLNode with the given key.
          *
-         * @param value The key of the node.
+         * @param key The key of the node.
          * @throws NullPointerException if the given key is null.
          */
         public XMLNode( K key ) {
@@ -352,7 +352,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
         /**
          * Constructs a XMLNode with the given value and key.
          *
-         * @param value The key of the node.
+         * @param key The key of the node.
          * @param value The initial value of the node.
          * @throws NullPointerException if the given key is null.
          */

@@ -77,7 +77,8 @@ public class UtilsTest {
     
     /**
      * Tests the methods for serializing and deserializing objects to strings.
-     * @throws NotSerializableException
+     * 
+     * @throws NotSerializableException if an exception happens.
      */
     @Test
     public void testEncode() throws NotSerializableException {
@@ -102,8 +103,8 @@ public class UtilsTest {
     
     /**
      * Tests encoding an object that is not serializable.
-     *
-     * @throws NotSerializableException
+     * 
+     * @throws NotSerializableException if an exception happens (expected).
      */
     @Test( expected = NotSerializableException.class )
     public void testEncodeException() throws NotSerializableException {

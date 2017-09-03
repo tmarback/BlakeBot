@@ -217,7 +217,7 @@ public interface Graph<K,V> {
          * the same path and the same value:
          * <p>
          * <code>
-         * e1.getPath().equals(e2.getPath()) && e1.getValue().equals(e2.getValue())
+         * e1.getPath().equals(e2.getPath()) &amp;&amp; e1.getValue().equals(e2.getValue())
          * </code>
          *
          * @param obj The object to compare to.

@@ -428,7 +428,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
        /**
         * Constructs a Node with the given key.
         *
-        * @param value The key of the node.
+        * @param key The key of the node.
         * @throws NullPointerException if the given key is null.
         */
        public Node( K key ) throws NullPointerException {
@@ -445,7 +445,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
        /**
         * Constructs a Node with the given value and key.
         *
-        * @param value The key of the node.
+        * @param key The key of the node.
         * @param value The initial value of the node.
         * @throws NullPointerException if the given key is null.
         */
@@ -776,7 +776,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
         /**
          * Constructs a TreeNode with the given key.
          *
-         * @param value The key of the node.
+         * @param key The key of the node.
          * @throws NullPointerException if the given key is null.
          */
         public TreeNode( K key ) throws NullPointerException {
@@ -788,7 +788,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
         /**
          * Constructs a TreeNode with the given value and key.
          *
-         * @param value The key of the node.
+         * @param key The key of the node.
          * @param value The initial value of the node.
          * @throws NullPointerException if the given key is null.
          */
