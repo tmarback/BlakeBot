@@ -158,6 +158,17 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
         throw new XMLStreamException( "Unexpected end of document." );
         
     }
+    
+    /**
+     * Retrieves the local name of the graph element.
+     *
+     * @return The tag (local name).
+     */
+    public String getTag() {
+        
+        return GRAPH_TAG;
+        
+    }
 
     /**
      * Reads a treeGraph from the given stream. If a factory for either key or value instances is
@@ -168,8 +179,8 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
     public void read( XMLStreamReader in ) throws XMLStreamException {
 
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-              !in.getLocalName().equals( GRAPH_TAG ) ) {
-            throw new XMLStreamException( "Stream not in opening tag of a tree graph." );
+              !in.getLocalName().equals( getTag() ) ) {
+            throw new XMLStreamException( "Stream not in opening tag of expected graph." );
         }
         
         boolean hasRoot = false;
@@ -209,7 +220,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                     break;
                     
                 case XMLStreamConstants.END_ELEMENT:
-                    if ( in.getLocalName().equals( GRAPH_TAG ) ) {
+                    if ( in.getLocalName().equals( getTag() ) ) {
                         return; // Finished reading.
                     } else {
                         throw new XMLStreamException( "Unexpected closing tag found." );
@@ -234,7 +245,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
      * @throws NullPointerException if the tag is null.
      * @throws XMLStreamException if an error was encountered while writing.
      */
-    private void writeFactory( XMLStreamWriter out, XMLElement.Factory<?> factory, String tag )
+    protected void writeFactory( XMLStreamWriter out, XMLElement.Factory<?> factory, String tag )
             throws NullPointerException, XMLStreamException {
         
         if ( factory == null ) {
@@ -264,7 +275,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
      */
     public void write( XMLStreamWriter out, boolean includeFactories ) throws XMLStreamException {
         
-        out.writeStartElement( GRAPH_TAG );
+        out.writeStartElement( getTag() );
         if ( includeFactories ) { // Should write existing factories.
             writeFactory( out, keyFactory, KEY_FACTORY_TAG );
             writeFactory( out, valueFactory, VALUE_FACTORY_TAG );
