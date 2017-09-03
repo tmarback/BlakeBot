@@ -73,7 +73,7 @@ public class XMLWebhook extends AbstractXMLIDLinkedObject<IWebhook> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

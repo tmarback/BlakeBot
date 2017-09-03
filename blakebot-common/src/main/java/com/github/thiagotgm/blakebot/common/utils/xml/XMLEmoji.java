@@ -73,7 +73,7 @@ public class XMLEmoji extends AbstractXMLIDLinkedObject<IEmoji> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

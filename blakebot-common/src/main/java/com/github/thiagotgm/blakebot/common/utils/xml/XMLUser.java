@@ -73,7 +73,7 @@ public class XMLUser extends AbstractXMLIDLinkedObject<IUser> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

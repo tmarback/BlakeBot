@@ -73,7 +73,7 @@ public class XMLRole extends AbstractXMLIDLinkedObject<IRole> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

@@ -73,7 +73,7 @@ public class XMLMessage extends AbstractXMLIDLinkedObject<IMessage> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

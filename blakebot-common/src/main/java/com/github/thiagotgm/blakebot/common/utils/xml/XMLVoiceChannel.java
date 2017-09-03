@@ -73,7 +73,7 @@ public class XMLVoiceChannel extends AbstractXMLIDLinkedObject<IVoiceChannel> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

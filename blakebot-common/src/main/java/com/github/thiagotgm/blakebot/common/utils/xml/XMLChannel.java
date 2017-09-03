@@ -73,7 +73,7 @@ public class XMLChannel extends AbstractXMLIDLinkedObject<IChannel> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

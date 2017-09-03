@@ -72,7 +72,7 @@ public class XMLGuild extends AbstractXMLIDLinkedObject<IGuild> {
     }
 
     @Override
-    protected String getTag() {
+    public String getTag() {
 
         return TAG;
         

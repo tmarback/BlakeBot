@@ -89,7 +89,8 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      * Reads only the start element from the XML stream.
      * <p>
      * The object will already be read, but will not reach the end element in
-     * the stream yet.
+     * the stream yet. Advancing the stream until the end element is then responsibility
+     * of the caller.
      *
      * @param in The stream to read data from.
      * @throws XMLStreamException if an error occurred.
@@ -179,7 +180,7 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      *
      * @return The object tag.
      */
-    protected abstract String getTag();
+    public abstract String getTag();
     
     /**
      * Retrieves the guild that the object is in.
