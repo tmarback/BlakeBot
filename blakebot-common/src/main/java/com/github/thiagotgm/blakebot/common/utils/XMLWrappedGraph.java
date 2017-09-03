@@ -27,25 +27,28 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 /**
- * XMLGraph that is capable of storing non-XML elements, hiding the (un)wrapping behind the scenes using
- * the wrapper factories given on construction.
+ * Convenience wrapper for XMLGraphs that store non-XML elements using wrappers, hiding the (un)wrapping
+ * mechanics to provide access to the graph directly using the non-XML elements.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-08-31
  * @param <K> The type of the keys that define connections on the graph.
  * @param <V> The type of the values to be stored.
+ * @param <KW> The type of wrapper used to wrap keys.
+ * @param <VW> The type of wrapper used to wrap values.
  */
-public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph<K,V> {
+public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<V>>
+        extends AbstractGraph<K,V> implements XMLGraph<K,V> {
     
     /**
      * UID that represents the class.
      */
     private static final long serialVersionUID = 4246845092955858657L;
     
-    private final XMLGraph<XMLWrapper<K>, XMLWrapper<V>> graph;
-    private final XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory;
-    private final XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory;
+    private final XMLGraph<KW,VW> graph;
+    private final XMLElement.Factory<KW> keyWrapperFactory;
+    private final XMLElement.Factory<VW> valueWrapperFactory;
     
     /**
      * Instantiates a wrapped graph that is backed by the given graph.
@@ -55,10 +58,8 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
      * @param valueWrapperFactory The factory to use to instantiate value wrappers.
      * @throws NullPointerException if any of the arguments is <tt>null</tt>.
      */
-    public XMLWrappedGraph( XMLGraph<XMLWrapper<K>, XMLWrapper<V>> graph,
-            XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory,
-            XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory )
-                    throws NullPointerException {
+    public XMLWrappedGraph( XMLGraph<KW,VW> graph, XMLElement.Factory<KW> keyWrapperFactory,
+            XMLElement.Factory<VW> valueWrapperFactory ) throws NullPointerException {
         
         if ( ( graph == null ) || 
              ( keyWrapperFactory == null ) || ( valueWrapperFactory == null ) ) {
@@ -68,22 +69,6 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
         this.keyWrapperFactory = keyWrapperFactory;
         this.valueWrapperFactory = valueWrapperFactory;
         this.graph = graph;
-        
-    }
-
-    /**
-     * Instantiates a wrapped graph.
-     *
-     * @param keyWrapperFactory The factory to use to instantiate key wrappers.
-     * @param valueWrapperFactory The factory to use to instantiate value wrappers.
-     * @throws NullPointerException if any of the arguments is <tt>null</tt>.
-     */
-    public XMLWrappedGraph( XMLElement.Factory<? extends XMLWrapper<K>> keyWrapperFactory,
-            XMLElement.Factory<? extends XMLWrapper<V>> valueWrapperFactory )
-                    throws NullPointerException {
-        
-        this( new XMLTreeGraph<>( keyWrapperFactory, valueWrapperFactory ),
-                keyWrapperFactory, valueWrapperFactory );
         
     }
 
@@ -106,11 +91,13 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
      *
      * @param obj The object to be wrapped.
      * @param wrapperFactory The factory that creates wrappers.
+     * @param <T> The object type.
+     * @param <TW> The type of wrapper that wraps the object.
      * @return The wrapper with the given wrapped object.
      */
-    private <T> XMLWrapper<T> wrap( T obj, XMLElement.Factory<? extends XMLWrapper<T>> wrapperFactory ) {
+    private <T,TW extends XMLWrapper<T>> TW wrap( T obj, XMLElement.Factory<TW> wrapperFactory ) {
         
-        XMLWrapper<T> wrapper = wrapperFactory.newInstance();
+        TW wrapper = wrapperFactory.newInstance();
         wrapper.setObject( obj );
         return wrapper;
         
@@ -122,10 +109,10 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
      * @param path The path to be wrapped.
      * @return The wrapped path.
      */
-    private XMLWrapper<K>[] wrap( K[] path ) {
+    private KW[] wrap( K[] path ) {
         
         @SuppressWarnings( "unchecked" )
-        XMLWrapper<K>[] wrappedPath = (XMLWrapper<K>[]) new XMLWrapper[ path.length ];
+        KW[] wrappedPath = (KW[]) new XMLWrapper[ path.length ];
         for ( int i = 0; i < path.length; i++ ) {
             
             wrappedPath[i] = wrap( path[i], keyWrapperFactory );
@@ -147,7 +134,7 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
     @Override
     public final List<V> getAll( K... path ) {
 
-        List<XMLWrapper<V>> wrapped = graph.getAll( wrap( path ) );
+        List<VW> wrapped = graph.getAll( wrap( path ) );
         List<V> unwrapped = new ArrayList<>( wrapped.size() );
         wrapped.stream().forEachOrdered( key -> unwrapped.add( key.getObject() ) );
         return unwrapped;
@@ -216,7 +203,7 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
      */
     protected class WrappedEntry extends AbstractEntry {
         
-        private final Entry<XMLWrapper<K>,XMLWrapper<V>> entry;
+        private final Entry<KW,VW> entry;
         
         /**
          * Constructs a new entry for the given path that is linked to the given entry.
@@ -224,7 +211,7 @@ public class XMLWrappedGraph<K,V> extends AbstractGraph<K,V> implements XMLGraph
          * @param path The path of this entry.
          * @param entry The entry in the wrapped graph that backs this entry.
          */
-        public WrappedEntry( List<K> path, Entry<XMLWrapper<K>, XMLWrapper<V>> entry ) {
+        public WrappedEntry( List<K> path, Entry<KW,VW> entry ) {
             
             super( path );
             this.entry = entry;
