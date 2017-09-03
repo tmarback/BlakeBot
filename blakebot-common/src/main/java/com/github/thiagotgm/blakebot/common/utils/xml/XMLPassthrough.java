@@ -69,8 +69,13 @@ public class XMLPassthrough<T extends XMLElement> extends AbstractXMLWrapper<T> 
     @Override
     public void read( XMLStreamReader in ) throws XMLStreamException {
 
-        T obj = factory.newInstance();
-        obj.read( in );
+        T obj;
+        if ( factory != null ) {
+            obj = factory.newInstance();
+            obj.read( in );
+        } else {
+            obj = XMLElementIO.read( in );
+        }
         setObject( obj );
         
     }
