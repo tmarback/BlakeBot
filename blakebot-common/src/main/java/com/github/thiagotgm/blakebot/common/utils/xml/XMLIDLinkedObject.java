@@ -24,8 +24,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-import com.github.thiagotgm.blakebot.common.utils.XMLWrapper;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IEmoji;
@@ -59,6 +57,8 @@ public class XMLIDLinkedObject extends AbstractXMLWrapper<IIDLinkedObject> {
      */
     protected final IDiscordClient client;
     
+    private AbstractXMLIDLinkedObject<? extends IIDLinkedObject> wrapper;
+    
     /**
      * Instantiates a wrapper with no object.
      *
@@ -80,64 +80,108 @@ public class XMLIDLinkedObject extends AbstractXMLWrapper<IIDLinkedObject> {
         
         super( obj );
         this.client = client;
+        this.wrapper = null;
         
     }
+    
+   /**
+    * Reads only the start element from the XML stream.
+    * <p>
+    * The object will already be read, but will not reach the end element in
+    * the stream yet.
+    *
+    * @param in The stream to read data from.
+    * @throws XMLStreamException if an error occurred.
+    */
+   public void readStart( XMLStreamReader in ) throws XMLStreamException {
+        
+       if ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) {
+           throw new XMLStreamException( "Stream not in start element." );
+       }
+       
+       switch ( in.getLocalName() ) {
+           
+           case XMLVoiceChannel.TAG:
+               wrapper = new XMLVoiceChannel( client );
+               break;
+               
+           case XMLChannel.TAG:
+               wrapper = new XMLChannel( client );
+               break;
+               
+           case XMLEmoji.TAG:
+               wrapper = new XMLEmoji( client );
+               break;
+               
+           case XMLGuild.TAG:
+               wrapper = new XMLGuild( client );
+               break;
+               
+           case XMLMessage.TAG:
+               wrapper = new XMLMessage( client );
+               break;
+               
+           case XMLRole.TAG:
+               wrapper = new XMLRole( client );
+               break;
+               
+           case XMLUser.TAG:
+               wrapper = new XMLUser( client );
+               break;
+               
+           case XMLWebhook.TAG:
+               wrapper = new XMLWebhook( client );
+               break;
+               
+           default:
+               throw new XMLStreamException( "Unrecognized local name." );
+           
+       }
+       wrapper.readStart( in );
+       setObject( wrapper.getObject() );
+        
+   }
+   
+   /**
+    * Reads the stream until the end of the element.
+    * <p>
+    * The start element is expected to already have been read, and no data is expected
+    * to be found.
+    *
+    * @param in The stream to read data from.
+    * @throws XMLStreamException if an error occurred.
+    */
+   public void readEnd( XMLStreamReader in ) throws XMLStreamException {
+       
+       if ( wrapper == null ) {
+           throw new IllegalStateException( "Was not reading." );
+       }
+       wrapper.readEnd( in );
+       wrapper = null;
+       
+   }
 
     @Override
     public void read( XMLStreamReader in ) throws XMLStreamException {
 
-        if ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) {
-            throw new XMLStreamException( "Stream not in start element." );
-        }
-        
-        XMLWrapper<? extends IIDLinkedObject> wrapper;
-        switch ( in.getLocalName() ) {
-            
-            case XMLVoiceChannel.TAG:
-                wrapper = new XMLVoiceChannel( client );
-                break;
-                
-            case XMLChannel.TAG:
-                wrapper = new XMLChannel( client );
-                break;
-                
-            case XMLEmoji.TAG:
-                wrapper = new XMLEmoji( client );
-                break;
-                
-            case XMLGuild.TAG:
-                wrapper = new XMLGuild( client );
-                break;
-                
-            case XMLMessage.TAG:
-                wrapper = new XMLMessage( client );
-                break;
-                
-            case XMLRole.TAG:
-                wrapper = new XMLRole( client );
-                break;
-                
-            case XMLUser.TAG:
-                wrapper = new XMLUser( client );
-                break;
-                
-            case XMLWebhook.TAG:
-                wrapper = new XMLWebhook( client );
-                break;
-                
-            default:
-                throw new XMLStreamException( "Unrecognized local name." );
-            
-        }
-        wrapper.read( in );
-        setObject( wrapper.getObject() );
+        readStart( in );
+        readEnd( in );
         
     }
-
-    @Override
-    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
-
-        XMLWrapper<? extends IIDLinkedObject> wrapper;
+    
+    /**
+     * Writes only the start element to the XML stream.
+     * <p>
+     * Eventually closing the element (using {@link XMLStreamWriter#writeEndElement()}) is
+     * responsibility of the caller.
+     *
+     * @param out The stream to write data to.
+     * @throws XMLStreamException if an error occurred while writing.
+     * @throws IllegalStateException if there is no object currently wrapped.
+     */
+    public void writeStart( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
+        
+        AbstractXMLIDLinkedObject<? extends IIDLinkedObject> wrapper;
         IIDLinkedObject obj = getObject();
         if ( obj == null ) {
             throw new IllegalStateException( "No wrapped object to write." );
@@ -163,7 +207,15 @@ public class XMLIDLinkedObject extends AbstractXMLWrapper<IIDLinkedObject> {
             throw new XMLStreamException( "Unsupported type of IDLinkedObject." );
         }
         
-        wrapper.write( out );
+        wrapper.writeStart( out );
+        
+    }
+
+    @Override
+    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
+
+        writeStart( out );
+        out.writeEndElement();
         
     }
     

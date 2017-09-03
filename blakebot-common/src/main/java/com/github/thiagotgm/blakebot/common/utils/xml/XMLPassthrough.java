@@ -31,7 +31,7 @@ import com.github.thiagotgm.blakebot.common.utils.XMLElementIO;
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-09-02
- * @param <T>
+ * @param <T> Type being wrapped.
  */
 public class XMLPassthrough<T extends XMLElement> extends AbstractXMLWrapper<T> {
     

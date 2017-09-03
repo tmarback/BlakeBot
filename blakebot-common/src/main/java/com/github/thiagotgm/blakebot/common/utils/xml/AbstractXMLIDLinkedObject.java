@@ -84,40 +84,62 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      * @return The object with the given ID.
      */
     protected abstract T getObject( long id, IGuild guild );
-
-    @Override
-    public void read( XMLStreamReader in ) throws XMLStreamException {
-
+    
+    /**
+     * Reads only the start element from the XML stream.
+     * <p>
+     * The object will already be read, but will not reach the end element in
+     * the stream yet.
+     *
+     * @param in The stream to read data from.
+     * @throws XMLStreamException if an error occurred.
+     */
+    public void readStart( XMLStreamReader in ) throws XMLStreamException {
+        
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-              !in.getLocalName().equals( getTag() ) ) {
-            throw new XMLStreamException( "Did not find element start." );
-        }
+                !in.getLocalName().equals( getTag() ) ) {
+              throw new XMLStreamException( "Did not find element start." );
+          }
+          
+          /* Get guild, if any */
+          String guildID = in.getAttributeValue( null, GUILD_ATTRIBUTE );
+          IGuild guild = null;
+          if ( guildID != null ) {
+              try {
+                  guild = client.getGuildByID( Long.parseUnsignedLong( guildID ) );
+              } catch ( NumberFormatException e ) {
+                  throw new XMLStreamException( "Invalid guild ID.", e );
+              }
+          }
+          
+          /* Get object */
+          T obj = null;
+          String id = in.getAttributeValue( null, ID_ATTRIBUTE );
+          if ( id == null ) {
+              throw new XMLStreamException( "Missing object ID." );
+          }
+          try {
+              obj = getObject( Long.parseUnsignedLong( id ), guild );
+          } catch ( NumberFormatException e ) {
+              throw new XMLStreamException( "Invalid object ID.", e );
+          }
+          if ( obj == null ) {
+              throw new XMLStreamException( "Could not get object." );
+          }
+          setObject( obj );
         
-        /* Get guild, if any */
-        String guildID = in.getAttributeValue( null, GUILD_ATTRIBUTE );
-        IGuild guild = null;
-        if ( guildID != null ) {
-            try {
-                guild = client.getGuildByID( Long.parseUnsignedLong( guildID ) );
-            } catch ( NumberFormatException e ) {
-                throw new XMLStreamException( "Invalid guild ID.", e );
-            }
-        }
-        
-        /* Get object */
-        T obj = null;
-        String id = in.getAttributeValue( null, ID_ATTRIBUTE );
-        if ( id == null ) {
-            throw new XMLStreamException( "Missing object ID." );
-        }
-        try {
-            obj = getObject( Long.parseUnsignedLong( id ), guild );
-        } catch ( NumberFormatException e ) {
-            throw new XMLStreamException( "Invalid object ID.", e );
-        }
-        if ( obj == null ) {
-            throw new XMLStreamException( "Could not get object." );
-        }
+    }
+    
+    /**
+     * Reads the stream until the end of the element.
+     * <p>
+     * The start element is expected to already have been read, and no data is expected
+     * to be found.
+     *
+     * @param in The stream to read data from.
+     * @throws XMLStreamException if an error occurred.
+     */
+    public void readEnd( XMLStreamReader in ) throws XMLStreamException {
         
         while ( in.hasNext() ) {
             
@@ -125,10 +147,12 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
                 
                 case XMLStreamConstants.START_ELEMENT:
                     throw new XMLStreamException( "Unexpected subelement found." );
+                    
+                case XMLStreamConstants.CHARACTERS:
+                    throw new XMLStreamException( "Unexpected character data found." );
                 
                 case XMLStreamConstants.END_ELEMENT:
                     if ( in.getLocalName().equals( getTag() ) ) {
-                        setObject( obj );
                         return;
                     } else {
                         throw new XMLStreamException( "Unexpected closing tag found." );
@@ -139,6 +163,14 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
         }
         
         throw new XMLStreamException( "Unexpected end of document encountered." );
+        
+    }
+
+    @Override
+    public void read( XMLStreamReader in ) throws XMLStreamException {
+
+        readStart( in );
+        readEnd( in );
         
     }
     
@@ -158,10 +190,19 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      * @return The associated guild, or <tt>null</tt> if not necessary.
      */
     protected abstract IGuild getGuild();
-
-    @Override
-    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
-
+    
+    /**
+     * Writes only the start element to the XML stream.
+     * <p>
+     * Eventually closing the element (using {@link XMLStreamWriter#writeEndElement()}) is
+     * responsibility of the caller.
+     *
+     * @param out The stream to write data to.
+     * @throws XMLStreamException if an error occurred while writing.
+     * @throws IllegalStateException if there is no object currently wrapped.
+     */
+    public void writeStart( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
+        
         if ( getObject() == null ) {
             throw new IllegalStateException( "No object currently wrapped." );
         }
@@ -172,8 +213,15 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
             out.writeAttribute( GUILD_ATTRIBUTE, Long.toUnsignedString( guild.getLongID() ) );
         }
         out.writeAttribute( ID_ATTRIBUTE, Long.toUnsignedString( getObject().getLongID() ) );
-        out.writeEndElement();
         
     }
 
+    @Override
+    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
+
+        writeStart( out );
+        out.writeEndElement();
+        
+    }
+    
 }
