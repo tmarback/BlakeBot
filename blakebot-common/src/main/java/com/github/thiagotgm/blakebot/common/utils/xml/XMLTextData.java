@@ -80,10 +80,6 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
     @Override
     public void read( XMLStreamReader in ) throws XMLStreamException {
 
-        if ( in.getEventType() != XMLStreamConstants.CHARACTERS ) {
-            throw new XMLStreamException( "Could not find data." );
-        }
-
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
               !in.getLocalName().equals( getTag() ) ) {
             throw new XMLStreamException( "Did not find element start." );
