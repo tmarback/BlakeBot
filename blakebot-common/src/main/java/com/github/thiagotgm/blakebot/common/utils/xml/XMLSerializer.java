@@ -43,7 +43,10 @@ public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T>
      */
     private static final long serialVersionUID = -3875253346127541487L;
 
-    private static final String SERIALIZED_TAG = "serialized";
+    /**
+     * Local XML name that identifies this element.
+     */
+    public static final String SERIALIZED_TAG = "serialized";
     
     /**
      * Initializes a Serializer with no wrapped object.
@@ -73,15 +76,7 @@ public class XMLSerializer<T extends Serializable> extends AbstractXMLWrapper<T>
             throw new XMLStreamException( "Did not find element start." );
         }
         
-        if ( in.next() != XMLStreamConstants.CHARACTERS ) {
-            throw new XMLStreamException( "Missing encoded text." );
-        }
-        String encoded = in.getText(); // Get encoded text.
-        
-        if ( ( in.next() != XMLStreamConstants.END_ELEMENT ) ||
-                in.getLocalName().equals( SERIALIZED_TAG ) ) { // Check end tag.
-            throw new XMLStreamException( "Did not find element end." );
-        }
+        String encoded = in.getElementText(); // Get encoded text.
         
         try {
             @SuppressWarnings( "unchecked" ) // Decode from string and check if castable

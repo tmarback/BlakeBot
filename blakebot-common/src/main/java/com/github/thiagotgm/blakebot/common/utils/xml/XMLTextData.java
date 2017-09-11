@@ -85,33 +85,11 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
             throw new XMLStreamException( "Did not find element start." );
         }
 
-        T obj = null;
-        while ( in.hasNext() ) { // Read each element.
-
-            switch ( in.next() ) {
-
-                case XMLStreamConstants.CHARACTERS:
-                    obj = fromString( in.getText() );
-                    if ( obj == null ) {
-                        throw new XMLStreamException( "Could not read data." );
-                    }
-                    break;
-
-                case XMLStreamConstants.END_ELEMENT:
-                    if ( in.getLocalName().equals( getTag() ) ) {
-                        if ( obj == null ) {
-                            throw new XMLStreamException( "No data to be read." );
-                        }
-                        setObject( obj );
-                        return; // Done reading.
-                    } else {
-                        throw new XMLStreamException( "Unexpected end element." );
-                    }
-
-            }
-
+        T obj = fromString( in.getElementText() );
+        if ( obj == null ) {
+            throw new XMLStreamException( "Could not read data." );
         }
-        throw new XMLStreamException( "Unexpected end of document." );
+        setObject( obj );
         
     }
     

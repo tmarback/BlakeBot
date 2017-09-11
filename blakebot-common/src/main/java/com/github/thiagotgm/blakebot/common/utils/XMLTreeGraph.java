@@ -127,35 +127,12 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
               !in.getLocalName().equals( tag ) ) {
            throw new XMLStreamException( "Stream not in opening tag of a factory element." );
         }
-        
-        XMLElement.Factory<T> factory = null;
-        while ( in.hasNext() ) {
-            
-            switch ( in.next() ) {
-                
-                case XMLStreamConstants.START_ELEMENT:
-                    throw new XMLStreamException( "Unexpected subelement found." );
-                
-                case XMLStreamConstants.END_ELEMENT:
-                    if ( in.getLocalName().equals( tag ) ) {
-                        return factory;
-                    } else {
-                        throw new XMLStreamException( "Unexpected closing tag found." );
-                    }
-                    
-                case XMLStreamConstants.CHARACTERS:
-                    factory = Utils.stringToSerializable( in.getText() );
-                    if ( factory == null ) {
-                        throw new XMLStreamException( "Could not read factory." );
-                    }
-                    break;
-                
-            }
-            
+  
+        XMLElement.Factory<T> factory = Utils.stringToSerializable( in.getElementText() );
+        if ( factory == null ) {
+            throw new XMLStreamException( "Could not read factory." );
         }
-        
-        // Reached end of document was reached before closing tag of factory element.
-        throw new XMLStreamException( "Unexpected end of document." );
+        return factory;
         
     }
     
