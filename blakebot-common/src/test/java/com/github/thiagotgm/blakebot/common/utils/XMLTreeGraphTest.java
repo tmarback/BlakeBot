@@ -19,19 +19,10 @@ package com.github.thiagotgm.blakebot.common.utils;
 
 import static org.junit.Assert.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-
 import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.junit.Test;
 
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLInteger;
@@ -61,32 +52,18 @@ public class XMLTreeGraphTest {
 
         XMLTreeGraph<XMLString,XMLInteger> graph = new XMLTreeGraph<XMLString,XMLInteger>(
                 XMLString.newFactory(), XMLInteger.newFactory() );
-        InputStream stream = this.getClass().getResourceAsStream( "/TreeGraph.xml" );
-        XMLStreamReader in = XMLInputFactory.newFactory().createXMLStreamReader( stream );
-        while ( in.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
-        graph.read( in );
+        InputStream in = this.getClass().getResourceAsStream( "/TreeGraph.xml" );
+        Utils.readXMLDocument( in, graph );
         
         assertEquals( "Read graph is not correct.", EXPECTED, graph );
         
     }
     
     @Test
-    public void testWrite() throws XMLStreamException, UnsupportedEncodingException {
-        
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        XMLStreamWriter out = XMLOutputFactory.newFactory().createXMLStreamWriter( outStream );
-        out.writeStartDocument();
-        EXPECTED.write( out );
-        out.writeEndDocument();
-        out.close();
-        
+    public void testWrite() throws XMLStreamException, IOException {
+     
         XMLTreeGraph<XMLString,XMLInteger> graph = new XMLTreeGraph<XMLString,XMLInteger>();
-        InputStream inStream = new ByteArrayInputStream( outStream.toByteArray() );
-        XMLStreamReader in = XMLInputFactory.newFactory().createXMLStreamReader( inStream );
-        while ( in.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
-        graph.read( in );
-        
-        assertEquals( "Read graph is not correct.", EXPECTED, graph );
+        XMLTestHelper.testReadWrite( EXPECTED, graph );
         
     }
 
