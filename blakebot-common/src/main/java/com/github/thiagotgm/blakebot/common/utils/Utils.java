@@ -142,8 +142,35 @@ public abstract class Utils {
     /* XML writing/reading methods */
     
     /**
+     * Character encoding used by default for reading and writing XML streams.
+     */
+    public static final String DEFAULT_ENCODING = "UTF-8";
+    
+    /**
      * Writes an XML document to a stream, where the content of the document is the XMLElement
      * given.
+     *
+     * @param out The stream to write to.
+     * @param encoding The character encoding to use.
+     * @param content The content of the document to be written.
+     * @throws XMLStreamException if an error is encountered while writing.
+     */
+    public static void writeXMLDocument( OutputStream out, String encoding, XMLElement content )
+            throws XMLStreamException {
+        
+        XMLStreamWriter outStream = XMLOutputFactory.newFactory().createXMLStreamWriter( out, encoding );
+        outStream.writeStartDocument();
+        content.write( outStream );
+        outStream.writeEndDocument();
+        
+    }
+    
+    /**
+     * Writes an XML document to a stream, where the content of the document is the XMLElement
+     * given. Uses the {@link #DEFAULT_ENCODING default character encoding}.
+     * <p>
+     * Same as calling {@link #writeXMLDocument(OutputStream, String, XMLElement)} with second parameter
+     * {@value #DEFAULT_ENCODING}.
      *
      * @param out The stream to write to.
      * @param content The content of the document to be written.
@@ -151,10 +178,7 @@ public abstract class Utils {
      */
     public static void writeXMLDocument( OutputStream out, XMLElement content ) throws XMLStreamException {
         
-        XMLStreamWriter outStream = XMLOutputFactory.newFactory().createXMLStreamWriter( out );
-        outStream.writeStartDocument();
-        content.write( outStream );
-        outStream.writeEndDocument();
+        writeXMLDocument( out, DEFAULT_ENCODING, content );
         
     }
     
@@ -167,15 +191,38 @@ public abstract class Utils {
      * is found.
      *
      * @param in The stream to read to.
+     * @param encoding The character encoding of the stream.
+     * @param content The element that will read the document's content.
+     * @throws XMLStreamException if an error is encountered while reading.
+     */
+    public static void readXMLDocument( InputStream in, String encoding, XMLElement content )
+            throws XMLStreamException {
+        
+        XMLStreamReader inStream = XMLInputFactory.newFactory().createXMLStreamReader( in, encoding );
+        while ( inStream.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
+        content.read( inStream );
+        while ( inStream.hasNext() ) { inStream.next(); } // Go to end of document.
+        
+    }
+    
+    /**
+     * Reads an XML document from a stream, where the content of the document is to be read
+     * by the given XMLElement. Uses the {@link #DEFAULT_ENCODING default character encoding}.
+     * <p>
+     * Same as calling {@link #readXMLDocument(InputStream, String, XMLElement)} with second parameter
+     * {@value #DEFAULT_ENCODING}.
+     * <p>
+     * If there is any content after what is read by the given XMLElement, that extra content
+     * is ignored. This means that the stream will always be read until the end of the document
+     * is found.
+     *
+     * @param in The stream to read to.
      * @param content The element that will read the document's content.
      * @throws XMLStreamException if an error is encountered while reading.
      */
     public static void readXMLDocument( InputStream in, XMLElement content ) throws XMLStreamException {
         
-        XMLStreamReader inStream = XMLInputFactory.newFactory().createXMLStreamReader( in );
-        while ( inStream.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
-        content.read( inStream );
-        while ( inStream.hasNext() ) { inStream.next(); } // Go to end of document.
+        readXMLDocument( in, DEFAULT_ENCODING, content );
         
     }
 
