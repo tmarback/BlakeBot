@@ -34,6 +34,11 @@ public class XMLInteger extends XMLTextData<Integer> {
     private static final long serialVersionUID = 7186200260476001515L;
     
     /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "int";
+    
+    /**
      * Initializes a wrapper with no wrapped integer.
      */
     public XMLInteger() {
@@ -50,6 +55,13 @@ public class XMLInteger extends XMLTextData<Integer> {
     public XMLInteger( Integer num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

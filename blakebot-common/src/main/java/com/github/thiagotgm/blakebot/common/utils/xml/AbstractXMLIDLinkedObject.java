@@ -96,39 +96,39 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      * @throws XMLStreamException if an error occurred.
      */
     public void readStart( XMLStreamReader in ) throws XMLStreamException {
-        
+
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-                !in.getLocalName().equals( getTag() ) ) {
-              throw new XMLStreamException( "Did not find element start." );
-          }
-          
-          /* Get guild, if any */
-          String guildID = in.getAttributeValue( null, GUILD_ATTRIBUTE );
-          IGuild guild = null;
-          if ( guildID != null ) {
-              try {
-                  guild = client.getGuildByID( Long.parseUnsignedLong( guildID ) );
-              } catch ( NumberFormatException e ) {
-                  throw new XMLStreamException( "Invalid guild ID.", e );
-              }
-          }
-          
-          /* Get object */
-          T obj = null;
-          String id = in.getAttributeValue( null, ID_ATTRIBUTE );
-          if ( id == null ) {
-              throw new XMLStreamException( "Missing object ID." );
-          }
-          try {
-              obj = getObject( Long.parseUnsignedLong( id ), guild );
-          } catch ( NumberFormatException e ) {
-              throw new XMLStreamException( "Invalid object ID.", e );
-          }
-          if ( obj == null ) {
-              throw new XMLStreamException( "Could not get object." );
-          }
-          setObject( obj );
-        
+              !in.getLocalName().equals( getTag() ) ) {
+            throw new XMLStreamException( "Did not find element start." );
+        }
+
+        /* Get guild, if any */
+        String guildID = in.getAttributeValue( null, GUILD_ATTRIBUTE );
+        IGuild guild = null;
+        if ( guildID != null ) {
+            try {
+                guild = client.getGuildByID( Long.parseUnsignedLong( guildID ) );
+            } catch ( NumberFormatException e ) {
+                throw new XMLStreamException( "Invalid guild ID.", e );
+            }
+        }
+
+        /* Get object */
+        T obj = null;
+        String id = in.getAttributeValue( null, ID_ATTRIBUTE );
+        if ( id == null ) {
+            throw new XMLStreamException( "Missing object ID." );
+        }
+        try {
+            obj = getObject( Long.parseUnsignedLong( id ), guild );
+        } catch ( NumberFormatException e ) {
+            throw new XMLStreamException( "Invalid object ID.", e );
+        }
+        if ( obj == null ) {
+            throw new XMLStreamException( "Could not get object." );
+        }
+        setObject( obj );
+
     }
     
     /**

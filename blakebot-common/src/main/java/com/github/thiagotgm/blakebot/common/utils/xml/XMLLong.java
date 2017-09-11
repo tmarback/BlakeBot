@@ -32,6 +32,11 @@ public class XMLLong extends XMLTextData<Long> {
      * UID that represents this class.
      */
     private static final long serialVersionUID = 6916907635448757798L;
+    
+    /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "long";
 
     /**
      * Initializes a wrapper with no wrapped long.
@@ -50,6 +55,13 @@ public class XMLLong extends XMLTextData<Long> {
     public XMLLong( Long num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

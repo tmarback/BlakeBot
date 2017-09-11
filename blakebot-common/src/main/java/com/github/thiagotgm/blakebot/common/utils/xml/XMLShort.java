@@ -34,6 +34,11 @@ public class XMLShort extends XMLTextData<Short> {
     private static final long serialVersionUID = -5117056623380307820L;
     
     /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "short";
+    
+    /**
      * Initializes a wrapper with no wrapped short.
      */
     public XMLShort() {
@@ -50,6 +55,13 @@ public class XMLShort extends XMLTextData<Short> {
     public XMLShort( Short num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

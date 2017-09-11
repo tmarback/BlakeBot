@@ -34,6 +34,11 @@ public class XMLBoolean extends XMLTextData<Boolean> {
     private static final long serialVersionUID = 8113277187822773509L;
     
     /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "boolean";
+    
+    /**
      * Initializes a wrapper with no wrapped boolean.
      */
     public XMLBoolean() {
@@ -50,6 +55,13 @@ public class XMLBoolean extends XMLTextData<Boolean> {
     public XMLBoolean( Boolean bool ) {
         
         super( bool );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

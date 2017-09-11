@@ -32,6 +32,11 @@ public class XMLByte extends XMLTextData<Byte> {
      * UID that represents this class.
      */
     private static final long serialVersionUID = 7275877933820716020L;
+    
+    /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "byte";
 
     /**
      * Initializes a wrapper with no wrapped byte.
@@ -50,6 +55,13 @@ public class XMLByte extends XMLTextData<Byte> {
     public XMLByte( Byte num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

@@ -34,6 +34,11 @@ public class XMLString extends XMLTextData<String> {
     private static final long serialVersionUID = -1291884558748264684L;
     
     /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "string";
+    
+    /**
      * Initializes a wrapper with no wrapped string.
      */
     public XMLString() {
@@ -50,6 +55,13 @@ public class XMLString extends XMLTextData<String> {
     public XMLString( String str ) {
         
         super( str );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

@@ -32,6 +32,11 @@ public class XMLDouble extends XMLTextData<Double> {
      * UID that represents this class.
      */
     private static final long serialVersionUID = 5433372977234659394L;
+    
+    /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "double";
 
     /**
      * Initializes a wrapper with no wrapped double.
@@ -50,6 +55,13 @@ public class XMLDouble extends XMLTextData<Double> {
     public XMLDouble( Double num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 

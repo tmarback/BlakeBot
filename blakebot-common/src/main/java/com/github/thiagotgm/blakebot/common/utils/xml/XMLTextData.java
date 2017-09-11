@@ -62,6 +62,13 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
     }
     
     /**
+     * Retrieves the tag that identifies the object.
+     *
+     * @return The object tag.
+     */
+    public abstract String getTag();
+    
+    /**
      * Converts the given string to an object that will be wrapped.
      * 
      * @param str The string representation of an object to wrap.
@@ -76,11 +83,39 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
         if ( in.getEventType() != XMLStreamConstants.CHARACTERS ) {
             throw new XMLStreamException( "Could not find data." );
         }
-        
-        setObject( fromString( in.getText() ) );
-        if ( getObject() == null ) {
-            throw new XMLStreamException( "Could not read data object." );
+
+        if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
+              !in.getLocalName().equals( getTag() ) ) {
+            throw new XMLStreamException( "Did not find element start." );
         }
+
+        T obj = null;
+        while ( in.hasNext() ) { // Read each element.
+
+            switch ( in.next() ) {
+
+                case XMLStreamConstants.CHARACTERS:
+                    obj = fromString( in.getText() );
+                    if ( obj == null ) {
+                        throw new XMLStreamException( "Could not read data." );
+                    }
+                    break;
+
+                case XMLStreamConstants.END_ELEMENT:
+                    if ( in.getLocalName().equals( getTag() ) ) {
+                        if ( obj == null ) {
+                            throw new XMLStreamException( "No data to be read." );
+                        }
+                        setObject( obj );
+                        return; // Done reading.
+                    } else {
+                        throw new XMLStreamException( "Unexpected end element." );
+                    }
+
+            }
+
+        }
+        throw new XMLStreamException( "Unexpected end of document." );
         
     }
     
@@ -99,7 +134,9 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
             throw new IllegalStateException( "No object currently wrapped." );
         }
         
+        out.writeStartElement( getTag() );
         out.writeCharacters( toString( getObject() ) );
+        out.writeEndElement();
         
     }
 

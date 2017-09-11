@@ -32,6 +32,11 @@ public class XMLFloat extends XMLTextData<Float> {
      * UID that represents this class.
      */
     private static final long serialVersionUID = -1501316516302358368L;
+    
+    /**
+     * Local name of the XML element.
+     */
+    public static final String TAG = "float";
 
     /**
      * Initializes a wrapper with no wrapped float.
@@ -50,6 +55,13 @@ public class XMLFloat extends XMLTextData<Float> {
     public XMLFloat( Float num ) {
         
         super( num );
+        
+    }
+    
+    @Override
+    public String getTag() {
+        
+        return TAG;
         
     }
 
