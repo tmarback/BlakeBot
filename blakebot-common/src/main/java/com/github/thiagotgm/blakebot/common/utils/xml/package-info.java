@@ -16,7 +16,7 @@
  */
 
 /**
- * Wrappers for common classes to translate them to/from an XML format.
+ * Wrappers and adapters for common classes to translate them to/from an XML format.
  *
  * @version 1.0
  * @author ThiagoTGM
