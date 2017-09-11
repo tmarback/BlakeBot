@@ -19,23 +19,23 @@
 <treeGraph>
 
     <node>
-        <value>0</value>
+        <value><int>0</int></value>
     
         <node>
-            <key>hi</key>
-            <value>34</value>
+            <key><string>hi</string></key>
+            <value><int>34</int></value>
             
             <node>
-                <key>I</key>
-                <value>420</value>
+                <key><string>I</string></key>
+                <value><int>420</int></value>
                 
                 <node>
-                    <key>am</key>
-                    <value>90</value>
+                    <key><string>am</string></key>
+                    <value><int>90</int></value>
                     
                     <node>
-                        <key>here</key>
-                        <value>-29</value>
+                        <key><string>here</string></key>
+                        <value><int>-29</int></value>
                     </node>
                 </node>
             </node>
