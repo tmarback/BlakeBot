@@ -18,35 +18,36 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.regex.Pattern;
 
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
-import org.dom4j.io.OutputFormat;
-import org.dom4j.io.SAXReader;
-import org.dom4j.io.XMLWriter;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sx.blah.discord.handle.impl.obj.Channel;
-import sx.blah.discord.handle.impl.obj.Guild;
-import sx.blah.discord.handle.impl.obj.Role;
-import sx.blah.discord.handle.impl.obj.User;
+import com.github.thiagotgm.blakebot.common.utils.IDLinkedGraph;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
+import com.github.thiagotgm.blakebot.common.utils.XMLElement;
+import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
+
+import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -54,8 +55,10 @@ import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 
 /**
- * Class that keeps record of the blacklist for all servers.<br>
- * Uses a Singleton pattern.
+ * Class that keeps record of the blacklist for all servers.
+ * <p>
+ * All the restriction sets retrieved in get methods are copies, and so do not reflect on
+ * the internal blacklist if changed.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -66,115 +69,76 @@ public class Blacklist {
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
     private static final Path DEFAULT_PATH = Paths.get( "data", "Blacklist.xml" );
-    private static final String ROOT_TAG = "blacklist";
-    private static final String RESTRICTION_TAG = "restriction";
-    private static final String ID_ATTRIBUTE = "id";
-    protected static final Map<Class<? extends IIDLinkedObject>, String> TAGS;
+    private static Map<IDiscordClient, Blacklist> instances;
     
-    static { // Make object-tag map.
+    static {
         
-        Map<Class<? extends IIDLinkedObject>, String> tags = new HashMap<>();
-        
-        String guild = "guild";
-        tags.put( IGuild.class, guild );
-        tags.put( Guild.class, guild );
-        
-        String channel = "channel";
-        tags.put( IChannel.class, channel );
-        tags.put( Channel.class, channel );
-        
-        String user = "user";
-        tags.put( IUser.class, user );
-        tags.put( User.class, user );
-        
-        String role = "role";
-        tags.put( IRole.class, role );
-        tags.put( Role.class, role );
-        
-        TAGS = Collections.synchronizedMap( tags );
+        instances = Collections.synchronizedMap( new HashMap<>() );
         
     }
     
     private final Path filePath;
-    private final Document document;
-    private final Element root;
-    
-    private static Blacklist instance;
+    private final IDLinkedGraph<RestrictionSet> blacklist;
     
     /**
      * Creates a new instance using data loaded from the blacklist file.<br>
      * If the file doesn't exist, starts a new document.
      * 
+     * @param client The client to be used to obtain ID-linked objects from their IDs.
      * @param filePath The path of the file to load the blacklist from and save
      *                 it in. If it does not exist, a new file and empty blacklist
      *                 are created.
      */
-    protected Blacklist( Path filePath ) {
+    protected Blacklist( IDiscordClient client, Path filePath ) {
         
+        this.blacklist = new IDLinkedGraph<>( client, RestrictionSet.newFactory() );
         this.filePath = filePath;
-        Document document = loadDocument();
-        this.document = ( document == null ) ? newDocument() : document;
-        this.root = this.document.getRootElement(); 
+        load();
         
     }
     
     /**
-     * Returns the current instance. If there isn't one, creates it.
+     * Returns the instance for a given client. If there isn't one, creates it.
      *
+     * @param client The client to get the instance for.
      * @return The Blacklist instance.
      */
-    public static Blacklist getInstance() {
+    public static Blacklist getInstance( IDiscordClient client ) {
         
+        Blacklist instance = instances.get( client );
         if ( instance == null ) {
-            instance = new Blacklist( DEFAULT_PATH );
+            instance = new Blacklist( client, DEFAULT_PATH );
+            instances.put( client, instance );
         }
         return instance;
         
     }
     
     /**
-     * Creates a new document to represent the blacklist.
-     *
-     * @return The newly created document.
+     * Loads an existing blacklist.
      */
-    private Document newDocument() {
-        
-        LOG.info( "Creating new Blacklist document." );
-        Document document = DocumentHelper.createDocument();
-        document.addElement( ROOT_TAG );
-        return document;
-        
-    }
-    
-    /**
-     * Loads an existing blacklist document.
-     *
-     * @return The loaded document if it exists, or null if it doesn't exist or
-     *         could not be read.
-     */
-    private synchronized Document loadDocument() {
+    private synchronized void load() {
         
         File inputFile = filePath.toFile();
-        if ( !inputFile.exists() ) {
-            return null;
-        }
-        LOG.info( "Loading Blacklist document." );
-        SAXReader reader = new SAXReader();
-        try {
-            return reader.read( inputFile );
-        } catch ( DocumentException e ) {
-            LOG.error( "Failed to read blacklist document.", e );
-            return null;
+        if ( inputFile.isFile() ) {
+            LOG.info( "Loading Blacklist." );
+            try {
+                Utils.readXMLDocument( new FileInputStream( inputFile ), blacklist );
+            } catch ( FileNotFoundException e ) {
+                LOG.error( "Could not open blacklist file.", e );
+            } catch ( XMLStreamException e ) {
+                LOG.error( "Failed to load blacklist.", e );
+            }
         }
         
     }
     
     /**
-     * Writes blacklist document to file.
+     * Writes blacklist to file.
      */
-    private synchronized void saveDocument() {
+    public synchronized void save() {
         
-        LOG.debug( "Saving Blacklist document." );
+        LOG.debug( "Saving Blacklist." );
         
         Path folders = filePath.getParent();
         if ( folders != null ) { // Ensure folders exist.
@@ -186,338 +150,14 @@ public class Blacklist {
             }
         }
             
-        FileOutputStream output;
         try {
-            output = new FileOutputStream( filePath.toFile() );
+            Utils.writeXMLDocument( new FileOutputStream( filePath.toFile() ), blacklist );
         } catch ( FileNotFoundException e ) {
             LOG.error( "Could not create or open blacklist file.", e );
             return;
+        } catch ( XMLStreamException e ) {
+            LOG.error( "Failed to save blacklist.", e );
         }
-        
-        XMLWriter writer = null;
-        try {
-            OutputFormat format = OutputFormat.createPrettyPrint();
-            writer = new XMLWriter( output, format );
-            writer.write( document );
-        } catch ( UnsupportedEncodingException e ) {
-            LOG.error( "Could not create XML writer.", e );
-        } catch ( IOException e ) {
-            LOG.error( "Could not write to blacklist file.", e );
-        } finally {
-            try {
-                output.close();
-            } catch ( IOException e ) {
-                LOG.error( "Could not close blacklist output file.", e );
-            }
-        }
-        
-    }
-    
-    /* Methods for traversing the blacklist tree */
-    
-    /**
-     * Retrieves the child of a given element that has a given tag (name) and has
-     * a given "name" attribute. If the child doesn't exist, returns the parent.
-     *
-     * @param parent Parent of the desired element.
-     * @param childTag Tag (name) of the desired Element.
-     * @param childId "name" attribute of the desired Element.
-     * @return The child of parent with specified id/name and "name" attribute.<br>
-     *         If it doesn't exist, returns null.
-     */
-    private Element getChild( Element parent, String childTag, String childId ) {
-        
-        for ( Element candidate : parent.elements( childTag ) ) {
-            
-            if ( childId.equals( candidate.attributeValue( ID_ATTRIBUTE ) ) ) {
-                return candidate; // Found child.
-            }
-            
-        }
-        return null; // Child not found.
-        
-    }
-    
-    /**
-     * Retrieves the child of a given element that has a given tag (name) and has
-     * a given "name" attribute.<br>
-     * If the child doesn't exist, creates it.
-     *
-     * @param parent Parent of the desired element.
-     * @param childTag Tag (name) of the desired Element.
-     * @param childId "name" attribute of the desired Element.
-     * @return The child of parent with specified id/name and "name" attribute.
-     */
-    private Element getOrCreateChild( Element parent, String childTag, String childId ) {
-        
-        Element child = getChild( parent, childTag, childId );
-        if ( child == null ) {
-            child = parent.addElement( childTag );
-            child.addAttribute( ID_ATTRIBUTE, childId );
-        }
-        return child;
-        
-    }
-    
-    /* Helpers for translating ID objects to elements */
-    
-    /**
-     * Retrieves the tag that represents an object of the given class.
-     *
-     * @param objClass The class of the object to be represented.
-     * @return The tag, or null if none found.
-     */
-    private String getTag( Class<? extends IIDLinkedObject> objClass ) {
-        
-        String tag = TAGS.get( objClass ); // Check class itself.
-        if ( tag != null ) { // Found tag.
-            return tag;
-        }
-        LOG.trace( "Class not recognized: {}. Looking at interfaces.",
-                objClass.getName() );
-        
-        /* Check if the class implements a recognized interface */
-        for ( Class<?> objInterface : objClass.getInterfaces() ) {
-           
-            if ( !IIDLinkedObject.class.isAssignableFrom( objInterface ) ) {
-                continue; // Not a subtype of IIDLinkedObject.
-            }
-            tag = TAGS.get( objInterface );
-            if ( tag != null ) { // Found tag.
-                return tag;
-            }
-            
-        }
-        return null;
-        
-    }
-    
-    /**
-     * Retrieves the child of a given element that represents the given object.
-     *
-     * @param parent Parent of the desired element.
-     * @param obj The object that the child should represent.
-     * @return The child of parent that represents the given object.<br>
-     *         If it doesn't exist, returns null.
-     */
-    private Element getChild( Element parent, IIDLinkedObject obj ) {
-        
-        String tag = getTag( obj.getClass() );
-        if ( tag == null ) { // Not a supported class.
-            LOG.error( "Given object class does not have a tag: {}",
-                    obj.getClass().getName() );
-            return null;  
-        }
-        return getChild( parent, tag, obj.getStringID() );
-        
-    }
-    
-    /**
-     * Retrieves the child of a given element that represents the given object.<br>
-     * If the child doesn't exist, creates it.
-     *
-     * @param parent Parent of the desired element.
-     * @param obj The object that the child should represent.
-     * @return The child of parent that represents the given object.
-     */
-    private Element getOrCreateChild( Element parent, IIDLinkedObject obj ) {
-        
-        return getOrCreateChild( parent, TAGS.get( obj.getClass() ), obj.getStringID() );
-        
-    }
-    
-    /* Helpers for traversing multiple elements at once */
-    
-    /**
-     * Retrieves the descendant of a given element that represent the given sequence
-     * of objects.
-     *
-     * @param parent The parent element.
-     * @param path The sequence of objects that represent the descendants.
-     * @return The descendant. If no objects given, the parent.<br>
-     *         If there is not an element that corresponds to the given path, null.
-     */
-    private Element getDescendant( Element parent, IIDLinkedObject... path ) {
-        
-        Element element = parent;
-        for ( IIDLinkedObject obj : path ) {
-            
-            element = getChild( element, obj );
-            if ( element == null ) {
-                return null;
-            }
-            
-        }
-        return element;
-        
-    }
-    
-    /**
-     * Retrieves the descendant of the root element that represent the given sequence
-     * of objects.
-     *
-     * @param path The sequence of objects that represent the descendants.
-     * @return The descendant. If no objects given, the root.<br>
-     *         If there is not an element that corresponds to the given path, null.
-     */
-    protected Element getDescendant( IIDLinkedObject... path ) {
-        
-        return getDescendant( root, path );
-        
-    }
-    
-    /**
-     * Retrieves the descendant of a given element that represent the given sequence
-     * of objects.<br>
-     * If there is no descendant that corresponds to the full path, retrieves the
-     * one that corresponds to as much of it as possible (without skipping parts of
-     * the path). May be the given element itself.
-     *
-     * @param parent The parent element.
-     * @param path The sequence of objects that represent the descendants.
-     * @return The farthest descendant found. If no objects given, the parent.
-     */
-    private Element getMaxDescendant( Element parent, IIDLinkedObject... path ) {
-        
-        Element element = parent;
-        for ( IIDLinkedObject obj : path ) {
-            
-            Element child = getChild( element, obj );
-            if ( child == null ) {
-                return element;
-            }
-            element = child;
-            
-        }
-        return element;
-        
-    }
-    
-    /**
-     * Retrieves the descendant of the root element that represent the given sequence
-     * of objects.<br>
-     * If there is no descendant that corresponds to the full path, retrieves the
-     * one that corresponds to as much of it as possible (without skipping parts of
-     * the path). May be the root iself.
-     *
-     * @param path The sequence of objects that represent the descendants.
-     * @return The farthest descendant found. If no objects given, the root.
-     */
-    protected Element getMaxDescendant( IIDLinkedObject... path ) {
-        
-        return getMaxDescendant( root, path );
-        
-    }
-    
-    /**
-     * Retrieves the descendant of a given element that represent the given sequence
-     * of objects.<br>
-     * If the child doesn't exist, creates it (as well as intermediate descendants
-     * as necessary).
-     *
-     * @param parent The parent element.
-     * @param path The sequence of objects that represent the descendants.
-     * @return The descendant. If no objects given, the parent.
-     */
-    private Element getOrCreateDescendant( Element parent, IIDLinkedObject... path ) {
-        
-        Element element = parent;
-        for ( IIDLinkedObject obj : path ) {
-            
-            element = getOrCreateChild( element, obj );
-            
-        }
-        return element;
-        
-    }
-    
-    /**
-     * Retrieves the descendant of the root element that represent the given sequence
-     * of objects.<br>
-     * If the child doesn't exist, creates it (as well as intermediate descendants
-     * as necessary).
-     *
-     * @param path The sequence of objects that represent the descendants.
-     * @return The descendant. If no objects given, the root.
-     */
-    protected Element getOrCreateDescendant( IIDLinkedObject... path ) {
-        
-        return getOrCreateDescendant( root, path );
-        
-    }
-    
-    /* Methods for editing restrictions in an element */
-    
-    /**
-     * Retrieves all the restrictions contained in a specified element.
-     * 
-     * @param element Element that contains the restrictions.
-     * @return The list of restrictions in this element.
-     */
-    protected Set<String> getRestrictions( Element element ) {
-        
-        Set<String> restrictions = new TreeSet<>();
-        for ( Element restriction : element.elements( RESTRICTION_TAG ) ) {
-            
-            restrictions.add( restriction.getText() );
-            
-        }
-        
-        return restrictions;
-        
-    }
-    
-    /**
-     * Adds a restriction to a given element, if it does not contain that restriction yet.
-     * @param element Element to add the restriction to.
-     * @param restriction Restriction to be added.
-     *
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present in that element.
-     */
-    protected boolean addRestriction( Element element, String restriction ) {
-        
-        for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
-            
-            if ( existent.getText().equals( restriction ) ) {
-                return false;
-            }
-            
-        }
-        element.addElement( RESTRICTION_TAG ).setText( restriction );
-        saveDocument();
-        return true;
-        
-    }
-    
-    /**
-     * Removes a given restriction from a given Element. Trims any Elements that become
-     * childless due to this operation.
-     * @param element Element where the restriction should be removed from.
-     * @param restriction Restriction to be removed.
-     *
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given Element.
-     */
-    protected boolean removeRestriction( Element element, String restriction ) {
-        
-        for ( Element existent : element.elements( RESTRICTION_TAG ) ) {
-            
-            if ( existent.getText().equals( restriction ) ) {
-                element.remove( existent );
-                while ( ( element != root ) && ( element.elements().isEmpty() ) ) {
-                    // Trims childless elements.
-                    Element parent = element.getParent();
-                    parent.remove( element );
-                    element = parent;
-                    
-                }
-                saveDocument();
-                return true;
-            }
-            
-        }
-        return false;
         
     }
     
@@ -526,19 +166,26 @@ public class Blacklist {
     // Methods for getting restrictions.
     
     /**
+     * Retrieves a copy of the restrictions for a given path.
+     *
+     * @param path Desired path.
+     * @return The restrictions that apply for that path.
+     */
+    protected Set<Restriction> get( IIDLinkedObject... path ) {
+        
+        return new RestrictionSet( blacklist.get( path ) );
+        
+    }
+    
+    /**
      * Retrieves the restrictions for a given Guild.
      *
      * @param guild Desired Guild.
      * @return The restrictions that apply for that Guild.
      */
-    public Set<String> getRestrictions( IGuild guild ) {
+    public Set<Restriction> getRestrictions( IGuild guild ) {
         
-        Element element = getDescendant( guild );
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( guild );
         
     }
     
@@ -548,14 +195,9 @@ public class Blacklist {
      * @param channel Desired Channel.
      * @return The restrictions that apply for that Channel.
      */
-    public Set<String> getRestrictions( IChannel channel ) {
+    public Set<Restriction> getRestrictions( IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel );        
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( channel.getGuild(), channel );
         
     }
     
@@ -566,14 +208,9 @@ public class Blacklist {
      * @param channel Channel the user is in.
      * @return The restrictions that apply for that User.
      */
-    public Set<String> getRestrictions( IUser user, IChannel channel ) {
+    public Set<Restriction> getRestrictions( IUser user, IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel, user );
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( channel.getGuild(), channel, user );
         
     }
     
@@ -584,14 +221,9 @@ public class Blacklist {
      * @param guild Guild the user is in.
      * @return The restrictions that apply for that User.
      */
-    public Set<String> getRestrictions( IUser user, IGuild guild ) {
+    public Set<Restriction> getRestrictions( IUser user, IGuild guild ) {
         
-        Element element = getDescendant( guild, user );        
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( guild, user );
         
     }
     
@@ -602,14 +234,9 @@ public class Blacklist {
      * @param channel Channel the role is in.
      * @return The restrictions that apply for that Role.
      */
-    public Set<String> getRestrictions( IRole role, IChannel channel ) {
+    public Set<Restriction> getRestrictions( IRole role, IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel, role );
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( channel.getGuild(), channel, role );
         
     }
     
@@ -620,47 +247,36 @@ public class Blacklist {
      * @param guild Guild the role is in.
      * @return The restrictions that apply for that Role.
      */
-    public Set<String> getRestrictions( IRole role, IGuild guild ) {
+    public Set<Restriction> getRestrictions( IRole role, IGuild guild ) {
         
-        Element element = getDescendant( guild, role );        
-        if ( element != null ) {
-            return getRestrictions( element );
-        } else {
-            return new HashSet<>();
-        }
+        return get( guild, role );
         
     }
     
-    
     /**
-     * Recursively obtains a set of all the restrictions that apply to a given user and his/her roles up to a given
-     * scope (eg all restrictions for that user under that element and its parents).
-     *
-     * @param element The element that represents the scope.
-     * @param user The user to get restrictions for.
-     * @param roles List of all the roles the user belongs to.
-     * @return The set of all restrictions that apply for that user in all scopes up to the given one,
-     *         or an empty set if the element is the root element.
+     * Retrieves all the restrictions that apply for a given User in a given Channel, for all scopes,
+     * both scope-wide and user-specific.
+     * 
+     * @param user User to get restrictions for.
+     * @param channel Channel where the user is in.
+     * @return The set of restrictions that apply for that user in that channel.
      */
-    private Set<String> getAllRestrictions( Element element, IUser user, List<IRole> roles ) {
+    public Set<Restriction> getAllRestrictions( IUser user, IChannel channel ) {
         
-        if ( element == root ) {
-            return new HashSet<>();
-        }
+        IGuild guild = channel.getGuild();
+        List<IRole> roles = user.getRolesForGuild( guild );
         
-        Set<String> restrictions = getAllRestrictions( element.getParent(), user, roles );
-        restrictions.addAll( getRestrictions( element ) ); // Adds all scope-wide restrictions.
-
-        Element userElement = getChild( element, user );
-        if ( userElement != null ) { // Adds user-specific restrictions, if any.
-            restrictions.addAll( getRestrictions( userElement ) );
-        }
+        /* Get user and scope-wide restrictions */
+        Set<Restriction> restrictions = getRestrictions( user, channel );
+        restrictions.addAll( getRestrictions( channel ) );
+        restrictions.addAll( getRestrictions( user, guild ) );
+        restrictions.addAll( getRestrictions( guild ) );
+        
+        /* Get role restrictions */
         for ( IRole role : roles ) {
             
-            Element roleElement = getChild( element, role );
-            if ( roleElement != null ) { // Adds role-specific restrictions, if any.
-                restrictions.addAll( getRestrictions( roleElement ) );
-            }
+            restrictions.addAll( getRestrictions( role, channel ) );
+            restrictions.addAll( getRestrictions( role, guild ) );
             
         }
         
@@ -668,34 +284,39 @@ public class Blacklist {
         
     }
     
+    // Methods for adding restrictions.
+    
     /**
-     * Retrieves all the restrictions that apply for a given User in a given Channel, for all scopes, both scope-wide
-     * and user-specific.
-     * 
-     * @param user User to get restrictions for.
-     * @param channel Channel where the user is in.
-     * @return The set of restrictions that apply for that user in that channel.
+     * Adds a restriction to the set linked to the given path. If there is no set linked
+     * to the given path, creates it.
+     *
+     * @param restriction The restriction to add.
+     * @param path The path to add the restriction to.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that path.
      */
-    public Set<String> getAllRestrictions( IUser user, IChannel channel ) {
+    protected boolean add( Restriction restriction, IIDLinkedObject... path ) {
         
-        return getAllRestrictions( getMaxDescendant( channel.getGuild(), channel ),
-                user, user.getRolesForGuild( channel.getGuild() ) );
+        RestrictionSet restrictions = blacklist.get( path );
+        if ( restrictions == null ) {
+            restrictions = new RestrictionSet();
+            blacklist.add( restrictions, path );
+        }
+        return restrictions.add( restriction );
         
     }
-    
-    // Methods for adding restrictions.
     
     /**
      * Adds a restriction to the given Guild.
      *
      * @param restriction Restriction to be added.
      * @param guild Guild to add the restriction to.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that Guild.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that Guild.
      */
-    public boolean addRestriction( String restriction, IGuild guild ) {
+    public boolean addRestriction( Restriction restriction, IGuild guild ) {
         
-        return addRestriction( getOrCreateDescendant( guild ), restriction );
+        return add( restriction, guild );
         
     }
     
@@ -704,13 +325,12 @@ public class Blacklist {
      *
      * @param restriction Restriction to be added.
      * @param channel Channel to add the restriction to.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that Channel.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that Channel.
      */
-    public boolean addRestriction( String restriction, IChannel channel ) {
+    public boolean addRestriction( Restriction restriction, IChannel channel ) {
         
-        Element element = getOrCreateDescendant( channel.getGuild(), channel );
-        return addRestriction( element, restriction );
+        return add( restriction, channel.getGuild(), channel );
         
     }
     
@@ -720,13 +340,12 @@ public class Blacklist {
      * @param restriction Restriction to be added.
      * @param user User to add the restriction to.
      * @param channel Channel the user is in.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that User in that Channel.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that User in that Channel.
      */
-    public boolean addRestriction( String restriction, IUser user, IChannel channel ) {
+    public boolean addRestriction( Restriction restriction, IUser user, IChannel channel ) {
         
-        Element element = getOrCreateDescendant( channel.getGuild(), channel, user );
-        return addRestriction( element, restriction );
+        return add( restriction, channel.getGuild(), channel, user );
         
     }
     
@@ -736,13 +355,12 @@ public class Blacklist {
      * @param restriction Restriction to be added.
      * @param user User to add the restriction to.
      * @param guild Guild the user is in.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that User in that Guild.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that User in that Guild.
      */
-    public boolean addRestriction( String restriction, IUser user, IGuild guild ) {
+    public boolean addRestriction( Restriction restriction, IUser user, IGuild guild ) {
         
-        Element element = getOrCreateDescendant( guild, user );
-        return addRestriction( element, restriction );
+        return add( restriction, guild, user );
         
     }
     
@@ -752,13 +370,12 @@ public class Blacklist {
      * @param restriction Restriction to be added.
      * @param role Role to add the restriction to.
      * @param channel Channel the role is in.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that Role in that Channel.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that Role in that Channel.
      */
-    public boolean addRestriction( String restriction, IRole role, IChannel channel ) {
+    public boolean addRestriction( Restriction restriction, IRole role, IChannel channel ) {
         
-        Element element = getOrCreateDescendant( channel.getGuild(), channel, role );
-        return addRestriction( element, restriction );
+        return add( restriction, channel.getGuild(), channel, role );
         
     }
     
@@ -768,34 +385,43 @@ public class Blacklist {
      * @param restriction Restriction to be added.
      * @param role Role to add the restriction to.
      * @param guild Guild the role is in.
-     * @return True if the restriction was added successfully. False if the restriction was
-     *         already present for that Role in that Guild.
+     * @return <tt>true</tt> if the restriction was added successfully.
+     *         <tt>false</tt> if the restriction was already present for that Role in that Guild.
      */
-    public boolean addRestriction( String restriction, IRole role, IGuild guild ) {
+    public boolean addRestriction( Restriction restriction, IRole role, IGuild guild ) {
         
-        Element element = getOrCreateDescendant( guild, role );
-        return addRestriction( element, restriction );
+        return add( restriction, guild, role );
         
     }
     
     // Methods for removing restrictions.
     
     /**
+     * Removes a restriction linked to the given path.
+     *
+     * @param restriction The restriction to be removed.
+     * @param path The path to remove it from.
+     * @return <tt>true</tt> if the restriction was removed from the given path.
+     *         <tt>false</tt> if there was no such restriction on the given path.
+     */
+    protected boolean remove( Restriction restriction, IIDLinkedObject... path ) {
+        
+        RestrictionSet restrictions = blacklist.get( path );
+        return ( ( restrictions != null ) && restrictions.remove( restriction ) );
+        
+    }
+    
+    /**
      * Removes a given restriction from a given Guild.
      *
      * @param restriction Restriction to be removed.
      * @param guild Guild where the restriction should be removed from.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given Guild.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Guild.
      */
-    public boolean removeRestriction( String restriction, IGuild guild ) {
+    public boolean removeRestriction( Restriction restriction, IGuild guild ) {
         
-        Element element = getDescendant( guild );
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
-        }
+        return remove( restriction, guild );
         
     }
     
@@ -804,17 +430,12 @@ public class Blacklist {
      *
      * @param restriction Restriction to be removed.
      * @param channel Channel where the restriction should be removed from.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given Channel.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Channel.
      */
-    public boolean removeRestriction( String restriction, IChannel channel ) {
+    public boolean removeRestriction( Restriction restriction, IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel );
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
-        }
+        return remove( restriction, channel.getGuild(), channel );
         
     }
     
@@ -824,17 +445,12 @@ public class Blacklist {
      * @param restriction Restriction to be removed.
      * @param user User where the restriction should be removed from.
      * @param channel Channel the user is in.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given User in the given Channel.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Channel.
      */
-    public boolean removeRestriction( String restriction, IUser user, IChannel channel ) {
+    public boolean removeRestriction( Restriction restriction, IUser user, IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel, user );        
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
-        }
+        return remove( restriction, channel.getGuild(), channel, user );
         
     }
     
@@ -844,17 +460,12 @@ public class Blacklist {
      * @param restriction Restriction to be removed.
      * @param user User where the restriction should be removed from.
      * @param guild Guild the user is in.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given User in the given Guild.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Guild.
      */
-    public boolean removeRestriction( String restriction, IUser user, IGuild guild ) {
+    public boolean removeRestriction( Restriction restriction, IUser user, IGuild guild ) {
         
-        Element element = getDescendant( guild, user );
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
-        }
+        return remove( restriction, guild, user );
         
     }
     
@@ -864,17 +475,12 @@ public class Blacklist {
      * @param restriction Restriction to be removed.
      * @param role Role where the restriction should be removed from.
      * @param channel Channel the role is in.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given Role in the given Channel.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Channel.
      */
-    public boolean removeRestriction( String restriction, IRole role, IChannel channel ) {
+    public boolean removeRestriction( Restriction restriction, IRole role, IChannel channel ) {
         
-        Element element = getDescendant( channel.getGuild(), channel, role );
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
-        }
+        return remove( restriction, channel.getGuild(), channel, role );
         
     }
     
@@ -884,16 +490,382 @@ public class Blacklist {
      * @param restriction Restriction to be removed.
      * @param role Role where the restriction should be removed from.
      * @param guild Guild the role is in.
-     * @return true if the restriction was successfully removed. false if the restriction
-     *         was not found on the given Role in the given Guild.
+     * @return <tt>true</tt> if the restriction was successfully removed.
+     *         <tt>false</tt> if the restriction was not found on the given Guild.
      */
-    public boolean removeRestriction( String restriction, IRole role, IGuild guild ) {
+    public boolean removeRestriction( Restriction restriction, IRole role, IGuild guild ) {
         
-        Element element = getDescendant( guild, role );
-        if ( element != null ) {
-            return removeRestriction( element, restriction );
-        } else {
-            return false;
+        return remove( restriction, guild, role );
+        
+    }
+    
+    /* Encapsulates a restriction and its metadata */
+    
+    /**
+     * Describes a restriction in the blacklist.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-08-15
+     */
+    public static class Restriction implements XMLElement {
+        
+        /**
+         * UID that represents this class.
+         */
+        private static final long serialVersionUID = -3849151675045924279L;
+
+        /**
+         * Identifies the type of restriction.
+         *
+         * @version 1.0
+         * @author ThiagoTGM
+         * @since 2017-08-15
+         */
+        public enum Type {
+            
+            /**
+             * A sequence of characters anywhere within a message (including within
+             * larger words).
+             */
+            CONTENT,
+            
+            /**
+             * A full word or expression (preceded and followed by either a blank space
+             * or a boundary of the message).
+             */
+            WORD,
+            
+            /**
+             * A regex expression.
+             */
+            REGEX
+            
+        }
+        
+        /**
+         * Local name that identifies this XML element.
+         */
+        public static final String TAG = "restriction";
+        
+        private static final String TYPE_ATTRIBUTE = "type";
+        
+        private String text;
+        private Type type;
+        private Pattern pattern;
+        
+        /**
+         * Constructs an empty restriction.
+         */
+        private Restriction() {
+            
+            this.text = null;
+            this.type = null;
+            this.pattern = null;
+            
+        }
+
+        /**
+         * Constructs a restriction of the given type with the given text.
+         *
+         * @param text The text version of the restriction.
+         * @param type The type of restriction.
+         */
+        public Restriction( String text, Type type ) {
+            
+            this.text = text;
+            this.type = type;
+            this.pattern = makePattern( text, type );
+            
+        }
+        
+        /**
+         * Compiles the restriction pattern from its text and type.
+         *
+         * @param text The text version of the restriction.
+         * @param type The type of restriction.
+         * @return The pattern that identifies the restriction.
+         */
+        private static Pattern makePattern( String text, Type type ) {
+            
+            String regex;
+            switch ( type ) {
+                
+                case CONTENT:
+                    regex = Pattern.quote( text );
+                    break;
+                    
+                case WORD:
+                    regex = String.format( "(?:\\A|\\s)?%s(?:\\z|\\s)?", Pattern.quote( text ) );
+                    break;
+                    
+                case REGEX:
+                    regex = text;
+                    break;
+                    
+                default:
+                    regex = "";
+                    
+            }
+            return Pattern.compile( regex );
+            
+        }
+        
+        /**
+         * Retrieves the text of the restriction.
+         *
+         * @return The restriction text.
+         */
+        public String getText() {
+            
+            return text;
+            
+        }
+        
+        /**
+         * Retrieves the type of the restriction.
+         *
+         * @return The restriction type.
+         */
+        public Type getType() {
+            
+            return type;
+            
+        }
+        
+        /**
+         * Tests if the given message contains this restriction.
+         *
+         * @param message The message to be searched.
+         * @return <tt>true</tt> if part of the message matches this restriction.
+         *         <tt>false</tt> otherwise.
+         */
+        public boolean test( String message ) {
+            
+            return pattern.matcher( message ).find();
+            
+        }
+
+        @Override
+        public void read( XMLStreamReader in ) throws XMLStreamException {
+
+            if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
+                  !in.getLocalName().equals( TAG ) ) {
+                throw new XMLStreamException( "Not in start tag." );
+            }
+            
+            /* Parse type */
+            String typeStr = in.getAttributeValue( null, TYPE_ATTRIBUTE );
+            if ( typeStr == null ) {
+                throw new XMLStreamException( "Missing type attribute." );
+            }
+            try {
+                type = Enum.valueOf( Type.class, typeStr.toUpperCase() );
+            } catch ( IllegalArgumentException e ) {
+                throw new XMLStreamException( "Invalid type attribute.", e );
+            }
+            
+            text = null;
+            while ( in.hasNext() ) {
+                
+                switch ( in.next() ) {
+                    
+                    case XMLStreamConstants.START_ELEMENT:
+                        throw new XMLStreamException( "Unexpected subelement." );
+                        
+                    case XMLStreamConstants.CHARACTERS:
+                        text = in.getText();
+                        break;
+                        
+                    case XMLStreamConstants.END_ELEMENT:
+                        if ( in.getLocalName().equals( TAG ) ) {
+                            if ( text != null ) {
+                                pattern = makePattern( text, type );
+                                return; // Done reading.
+                            } else {
+                                throw new XMLStreamException( "Missing restriction text." );
+                            }
+                        } else {
+                            throw new XMLStreamException( "Unexpected end element." );
+                        }
+                    
+                }
+                
+            }
+            throw new XMLStreamException( "Unexpected end of document." );
+            
+        }
+
+        @Override
+        public void write( XMLStreamWriter out ) throws XMLStreamException {
+
+            out.writeStartElement( TAG );
+            out.writeAttribute( TYPE_ATTRIBUTE, getType().toString().toLowerCase() );
+            out.writeCharacters( getText() );
+            out.writeEndElement();
+            
+        }
+        
+        /**
+         * Compares this restriction with an object for equality. Returns <tt>true</tt> if
+         * the given object is a Restriction with the same text and type.
+         *
+         * @param obj The object to compare to.
+         * @return <tt>true</tt> if this is equal to the given object.
+         *         <tt>false</tt> otherwise.
+         */
+        @Override
+        public boolean equals( Object obj ) {
+            
+            if ( !( obj instanceof Restriction ) ) {
+                return false;
+            }
+            
+            Restriction r = (Restriction) obj;
+            return this.getText().equals( r.getText() ) && ( this.getType() == r.getType() );
+            
+        }
+        
+        /**
+         * Calculates the hash code of the restriction, which is the same as the hash
+         * code of its text.
+         *
+         * @return The hash code of the restriction.
+         */
+        @Override
+        public int hashCode() {
+            
+            return getText().hashCode();
+            
+        }
+        
+        @Override
+        public String toString() {
+            
+            return String.format( "[%s] (%s)", getText(), getType().toString() );
+            
+        }
+        
+        /**
+         * Creates a factory that produces blank Restriction instances.
+         *
+         * @return The new Restriction factory.
+         */
+        public static XMLElement.Factory<Restriction> newFactory() {
+            
+            return new Factory();
+            
+        }
+        
+        /**
+         * Factory that creates new blank Restriction instances.
+         *
+         * @version 1.0
+         * @author ThiagoTGM
+         * @since 2017-09-11
+         */
+        private static class Factory implements XMLElement.Factory<Restriction> {
+
+            /**
+             * UID that represents this class.
+             */
+            private static final long serialVersionUID = 1230290568027312086L;
+
+            @Override
+            public Restriction newInstance() {
+
+                return new Restriction();
+
+            }
+
+        }
+        
+    }
+    
+    /**
+     * Contains a set of restrictions.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-09-11
+     */
+    public static class RestrictionSet extends XMLSet<Restriction> {
+
+        /**
+         * UID that represents this class.
+         */
+        private static final long serialVersionUID = 4465227673053178038L;
+        
+        /**
+         * Local name that identifies this XML element.
+         */
+        public static final String TAG = "restrictions";
+
+        /**
+         * Creates a new instance.
+         */
+        public RestrictionSet() {
+            
+            super( new HashSet<>(), Restriction.newFactory() );
+            
+        }
+        
+        /**
+         * Creates a new instance, initializing it to have the restrictions in the given
+         * collection.
+         *
+         * @param restrictions The restrictions that the instantiated set should have.
+         *                     If empty or <tt>null</tt>, the instantiated RestrictionSet
+         *                     is empty.
+         */
+        public RestrictionSet( Collection<? extends Restriction> restrictions ) {
+            
+            this();
+            if ( restrictions != null ) {
+                addAll( restrictions );
+            }
+            
+        }
+        
+        @Override
+        public String getTag() {
+            
+            return TAG;
+            
+        }
+        
+        /**
+         * Creates a factory that produces empty RestrictionSets.
+         *
+         * @return The new RestrictionSet factory.
+         */
+        public static XMLElement.Factory<RestrictionSet> newFactory() {
+            
+            return new Factory();
+            
+        }
+        
+        /**
+         * Factory that creates new empty RestrictionSets.
+         *
+         * @version 1.0
+         * @author ThiagoTGM
+         * @since 2017-09-11
+         */
+        private static class Factory implements XMLElement.Factory<RestrictionSet> {
+
+            /**
+             * UID that represents this class.
+             */
+            private static final long serialVersionUID = -912979037728857291L;
+
+            @Override
+            public RestrictionSet newInstance() {
+
+                return new RestrictionSet();
+
+            }
+
         }
         
     }

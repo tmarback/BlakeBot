@@ -51,11 +51,6 @@
             <version>1.0.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.dom4j</groupId>
-            <artifactId>dom4j</artifactId>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -100,7 +95,6 @@
                             <artifactSet>
                                 <includes>
 
-                                    <include>org.dom4j:dom4j</include>
                                     <include>com.github.thiagotgm:blakebot-module-admin</include>
 
                                 </includes>

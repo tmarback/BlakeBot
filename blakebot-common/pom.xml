@@ -43,4 +43,13 @@
 
     </licenses>
     
+    <dependencies>
+    
+        <dependency>
+            <groupId>com.fasterxml.woodstox</groupId>
+            <artifactId>woodstox-core</artifactId>
+        </dependency>
+        
+    </dependencies>
+    
 </project>
