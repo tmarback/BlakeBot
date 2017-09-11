@@ -94,7 +94,7 @@ public abstract class AbstractXMLWrapper<T> implements XMLWrapper<T> {
     @Override
     public String toString() {
         
-        return getObject().toString();
+        return ( getObject() == null ) ? null : getObject().toString();
         
     }
 

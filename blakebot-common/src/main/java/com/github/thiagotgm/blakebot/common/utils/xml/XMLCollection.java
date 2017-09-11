@@ -36,7 +36,7 @@ import com.github.thiagotgm.blakebot.common.utils.XMLElement;
  * @since 2017-09-10
  * @param <E> The type of elements being stored in the collection.
  */
-public class XMLCollection<E extends XMLElement> implements XMLElement, Collection<E> {
+public abstract class XMLCollection<E extends XMLElement> implements XMLElement, Collection<E> {
 
     /**
      * UID that represents this class.
