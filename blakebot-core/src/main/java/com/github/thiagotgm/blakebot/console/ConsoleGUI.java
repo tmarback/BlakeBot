@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.ConnectionStatusListener;
+import com.github.thiagotgm.blakebot.common.ExitManager;
 import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
 import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
@@ -97,7 +98,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
                 LOG.info( "Console closed. Exiting." );
                 Settings.saveSettings();
-                System.exit( 0 );
+                ExitManager.exit();
                 
             }
 
