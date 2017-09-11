@@ -28,7 +28,13 @@ import org.junit.Test;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLInteger;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
 
-
+/**
+ * Unit tests for {@link XMLTreeGraph}.
+ *
+ * @version 1.0
+ * @author ThiagoTGM
+ * @since 2017-09-11
+ */
 public class XMLTreeGraphTest {
     
     private static final XMLTreeGraph<XMLString,XMLInteger> EXPECTED;
