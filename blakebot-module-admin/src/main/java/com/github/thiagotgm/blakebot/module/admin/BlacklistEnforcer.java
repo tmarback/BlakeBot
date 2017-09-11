@@ -19,13 +19,13 @@ package com.github.thiagotgm.blakebot.module.admin;
 
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.regex.Pattern;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.AsyncTools;
+import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
+import com.github.thiagotgm.blakebot.module.admin.Blacklist.Restriction;
 
+import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
@@ -53,16 +53,15 @@ public class BlacklistEnforcer {
         LOG.error( "Uncaught exception thrown while enforcing blacklist.", e );
         
     });
-    private static final String PATTERN = "(?s)(?:.*\\s)?%s(?:\\s.*)?";
     
     private final Blacklist blacklist;
     
     /**
      * Constructs a new enforcer.
      */
-    public BlacklistEnforcer() {
+    public BlacklistEnforcer( IDiscordClient client ) {
         
-        blacklist = Blacklist.getInstance();
+        blacklist = Blacklist.getInstance( client );
         
     }
     
@@ -86,14 +85,15 @@ public class BlacklistEnforcer {
         // Check for match asynchronously.
         executor.execute( () -> {
             
-            Set<String> restrictions = blacklist.getAllRestrictions( author, channel );
+            Set<Restriction> restrictions = blacklist.getAllRestrictions( author, channel );
             LOG.trace( "Restrictions for author \"{}\" in channel \"{}\" of guild \"{}\": {}.",
                     author.getName(), channel.getName(), guild.getName(), restrictions );
-            for ( String restriction : restrictions ) {
+            for ( Restriction restriction : restrictions ) {
                 
-                if ( Pattern.matches( String.format( PATTERN, restriction ), content ) ) {
-                    LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\".",
-                            content, author.getName(), channel.getName(), guild.getName() );
+                if ( restriction.test( content ) ) { // Found restriction in message.
+                    LOG.debug( "Blacklist match: \"{}\" from \"{}\" in channel \"{}\" of guild \"{}\""
+                            + " - matches {}.", content, author.getName(), channel.getName(),
+                            guild.getName(), restriction );
                     RequestBuffer.request( () -> {
                         
                         try { // Attempt to delete the message.
