@@ -18,6 +18,7 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
 import com.github.thiagotgm.blakebot.common.LogoutManager;
+import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
@@ -38,35 +39,44 @@ public class AdminModule implements IModule {
     private static final String MODULE_NAME = "Admin";
     
     IDiscordClient client;
-    private static final BlacklistEnforcer enforcer = new BlacklistEnforcer();
+    private Blacklist blacklist;
+    private BlacklistEnforcer enforcer;
     
     
     @Override
     public void disable() {
         
         EventDispatcher dispatcher = client.getDispatcher();
-        dispatcher.unregisterListener( enforcer );
+        dispatcher.unregisterListener( enforcer ); // Remove blacklist enforcer.
         
         TimeoutController controller = TimeoutController.getInstance();
         LogoutManager.getManager( client ).unregisterListener( controller );
         controller.terminate(); // Ensure timeouts are reverted.
         
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
-        client = null;
+        CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
+        client = null; // Remove client.
+        
+        SaveManager.unregisterListener( blacklist );
+        blacklist.save(); // Disables and saves blacklist.
 
     }
 
     @Override
     public boolean enable( IDiscordClient arg0 ) {
 
-        client = arg0;
+        client = arg0; // Store client.
+        
+        blacklist = Blacklist.getInstance( arg0 ); // Get blacklist.
+        SaveManager.registerListener( blacklist );
         
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
-        registerCommands( registry );
+        registerCommands( registry ); // Register commands.
         
         EventDispatcher dispatcher = client.getDispatcher();
+        enforcer = new BlacklistEnforcer( blacklist ); // Make blacklist enforcer.
         dispatcher.registerListener( enforcer );
         
+        // Set timeout controller.
         LogoutManager.getManager( client ).registerListener( TimeoutController.getInstance() );
         
         return true;
@@ -80,7 +90,7 @@ public class AdminModule implements IModule {
      */
     private void registerCommands( CommandRegistry registry ) {
         
-        registry.registerAnnotatedCommands( new BlacklistCommand() );
+        registry.registerAnnotatedCommands( new BlacklistCommand( blacklist ) );
         registry.registerAnnotatedCommands( new TimeoutCommand() );
         registry.registerAnnotatedCommands( new AutoRoleCommand() );
         

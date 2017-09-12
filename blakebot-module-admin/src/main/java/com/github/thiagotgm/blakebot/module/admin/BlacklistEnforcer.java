@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 import com.github.thiagotgm.blakebot.module.admin.Blacklist.Restriction;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
 import sx.blah.discord.handle.obj.IChannel;
@@ -58,10 +57,12 @@ public class BlacklistEnforcer {
     
     /**
      * Constructs a new enforcer.
+     * 
+     * @param blacklist The blacklist to be enforced.
      */
-    public BlacklistEnforcer( IDiscordClient client ) {
+    public BlacklistEnforcer( Blacklist blacklist ) {
         
-        blacklist = Blacklist.getInstance( client );
+        this.blacklist = blacklist;
         
     }
     

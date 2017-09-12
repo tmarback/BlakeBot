@@ -42,6 +42,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.blakebot.common.utils.IDLinkedGraph;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
@@ -64,7 +65,7 @@ import sx.blah.discord.handle.obj.IUser;
  * @author ThiagoTGM
  * @since 2017-02-07
  */
-public class Blacklist {
+public class Blacklist implements SaveManager.Saveable {
     
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
@@ -72,7 +73,7 @@ public class Blacklist {
     private static Map<IDiscordClient, Blacklist> instances;
     
     static {
-        
+
         instances = Collections.synchronizedMap( new HashMap<>() );
         
     }
@@ -136,9 +137,10 @@ public class Blacklist {
     /**
      * Writes blacklist to file.
      */
+    @Override
     public synchronized void save() {
         
-        LOG.debug( "Saving Blacklist." );
+        LOG.debug( "Saving Blacklist..." );
         
         Path folders = filePath.getParent();
         if ( folders != null ) { // Ensure folders exist.
@@ -158,6 +160,8 @@ public class Blacklist {
         } catch ( XMLStreamException e ) {
             LOG.error( "Failed to save blacklist.", e );
         }
+        
+        LOG.debug( "Blacklist saved." );
         
     }
     
