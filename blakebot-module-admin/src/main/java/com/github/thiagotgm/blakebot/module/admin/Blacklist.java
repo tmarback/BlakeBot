@@ -49,6 +49,8 @@ import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.events.IListener;
+import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -65,7 +67,7 @@ import sx.blah.discord.handle.obj.IUser;
  * @author ThiagoTGM
  * @since 2017-02-07
  */
-public class Blacklist implements SaveManager.Saveable {
+public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
     
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
@@ -94,7 +96,7 @@ public class Blacklist implements SaveManager.Saveable {
         
         this.blacklist = new IDLinkedGraph<>( client, RestrictionSet.newFactory() );
         this.filePath = filePath;
-        load();
+        client.getDispatcher().registerTemporaryListener( this );
         
     }
     
@@ -112,6 +114,17 @@ public class Blacklist implements SaveManager.Saveable {
             instances.put( client, instance );
         }
         return instance;
+        
+    }
+    
+    /**
+     * Once the bot is connected, loads the blacklist from file.
+     *
+     * @param event
+     */
+    public void handle( ReadyEvent event ) {
+        
+        load();
         
     }
     
@@ -299,7 +312,7 @@ public class Blacklist implements SaveManager.Saveable {
      * @return <tt>true</tt> if the restriction was added successfully.
      *         <tt>false</tt> if the restriction was already present for that path.
      */
-    protected boolean add( Restriction restriction, IIDLinkedObject... path ) {
+    protected synchronized boolean add( Restriction restriction, IIDLinkedObject... path ) {
         
         RestrictionSet restrictions = blacklist.get( path );
         if ( restrictions == null ) {
@@ -408,7 +421,7 @@ public class Blacklist implements SaveManager.Saveable {
      * @return <tt>true</tt> if the restriction was removed from the given path.
      *         <tt>false</tt> if there was no such restriction on the given path.
      */
-    protected boolean remove( Restriction restriction, IIDLinkedObject... path ) {
+    protected synchronized boolean remove( Restriction restriction, IIDLinkedObject... path ) {
         
         RestrictionSet restrictions = blacklist.get( path );
         return ( ( restrictions != null ) && restrictions.remove( restriction ) );
