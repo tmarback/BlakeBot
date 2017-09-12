@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot.common.utils;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 /**
@@ -106,6 +107,8 @@ public class AsyncTools {
         
     }
     
+    /* Thread Pool Executors */
+    
     /**
      * Creates an executor that uses a fixed amount of threads, where the threads
      * used have the given settings.
@@ -173,6 +176,79 @@ public class AsyncTools {
             UncaughtExceptionHandler handler ) {
         
         return createFixedThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, true );
+        
+    }
+    
+    /* Thread Pool Scheduled Executors */
+    
+    /**
+     * Creates a scheduled executor that uses a fixed amount of threads, where the threads
+     * used have the given settings.
+     *
+     * @param nThreads The amount of threads to use.
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @param daemon Whether the threads to be used should be daemon threads.
+     * @return The scheduled executor with the given parameters.
+     * @see Executors#newScheduledThreadPool(int)
+     */
+    public static ScheduledExecutorService createScheduledThreadPool( int nThreads, ThreadGroup group,
+            UncaughtExceptionHandler handler, boolean daemon ) {
+        
+        ThreadFactory factory = createThreadFactory( group, handler, daemon );
+        return Executors.newScheduledThreadPool( nThreads, factory );
+        
+    }
+    
+    /**
+     * Creates a scheduled executor that uses the
+     * {@link #DEFAULT_THREAD_AMOUNT default amount of threads}, where the threads used have
+     * the given settings.
+     *
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @param daemon Whether the threads to be used should be daemon threads.
+     * @return The scheduled executor with the given parameters.
+     * @see Executors#newScheduledThreadPool(int)
+     */
+    public static ScheduledExecutorService createScheduledThreadPool( ThreadGroup group,
+            UncaughtExceptionHandler handler, boolean daemon ) {
+        
+        return createScheduledThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, daemon );
+        
+    }
+    
+    /**
+     * Creates a scheduled executor that uses a fixed amount of threads, where the threads
+     * used have the given settings and are daemon threads.
+     *
+     * @param nThreads The amount of threads to use.
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @return The scheduled executor with the given parameters.
+     * @see Executors#newScheduledThreadPool(int)
+     */
+    public static ScheduledExecutorService createScheduledThreadPool( int nThreads, ThreadGroup group,
+            UncaughtExceptionHandler handler ) {
+        
+        return createScheduledThreadPool( nThreads, group, handler, true );
+        
+    }
+    
+    /**
+     * Creates an scheduled executor that uses the
+     * {@link #DEFAULT_THREAD_AMOUNT default amount of threads}, where the threads used have
+     * the given settings and are daemon threads.
+     *
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @return The scheduled executor with the given parameters.
+     * @see Executors#newScheduledThreadPool(int)
+     */
+    public static ScheduledExecutorService createScheduledThreadPool( ThreadGroup group,
+            UncaughtExceptionHandler handler ) {
+        
+        return createScheduledThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, true );
         
     }
 

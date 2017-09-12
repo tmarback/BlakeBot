@@ -19,7 +19,6 @@ package com.github.thiagotgm.blakebot.common;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -49,12 +48,12 @@ public class SaveManager implements ExitManager.ExitListener {
     
     private static final List<Saveable> listeners = new LinkedList<>();
     private static final ThreadGroup THREADS = new ThreadGroup( "Auto-save Scheduler" );
-    private static final ScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool( 1,
-            AsyncTools.createThreadFactory( THREADS, ( t, e ) -> {
+    private static final ScheduledExecutorService EXECUTOR =
+            AsyncTools.createScheduledThreadPool( 1, THREADS, ( t, e ) -> {
                 
                 LOG.error( "Uncaught exception thrown while autosaving.", e );
                 
-            }, true ) );
+            });
     private static final Runnable AUTO_SAVE = () -> {
         
         LOG.info( "Auto-saving." );
