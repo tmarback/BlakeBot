@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * @author ThiagoTGM
  * @since 2017-07-28
  */
-public class Settings {
+public class Settings implements SaveManager.Saveable {
     
     private static final Logger LOG = LoggerFactory.getLogger( Settings.class );
     
@@ -238,6 +238,24 @@ public class Settings {
         } catch ( IOException e ) {
             LOG.error( "Could not write to properties file.", e );
         }
+        
+    }
+    
+    static {
+        // Register for autosaving.
+        SaveManager.registerListener( new Settings() );
+        
+    }
+    
+    /**
+     * Creates a new instance.
+     */
+    private Settings() {}
+    
+    @Override
+    public void save() {
+        
+        saveSettings();
         
     }
 

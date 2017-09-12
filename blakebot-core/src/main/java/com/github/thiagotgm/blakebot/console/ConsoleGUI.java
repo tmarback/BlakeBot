@@ -97,7 +97,6 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             public void windowClosed( WindowEvent arg0 ) {
 
                 LOG.info( "Console closed. Exiting." );
-                Settings.saveSettings();
                 ExitManager.exit();
                 
             }
