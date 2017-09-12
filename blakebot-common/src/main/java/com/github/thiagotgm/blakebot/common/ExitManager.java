@@ -49,7 +49,7 @@ public class ExitManager {
                 
             });
     
-    private static List<ExitListener> listeners = new LinkedList<>();
+    private static final List<ExitListener> listeners = new LinkedList<>();
     
     /**
      * Registers a listener to be called before exiting.
