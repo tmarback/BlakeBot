@@ -123,7 +123,10 @@ public class BlacklistCommand {
             description = "Performs the operation (add or remove), but treating each entry as "
                     + "a full word/expression.",
             usage = "{}blacklist|bl [server] <operation> word [user/role]... <entry> [entry]...",
-            executeParent = true
+            ignorePrivate = true,
+            executeParent = true,
+            successHandler = SUCCESS_HANDLER,
+            failureHandler = FAILURE_HANDLER
             )
     public void wordModifier( CommandContext context ) {}
     
@@ -133,7 +136,10 @@ public class BlacklistCommand {
             description = "Performs the operation (add or remove), but treating each entry as "
                     + "a regex expression.",
             usage = "{}blacklist|bl [server] <operation> regex [user/role]... <entry> [entry]...",
-            executeParent = true
+            ignorePrivate = true,
+            executeParent = true,
+            successHandler = SUCCESS_HANDLER,
+            failureHandler = FAILURE_HANDLER
             )
     public void regexModifier( CommandContext context ) {}
     
