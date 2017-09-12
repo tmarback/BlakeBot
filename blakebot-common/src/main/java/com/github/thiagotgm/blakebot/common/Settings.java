@@ -227,7 +227,7 @@ public class Settings implements SaveManager.Saveable {
      */
     public synchronized static void saveSettings() {
         
-        LOG.info( "Saving properties." );
+        LOG.info( "Saving settings..." );
         FileOutputStream file;
         try {
             file = new FileOutputStream( SETTINGS_FILE );

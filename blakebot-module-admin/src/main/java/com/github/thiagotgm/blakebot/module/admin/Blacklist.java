@@ -140,7 +140,7 @@ public class Blacklist implements SaveManager.Saveable {
     @Override
     public synchronized void save() {
         
-        LOG.debug( "Saving Blacklist..." );
+        LOG.info( "Saving Blacklist..." );
         
         Path folders = filePath.getParent();
         if ( folders != null ) { // Ensure folders exist.
@@ -600,7 +600,7 @@ public class Blacklist implements SaveManager.Saveable {
                     break;
                     
                 case WORD:
-                    regex = String.format( "(?:\\A|\\s)?%s(?:\\z|\\s)?", Pattern.quote( text ) );
+                    regex = String.format( "(?:\\A|\\s)%s(?:\\z|\\s)", Pattern.quote( text ) );
                     break;
                     
                 case REGEX:
