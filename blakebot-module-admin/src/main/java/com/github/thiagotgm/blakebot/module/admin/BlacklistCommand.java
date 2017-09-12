@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import com.github.thiagotgm.blakebot.module.admin.Blacklist.Restriction;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.FailureReason;
@@ -58,6 +60,9 @@ public class BlacklistCommand {
     private static final String ADD_NAME = "Blacklist Add";
     private static final String REMOVE_NAME = "Blacklist Remove";
     private static final String LIST_NAME = "Blacklist List";
+    
+    private static final String WORD_NAME = "Word entries";
+    private static final String REGEX_NAME = "Regex entries";
     
     private static final String SUCCESS_HANDLER = "success";
     private static final String FAILURE_HANDLER = "failure";
@@ -112,6 +117,54 @@ public class BlacklistCommand {
     
     /* For editing the blacklist */
     
+    @SubCommand(
+            name = WORD_NAME,
+            aliases = "word",
+            description = "Performs the operation (add or remove), but treating each entry as "
+                    + "a full word/expression.",
+            usage = "{}blacklist|bl [server] <operation> word [user/role]... <entry> [entry]...",
+            executeParent = true
+            )
+    public void wordModifier( CommandContext context ) {}
+    
+    @SubCommand(
+            name = REGEX_NAME,
+            aliases = "regex",
+            description = "Performs the operation (add or remove), but treating each entry as "
+                    + "a regex expression.",
+            usage = "{}blacklist|bl [server] <operation> regex [user/role]... <entry> [entry]...",
+            executeParent = true
+            )
+    public void regexModifier( CommandContext context ) {}
+    
+    /**
+     * Parses the argument given to the command. If the command is the Word or Regex modifier,
+     * the entries are parsed accordingly. Else, entries are parsed as Content.
+     *
+     * @param context Context of the command being executed.
+     * @return The parsed arguments.
+     */
+    private Arguments parseArgs( CommandContext context ) {
+        
+        Restriction.Type entryType;
+        switch ( context.getCommand().getName() ) {
+            
+            case WORD_NAME:
+                entryType = Restriction.Type.WORD;
+                break;
+                
+            case REGEX_NAME:
+                entryType = Restriction.Type.REGEX;
+                break;
+                
+            default:
+                entryType = Restriction.Type.CONTENT;
+            
+        }
+        return new Arguments( context.getArguments(), entryType );
+        
+    }
+    
     /**
      * Runs an operation on the full scope.
      *
@@ -121,12 +174,12 @@ public class BlacklistCommand {
      * @param successMessage The result message on a success.
      * @param failureMessage The result message on a failure.
      */
-    private void runOnScope( Predicate<String> operation, String entry,
+    private void runOnScope( Predicate<Restriction> operation, Restriction entry,
             StringBuilder message, String successMessage, String failureMessage ) {
         
         boolean success = operation.test( entry );
         String resultMessage = ( success ) ? successMessage : failureMessage;
-        message.append( String.format( resultMessage, entry ) );
+        message.append( String.format( resultMessage, entry.getText() ) );
         
     }
     
@@ -142,8 +195,8 @@ public class BlacklistCommand {
      * @param successMessage The result message on a success.
      * @param failureMessage The result message on a failure.
      */
-    private void runOnUsersAndRoles( BiPredicate<IUser, String> userOperation, 
-            BiPredicate<IRole, String> roleOperation, String entry,
+    private void runOnUsersAndRoles( BiPredicate<IUser, Restriction> userOperation, 
+            BiPredicate<IRole, Restriction> roleOperation, Restriction entry,
             List<IUser> users, List<IRole> roles,
             StringBuilder message, String successMessage, String failureMessage ) {
         
@@ -172,10 +225,12 @@ public class BlacklistCommand {
         
         // Build message.
         if ( !successes.isEmpty() ) {
-            message.append( String.format( successMessage, entry, String.join( ", ", successes ) ) );
+            message.append( String.format( successMessage, entry.getText(),
+                    String.join( ", ", successes ) ) );
         }
         if ( !failures.isEmpty() ) {
-            message.append( String.format( failureMessage, entry, String.join( ", ", failures ) ) );
+            message.append( String.format( failureMessage, entry.getText(),
+                    String.join( ", ", failures ) ) );
         }
         
     }
@@ -186,9 +241,9 @@ public class BlacklistCommand {
      * @param operation The operation to run.
      * @param entries The entries to run on.
      */
-    private void runOnEntries( Consumer<String> operation, List<String> entries ) {
+    private void runOnEntries( Consumer<Restriction> operation, List<Restriction> entries ) {
         
-        for ( String entry : entries ) { // Run operation on each entry.
+        for ( Restriction entry : entries ) { // Run operation on each entry.
             
             operation.accept( entry );
             
@@ -199,27 +254,31 @@ public class BlacklistCommand {
     @SubCommand(
             name = ADD_NAME,
             aliases = "add",
-            description = "Adds a new blacklist entry.",
-            usage = "{}blacklist|bl [server] add [user/role]... <entry> [entry]...",
+            description = "Adds a new blacklist entry. By default, each entry is treated as "
+                    + "content anywhere in each message. Modifiers can be used to make the "
+                    + "entries be treated as words/expressions (must be surrounded by spaces) "
+                    + "or a regex expression.",
+            usage = "{}blacklist|bl [server] add [modifier] [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
-            failureHandler = FAILURE_HANDLER
+            failureHandler = FAILURE_HANDLER,
+            subCommands = { WORD_NAME, REGEX_NAME }
     )
     public boolean blacklistAddCommand( CommandContext context ) {
         
-        Arguments args = new Arguments( context.getArguments() );
+        Arguments args = parseArgs( context );
         if ( args.getEntries().isEmpty() ) {
             return false; // Missing any entries.
         }
         
         Scope scope = (Scope) context.getHelper().get();
         
-        Consumer<String> operation; // Set up operation to run.
+        Consumer<Restriction> operation; // Set up operation to run.
         StringBuilder message = new StringBuilder();
         if ( args.getUsers().isEmpty() && args.getRoles().isEmpty() ) {
             /* Scope-wide add */
-            Predicate<String> tempSetter = null;
+            Predicate<Restriction> tempSetter = null;
             switch ( scope ) {
                 
                 case CHANNEL:
@@ -235,15 +294,15 @@ public class BlacklistCommand {
                     break;
                 
             }
-            final Predicate<String> setter = tempSetter;
+            final Predicate<Restriction> setter = tempSetter;
             operation = ( entry ) -> {
                 runOnScope( setter, entry, message, "Blacklisted `%s`!\n",
                         "Failure: `%s` is already blacklisted.\n" );
             };
         } else {
             /* Add for specific users and roles. */
-            BiPredicate<IUser, String> tempUserSetter = null;
-            BiPredicate<IRole, String> tempRoleSetter = null;
+            BiPredicate<IUser, Restriction> tempUserSetter = null;
+            BiPredicate<IRole, Restriction> tempRoleSetter = null;
             switch ( scope ) {
                 
                 case CHANNEL:
@@ -265,8 +324,8 @@ public class BlacklistCommand {
                     break;
                 
             }
-            final BiPredicate<IUser, String> userSetter = tempUserSetter;
-            final BiPredicate<IRole, String> roleSetter = tempRoleSetter;
+            final BiPredicate<IUser, Restriction> userSetter = tempUserSetter;
+            final BiPredicate<IRole, Restriction> roleSetter = tempRoleSetter;
             operation = ( entry ) -> {
                 runOnUsersAndRoles( userSetter, roleSetter, entry, 
                         args.getUsers(), args.getRoles(), message,
@@ -285,27 +344,29 @@ public class BlacklistCommand {
     @SubCommand(
             name = REMOVE_NAME,
             aliases = { "remove", "rm" },
-            description = "Removes a blacklist entry.",
-            usage = "{}blacklist|bl [server] remove|rm [user/role]... <entry> [entry]...",
+            description = "Removes a blacklist entry. The modifier must match the modifier used "
+                    + "to add the entry.",
+            usage = "{}blacklist|bl [server] remove|rm [modifier] [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
-            failureHandler = FAILURE_HANDLER
+            failureHandler = FAILURE_HANDLER,
+            subCommands = { WORD_NAME, REGEX_NAME }
     )
     public boolean blacklistRemoveCommand( CommandContext context ) {
         
-        Arguments args = new Arguments( context.getArguments() );
+        Arguments args = parseArgs( context );
         if ( args.getEntries().isEmpty() ) {
             return false; // Missing any entries.
         }
         
         Scope scope = (Scope) context.getHelper().get();
         
-        Consumer<String> operation; // Set up operation to run.
+        Consumer<Restriction> operation; // Set up operation to run.
         StringBuilder message = new StringBuilder();
         if ( args.getUsers().isEmpty() && args.getRoles().isEmpty() ) {
             /* Scope-wide add */
-            Predicate<String> tempSetter = null;
+            Predicate<Restriction> tempSetter = null;
             switch ( scope ) {
                 
                 case CHANNEL:
@@ -321,15 +382,15 @@ public class BlacklistCommand {
                     break;
                 
             }
-            final Predicate<String> setter = tempSetter;
+            final Predicate<Restriction> setter = tempSetter;
             operation = ( entry ) -> {
                 runOnScope( setter, entry, message, "Removed `%s` from the blacklist!\n",
                         "Failure: `%s` is not blacklisted.\n" );
             };
         } else {
             /* Add for specific users and roles. */
-            BiPredicate<IUser, String> tempUserSetter = null;
-            BiPredicate<IRole, String> tempRoleSetter = null;
+            BiPredicate<IUser, Restriction> tempUserSetter = null;
+            BiPredicate<IRole, Restriction> tempRoleSetter = null;
             switch ( scope ) {
                 
                 case CHANNEL:
@@ -351,8 +412,8 @@ public class BlacklistCommand {
                     break;
                 
             }
-            final BiPredicate<IUser, String> userSetter = tempUserSetter;
-            final BiPredicate<IRole, String> roleSetter = tempRoleSetter;
+            final BiPredicate<IUser, Restriction> userSetter = tempUserSetter;
+            final BiPredicate<IRole, Restriction> roleSetter = tempRoleSetter;
             operation = ( entry ) -> {
                 runOnUsersAndRoles( userSetter, roleSetter, entry, 
                         args.getUsers(), args.getRoles(), message,
@@ -376,9 +437,11 @@ public class BlacklistCommand {
      * @param restrictions The restrictions to be formatted.
      * @return The formatted list.
      */
-    private String formatRestrictions( Collection<String> restrictions ) {
+    private String formatRestrictions( Collection<Restriction> restrictions ) {
         
-        return ( restrictions.isEmpty() ) ? "\u200B" : String.join( "\n", restrictions );
+        List<String> restrictionStrings = new ArrayList<>( restrictions.size() );
+        restrictions.stream().forEachOrdered( r -> restrictionStrings.add( r.toString() ) );
+        return ( restrictions.isEmpty() ) ? "\u200B" : String.join( "\n", restrictionStrings );
         
     }
       
@@ -398,7 +461,7 @@ public class BlacklistCommand {
         List<Argument> args = context.getArguments();
         if ( args.isEmpty() ) { // Scope-wide.
             String text = null;
-            Set<String> restrictions = null;
+            Set<Restriction> restrictions = null;
             switch ( scope ) {
                 
                 case CHANNEL:
@@ -416,8 +479,8 @@ public class BlacklistCommand {
             builder.appendField( title, formatRestrictions( restrictions ), false );
         } else { // For specific users/roles.
             String text = null;
-            Function<IUser, Set<String>> userGetter = null;
-            Function<IRole, Set<String>> roleGetter = null;
+            Function<IUser, Set<Restriction>> userGetter = null;
+            Function<IRole, Set<Restriction>> roleGetter = null;
             switch ( scope ) { // Set how to get restrictions for selected scope.
                 
                 case CHANNEL:
@@ -454,7 +517,7 @@ public class BlacklistCommand {
             for ( Argument arg : args ) { // Shows restrictions for each mention.
                 
                 String name;
-                Set<String> restrictions;
+                Set<Restriction> restrictions;
                 switch ( arg.getType() ) {
                     
                     case USER_MENTION:
@@ -527,15 +590,16 @@ public class BlacklistCommand {
         
         private final List<IUser> users;
         private final List<IRole> roles;
-        private final List<String> entries;
+        private final List<Restriction> entries;
         
         /**
          * Parses the arguments given to the command, splitting into
          * mentioned users and roles and all text that came after.
          *
          * @param args The arguments received by the command.
+         * @param restrictionType The type of restrictions being used.
          */
-        public Arguments( List<Argument> args ) {
+        public Arguments( List<Argument> args, Restriction.Type restrictionType ) {
             
             /* Parse the target users and roles */
             List<IUser> users = new LinkedList<>();
@@ -563,10 +627,10 @@ public class BlacklistCommand {
             }
             
             /* Parse the target expressions for the blacklist */
-            List<String> entries = new LinkedList<>();
+            List<Restriction> entries = new LinkedList<>();
             while ( curr < args.size() ) {
                 
-                entries.add( args.get( curr++ ).getText() );
+                entries.add( new Restriction( args.get( curr++ ).getText(), restrictionType ) );
                 
             }
             
@@ -604,7 +668,7 @@ public class BlacklistCommand {
          *
          * @return The target entries.
          */
-        public List<String> getEntries() {
+        public List<Restriction> getEntries() {
             
             return entries;
             
