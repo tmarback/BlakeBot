@@ -442,8 +442,8 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                                 if ( key != null ) {
                                     throw new XMLStreamException( "More than one key found." );
                                 }
-                                reading = true;
-                                in.next(); // Move to start of key element.
+                                reading = true; // Move to start of key element.
+                                while ( in.next() != XMLStreamConstants.START_ELEMENT );
                                 key = readKey( in );
                                 break;
                                 
@@ -451,8 +451,8 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                                 if ( value != null ) {
                                     throw new XMLStreamException( "More than one value found." );
                                 }
-                                reading = true;
-                                in.next(); // Move to start of value element.
+                                reading = true; // Move to start of value element.
+                                while ( in.next() != XMLStreamConstants.START_ELEMENT );
                                 value = readValue( in );
                                 break;
                                 

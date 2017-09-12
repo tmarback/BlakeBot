@@ -182,6 +182,7 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
                 XMLElement.Factory<XMLPassthrough<V>> valueFactory ) {
 
             super( keyFactory, valueFactory );
+            setRoot( new IDLinkedNode() );
             
         }
         
@@ -233,10 +234,12 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
                     throw new XMLStreamException( "Not in start element." );
                 }
                 
-                /* Read key */
-                XMLIDLinkedObject key = keyFactory.newInstance();
-                key.readStart( in );
-                setKey( key );
+                if ( !in.getLocalName().equals( XMLNode.NODE_TAG ) ) { // Not root node.
+                    /* Read key */
+                    XMLIDLinkedObject key = keyFactory.newInstance();
+                    key.readStart( in );
+                    setKey( key );
+                }
 
                 children.clear();
                 value = null;
@@ -257,8 +260,8 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
                                 if ( value != null ) {
                                     throw new XMLStreamException( "More than one value found." );
                                 }
-                                reading = true;
-                                in.next(); // Move to start of value element.
+                                reading = true; // Move to start of value element.
+                                while ( in.next() != XMLStreamConstants.START_ELEMENT );
                                 value = readValue( in );
                                 break;
 
@@ -274,7 +277,8 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
                             break;
 
                         case XMLStreamConstants.END_ELEMENT:
-                            if ( in.getLocalName().equals( getKey().getTag() ) ) {
+                            if ( in.getLocalName().equals(
+                                    getKey() == null ? XMLNode.NODE_TAG : getKey().getTag() ) ) {
                                 return; // Done reading.
                             } else if ( in.getLocalName().equals( VALUE_TAG ) ) {
                                 if ( value == null ) {
@@ -296,7 +300,11 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
             @Override
             public void write( XMLStreamWriter out ) throws XMLStreamException {
                 
-                getKey().writeStart( out );
+                if ( getKey() != null ) {
+                    getKey().writeStart( out );
+                } else { // Root node.
+                    out.writeStartElement( XMLNode.NODE_TAG );
+                }
                 
                 if ( getValue() != null ) { // Write value if there is one.
                     out.writeStartElement( VALUE_TAG );
