@@ -172,6 +172,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
             return;
         } catch ( XMLStreamException e ) {
             LOG.error( "Failed to save blacklist.", e );
+            return;
         }
         
         LOG.debug( "Blacklist saved." );
@@ -543,22 +544,24 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
             
             /**
              * A sequence of characters anywhere within a message (including within
-             * larger words).
+             * larger words). Case insensitive.
              */
             CONTENT,
             
             /**
              * A full word or expression (preceded and followed by either a blank space
-             * or a boundary of the message).
+             * or a boundary of the message). Case insensitive.
              */
             WORD,
             
             /**
-             * A regex expression.
+             * A regex expression. Case sensitive.
              */
             REGEX
             
         }
+        
+        private static final int CASE_FLAG = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
         
         /**
          * Local name that identifies this XML element.
@@ -606,14 +609,17 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
         private static Pattern makePattern( String text, Type type ) {
             
             String regex;
+            int flags = 0;
             switch ( type ) {
                 
                 case CONTENT:
                     regex = Pattern.quote( text );
+                    flags = CASE_FLAG;
                     break;
                     
                 case WORD:
                     regex = String.format( "(?:\\A|\\s)%s(?:\\z|\\s)", Pattern.quote( text ) );
+                    flags = CASE_FLAG;
                     break;
                     
                 case REGEX:
@@ -624,7 +630,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
                     regex = "";
                     
             }
-            return Pattern.compile( regex );
+            return Pattern.compile( regex, flags );
             
         }
         

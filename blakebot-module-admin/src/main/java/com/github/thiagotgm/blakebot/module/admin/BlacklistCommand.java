@@ -121,7 +121,7 @@ public class BlacklistCommand {
             name = WORD_NAME,
             aliases = "word",
             description = "Performs the operation (add or remove), but treating each entry as "
-                    + "a full word/expression.",
+                    + "a full word/expression. Is case insensitive.",
             usage = "{}blacklist|bl [server] <operation> word [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
@@ -134,7 +134,7 @@ public class BlacklistCommand {
             name = REGEX_NAME,
             aliases = "regex",
             description = "Performs the operation (add or remove), but treating each entry as "
-                    + "a regex expression.",
+                    + "a regex expression. Is case sensitive.",
             usage = "{}blacklist|bl [server] <operation> regex [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
@@ -263,7 +263,8 @@ public class BlacklistCommand {
             description = "Adds a new blacklist entry. By default, each entry is treated as "
                     + "content anywhere in each message. Modifiers can be used to make the "
                     + "entries be treated as words/expressions (must be surrounded by spaces) "
-                    + "or a regex expression.",
+                    + "or a regex expression. With exception of when the regex modifier is used, "
+                    + "entries are case insensitive.",
             usage = "{}blacklist|bl [server] add [modifier] [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
