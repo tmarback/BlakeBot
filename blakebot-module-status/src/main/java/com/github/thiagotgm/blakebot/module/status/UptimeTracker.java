@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.status;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.ExitManager;
 import com.github.thiagotgm.blakebot.common.Settings;
 
 import sx.blah.discord.api.events.Event;
@@ -46,10 +48,10 @@ import sx.blah.discord.handle.impl.events.shard.ResumedEvent;
  * @author ThiagoTGM
  * @since 2017-07-28
  */
-public class UptimeTracker {
+public class UptimeTracker implements ExitManager.ExitListener {
     
     private static final Logger LOG = LoggerFactory.getLogger( UptimeTracker.class );
-    
+
     private static final File UPTIME_FILE = Paths.get( "uptimes.log" ).toFile();
     private static final File DOWNTIME_FILE = Paths.get( "downtimes.log" ).toFile();
     private static final File CONNECTION_FILE = Paths.get( "connection.log" ).toFile();
@@ -115,6 +117,7 @@ public class UptimeTracker {
         
         if ( instance == null ) {
             instance = new UptimeTracker();
+            ExitManager.registerListener( instance );
         }
         return instance;
         
@@ -148,7 +151,6 @@ public class UptimeTracker {
             builder.append( '\n' );
             try {
                 connectionOutput.write( builder.toString() );
-                connectionOutput.flush();
             } catch ( IOException e ) {
                 LOG.error( "Could not write to connection log file." );
             }
@@ -435,13 +437,44 @@ public class UptimeTracker {
     }
     
     /**
+     * Closes all logging streams.
+     */
+    @Override
+    public synchronized void handle() {
+        
+        /* Close connection log */
+        if ( connectionOutput != null ) {
+            try {
+                connectionOutput.close();
+            } catch ( IOException e ) {
+                LOG.error( "Failed to close connection log output." );
+            }
+        }
+        
+        /* Close uptime log */
+        try {
+            uptimes.close();
+        } catch ( IOException e ) {
+            LOG.error( "Failed to close uptime log output." );
+        }
+        
+        /* Close downtime log */
+        try {
+            downtimes.close();
+        } catch ( IOException e ) {
+            LOG.error( "Failed to close downtime log output." );
+        }
+        
+    }
+    
+    /**
      * Class that keeps track of a set of time intervals.
      *
      * @version 1.0
      * @author ThiagoTGM
      * @since 2017-07-28
      */
-    private class TimeData {
+    private class TimeData implements Closeable {
         
         private final String errorString;
         private final Writer output;
@@ -480,6 +513,20 @@ public class UptimeTracker {
         }
         
         /**
+         * Closes the writer used for logging output, if there is one.
+         *
+         * @throws IOException if an error occurred while closing.
+         */
+        @Override
+        public void close() throws IOException {
+            
+            if ( output != null ) {
+                output.close();
+            }
+            
+        }
+        
+        /**
          * Records a time interval into this data set.
          *
          * @param time The time interval to be recorded.
@@ -498,7 +545,6 @@ public class UptimeTracker {
                 builder.append( '\n' );
                 try {
                     output.write( builder.toString() );
-                    output.flush();
                 } catch ( IOException e ) {
                     LOG.error( errorString, e );
                 }
