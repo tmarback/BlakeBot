@@ -126,7 +126,8 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
     @Override
     public final V get( K... path ) {
 
-        return graph.get( wrap( path ) ).getObject();
+        VW wrap = graph.get( wrap( path ) );
+        return wrap == null ? null : wrap.getObject();
         
     }
 
@@ -145,7 +146,8 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
     @Override
     public final V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException {
 
-        return graph.set( wrap( value, valueWrapperFactory ), wrap( path ) ).getObject();
+        VW wrap = graph.set( wrap( value, valueWrapperFactory ), wrap( path ) );
+        return wrap == null ? null : wrap.getObject();
         
     }
 
@@ -161,7 +163,8 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
     @Override
     public final V remove( K... path ) throws UnsupportedOperationException {
 
-        return graph.remove( wrap( path ) ).getObject();
+        VW wrap = graph.remove( wrap( path ) );
+        return wrap == null ? null : wrap.getObject();
         
     }
 
