@@ -47,7 +47,7 @@ public class TimeoutCommand {
     private static final String SERVER_MODIFIER = "Un/Timeout Server";
     private static final String CHECK_NAME = "Check Timeout";
     
-    private static final Pattern TIME_PATTERN = Pattern.compile( "(\\d)([smh])" );
+    private static final Pattern TIME_PATTERN = Pattern.compile( "(\\d+)([smh])" );
     private static final String NOT_USER_ERROR = "Argument \"%s\" not an user.";
     
     private final TimeoutController controller;
