@@ -149,7 +149,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     private IRequestAction setTimeout( IUser user, IChannel channel, boolean timeout ) {
         
-        LOG.trace( "Requested timeout set {} for {} in channel {} of guild.", timeout, user.getName(),
+        LOG.trace( "Requested timeout set {} for {} in channel {} of guild {}.", timeout, user.getName(),
                 channel.getName(), channel.getGuild().getName() );
         IChannel.PermissionOverride overrides = channel.getUserOverridesLong().get( user.getLongID() );
         EnumSet<Permissions> allowed = 
@@ -179,7 +179,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
         
         return () -> {
             
-            LOG.debug( "Setting timeout {} for {} in channel {} of guild.", timeout, user.getName(),
+            LOG.debug( "Setting timeout {} for {} in channel {} of guild {}.", timeout, user.getName(),
                     channel.getName(), channel.getGuild().getName() );
             if ( allowed.isEmpty() && denied.isEmpty() ) { // If no overrides, remove user  
                 channel.removePermissionsOverride( user ); // from override list.

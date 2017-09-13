@@ -182,7 +182,7 @@ public class TimeoutCommand {
         String scope = serverScope ? "server" : "channel";
         List<String> replies = new LinkedList<>();
         
-        for ( Argument arg : args.subList( 1, args.size() ) ) {
+        for ( Argument arg : args ) {
             
             String message;
             if ( arg.getType() == Argument.Type.USER_MENTION ) {
