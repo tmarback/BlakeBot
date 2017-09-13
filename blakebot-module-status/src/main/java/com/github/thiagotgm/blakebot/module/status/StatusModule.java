@@ -21,6 +21,7 @@ import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
 
 import sx.blah.discord.api.IDiscordClient;
+import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.modules.IModule;
 
 /**
@@ -41,7 +42,9 @@ public class StatusModule implements IModule {
     public void disable() {
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this );
-        client.getDispatcher().unregisterListener( UptimeTracker.getInstance() );
+        EventDispatcher dispatcher = client.getDispatcher();
+        dispatcher.unregisterListener( UptimeTracker.getInstance() );
+        dispatcher.unregisterListener( MessageStats.class );
         client = null;
         
     }
@@ -51,7 +54,9 @@ public class StatusModule implements IModule {
 
         client = arg0;
         
-        arg0.getDispatcher().registerListener( UptimeTracker.getInstance() );
+        EventDispatcher dispatcher = arg0.getDispatcher();
+        dispatcher.registerListener( UptimeTracker.getInstance() );
+        dispatcher.registerListener( MessageStats.class );
         
         CommandRegistry registry;
         registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
@@ -71,7 +76,7 @@ public class StatusModule implements IModule {
         registry.registerAnnotatedCommands( new PingCommand() );
         registry.registerAnnotatedCommands( new UptimeCommand() );
         registry.registerAnnotatedCommands( new OwnerCommand() );
-        registry.registerAnnotatedCommands( new StatusCommand() );
+        registry.registerAnnotatedCommands( new StatsCommand() );
         
     }
 

@@ -29,12 +29,12 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  */
 public class PingCommand {
     
-    private static final String NAME = "Ping";
+    private static final String NAME = "Ping Command";
     
     @MainCommand(
             name = NAME,
             aliases = "ping",
-            description = "pings the bot, and gets a pong response",
+            description = "Pings the bot, and gets a pong response",
             usage = "{}ping"
     )
     public void pingCommand( CommandContext context ) {
