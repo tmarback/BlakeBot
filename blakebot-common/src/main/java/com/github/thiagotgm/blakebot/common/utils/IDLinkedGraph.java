@@ -25,6 +25,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLIDLinkedObject;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLPassthrough;
 
@@ -46,6 +49,8 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
      * UID that represents this class.
      */
     private static final long serialVersionUID = 345917961460461125L;
+    
+    private static final Logger LOG = LoggerFactory.getLogger( IDLinkedGraph.class );
 
     /**
      * Local name of the XML element that represents this graph type.
@@ -233,12 +238,18 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
                 if ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) {
                     throw new XMLStreamException( "Not in start element." );
                 }
-                
+                String tag = in.getLocalName(); // Record opening tag.
+
+                Exception error = null;
                 if ( !in.getLocalName().equals( XMLNode.NODE_TAG ) ) { // Not root node.
                     /* Read key */
                     XMLIDLinkedObject key = keyFactory.newInstance();
-                    key.readStart( in );
-                    setKey( key );
+                    try {
+                        key.readStart( in );
+                        setKey( key );
+                    } catch ( Exception e ) {
+                        error = e;
+                    }
                 }
 
                 children.clear();
@@ -267,18 +278,26 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
 
                             } else { // Possibly a child.
                                 XMLNode child = newInstance();
-                                child.read( in ); // Recursively reads child.
-                                if ( children.containsKey( child.getKey() ) ) {
-                                    throw new XMLStreamException( "Found child node with duplicate key." );
+                                try {
+                                    child.read( in ); // Recursively reads child.
+                                    if ( children.containsKey( child.getKey() ) ) {
+                                        throw new XMLStreamException( "Found child node with duplicate key." );
+                                    }
+                                    if ( ( child.getValue() != null ) || // Only add child if it had a
+                                          !child.getChildren().isEmpty() ) { // value or at least one
+                                        children.put( child.getKey(), child ); // children was read.
+                                    }
+                                } catch ( XMLStreamException e ) {
+                                    LOG.error( "Could not read child.", e );
                                 }
-                                children.put( child.getKey(), child );
-
                             }
                             break;
 
                         case XMLStreamConstants.END_ELEMENT:
-                            if ( in.getLocalName().equals(
-                                    getKey() == null ? XMLNode.NODE_TAG : getKey().getTag() ) ) {
+                            if ( in.getLocalName().equals( tag ) ) { // Match for start element.
+                                if ( error != null ) {
+                                    throw new XMLStreamException( "Could not read key.", error );
+                                }
                                 return; // Done reading.
                             } else if ( in.getLocalName().equals( VALUE_TAG ) ) {
                                 if ( value == null ) {
