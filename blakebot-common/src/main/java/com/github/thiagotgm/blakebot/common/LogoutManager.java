@@ -52,8 +52,9 @@ public class LogoutManager {
     
     private static final Map<IDiscordClient, LogoutManager> managers = new HashMap<>();
     private static final Logger LOG = LoggerFactory.getLogger( LogoutManager.class );
-    private static final ThreadGroup threads = new ThreadGroup( "LogoutManager Queue Handler" );
-    private static final ExecutorService executor = AsyncTools.createFixedThreadPool( threads, ( t, e ) -> {
+    private static final ThreadGroup THREADS = new ThreadGroup( "LogoutManager Queue Handler" );
+    private static final ExecutorService EXECUTOR =
+            AsyncTools.createFixedThreadPool( THREADS, ( t, e ) -> {
                 
                 LOG.error( "Uncaught exception thrown while processing logout queue.", e );
                 
@@ -135,7 +136,7 @@ public class LogoutManager {
         }
         EventDispatcher dispatcher = client.getDispatcher(); // Get dispatcher for the result event.
         try {
-            executor.invokeAll( tasks ); // Execute and wait for queue.
+            EXECUTOR.invokeAll( tasks ); // Execute and wait for queue.
         } catch ( InterruptedException e ) {
             LOG.error( "Logout queue interrupted.", e );
             dispatcher.dispatch( // Dispatch failure event.

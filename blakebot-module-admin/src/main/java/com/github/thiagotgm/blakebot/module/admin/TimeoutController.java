@@ -17,15 +17,24 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.Hashtable;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.LogoutManager;
 import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
+import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
+import com.google.common.collect.ConcurrentHashMultiset;
+import com.google.common.collect.Multiset;
 
 import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.obj.IChannel;
@@ -34,26 +43,56 @@ import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
-import sx.blah.discord.util.RequestBuffer;
+import sx.blah.discord.util.RequestBuilder;
+import sx.blah.discord.util.RequestBuilder.IRequestAction;
 
+/**
+ * Manager that is capable of timing out users from channels or guilds for a period of time.
+ * <p>
+ * Must be registered with the appropriate {@link LogoutManager} so that all pending timeouts are
+ * reverted before the client logs out.
+ *
+ * @version 1.0
+ * @author ThiagoTGM
+ * @since 2017-09-13
+ */
 public class TimeoutController implements IListener<LogoutRequestedEvent> {
     
-    private static final int START_SIZE = 100;
-    private static final String ID_SEPARATOR = "@";
+    private static final String CHANNEL_ID_FORMAT = "%d@%d@%d";
+    private static final String GUILD_ID_FORMAT = "%d@%d";
     private static final Logger LOG = LoggerFactory.getLogger( TimeoutController.class );
+    private static final Consumer<DiscordException> ERROR_HANDLER = e -> {
+        
+        LOG.error( "Error encountered while setting permissions.", e );
+        
+    };
+    private static final Consumer<MissingPermissionsException> MISSING_PERMS_HANDLER = e -> {
+        
+        LOG.warn( "Does not have permission to edit permissions.", e );
+        
+    };
+    private static final IRequestAction NO_OP = () -> { return true; };
     
     private static TimeoutController instance;
     
-    private final Timer timer;
-    private final Hashtable<String, TimerTask> tasks;
+    private final ThreadGroup threads;
+    private final ScheduledExecutorService timer;
+    private final Map<String, ScheduledUntimeout> pending;
+    private final Multiset<String> timeouts;
     
     /**
      * Creates a new Controller instance.
      */
     private TimeoutController() {
         
-        timer = new Timer( "Timeout Timer" );
-        tasks = new Hashtable<>( START_SIZE );
+        threads = new ThreadGroup( "TimeoutController Scheduler" );
+        timer = AsyncTools.createScheduledThreadPool( threads, ( t, e ) -> {
+                
+                LOG.error( "Uncaught exception thrown while managing timeouts.", e );
+                
+            } );
+        pending = new ConcurrentHashMap<>();
+        timeouts = ConcurrentHashMultiset.create();
         
     }
     
@@ -73,20 +112,6 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
     }
     
     /**
-     * Adds a new task to the timer with a certain delay and ID.
-     *
-     * @param task Task to be executed.
-     * @param delay Delay before the task is executed.
-     * @param id The ID of the task.
-     */
-    private void addTask( TimerTask task, long delay, String id ) {
-        
-        tasks.put( id, task );
-        timer.schedule( task, delay );  
-        
-    }
-    
-    /**
      * Executes pending tasks before the bot logs out.
      *
      * @param event Event fired.
@@ -100,139 +125,166 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
     /**
      * Executes all pending tasks, in preparation for stopping the module.
      */
-    public void terminate() {
+    public synchronized void terminate() {
         
         LOG.info( "Terminating." );
-        for ( TimerTask task : tasks.values() ) {
-            // Cancel and execute pending timeout reversals.
-            task.cancel();
+        for ( ScheduledUntimeout task : pending.values() ) {
+            // Execute pending timeout reversals.
             task.run();
             
         }
-        tasks.clear();
-        timer.purge();
         LOG.debug( "Terminated." );
         
     }
     
     /**
-     * Sets the "Deny Send Message" permission for a user in a channel.
+     * Configures a request for setting the timeout state for a given user in a given channel.
      *
      * @param user Target user.
      * @param channel Target channel.
-     * @param allow If false, sets the channel override SEND_TEXT permission of that user
-     *              to deny the permission. If true, removes that override.
+     * @param timeout If <tt>true</tt>, places the user on timeout, that is, sets the channel
+     *                override SEND_TEXT permission of that user to deny the permission. If
+     *                <tt>false</tt>, removes the timeout (removes that override).
+     * @return A request that will set (or unset) the timeout for the given user in the given channel.
      */
-    private void setPermission( IUser user, IChannel channel, boolean allow ) {
+    private IRequestAction setTimeout( IUser user, IChannel channel, boolean timeout ) {
         
-        LOG.debug( "Permission set " + allow + " for " + user.getName() + "@" +
-                channel.getName() + "@" + channel.getGuild().getName() );
+        LOG.trace( "Requested timeout set {} for {} in channel {} of guild.", timeout, user.getName(),
+                channel.getName(), channel.getGuild().getName() );
         IChannel.PermissionOverride overrides = channel.getUserOverridesLong().get( user.getLongID() );
         EnumSet<Permissions> allowed = 
                 ( overrides != null ) ? overrides.allow() : EnumSet.noneOf( Permissions.class );
         EnumSet<Permissions> denied = 
                 ( overrides != null ) ? overrides.deny() : EnumSet.noneOf( Permissions.class );
-        if ( allow ) { // Removes deny-permission override.
-            denied.remove( Permissions.SEND_MESSAGES );
-        } else { // Adds deny-permission override.
-            denied.add( Permissions.SEND_MESSAGES );
-        }
-        
-        RequestBuffer.request( () -> {
+        String timeoutID = getTaskID( user, channel );
+        synchronized ( this ) {
             
-            try { // Sets permissions for this channel.
-                if ( allowed.isEmpty() && denied.isEmpty() ) { // If no overrides, remove user  
-                    channel.removePermissionsOverride( user ); // from override list.
-                } else {
-                    channel.overrideUserPermissions( user, allowed, denied );
+            if ( timeout ) { // Adds deny-permission override.
+                timeouts.add( timeoutID );
+                if ( timeouts.count( timeoutID ) > 1 ) {
+                    LOG.trace( "Timeout already in place." );
+                    return NO_OP; // A timeout was alread in place.
                 }
-            } catch ( DiscordException e ) {
-                LOG.warn( "Error encountered.", e ); 
-            } catch ( MissingPermissionsException e ) {
-                LOG.info( "Missing permission to set permissions." );
+                denied.add( Permissions.SEND_MESSAGES );
+            } else { // Removes deny-permission override.
+                timeouts.remove( timeoutID );
+                if ( timeouts.contains( timeoutID ) ) {
+                    LOG.trace( "Equal timeout still in place." );
+                    return NO_OP; // There is still another timeout in place.
+                }
+                denied.remove( Permissions.SEND_MESSAGES );
             }
             
-        });
+        }
+        
+        return () -> {
+            
+            LOG.debug( "Setting timeout {} for {} in channel {} of guild.", timeout, user.getName(),
+                    channel.getName(), channel.getGuild().getName() );
+            if ( allowed.isEmpty() && denied.isEmpty() ) { // If no overrides, remove user  
+                channel.removePermissionsOverride( user ); // from override list.
+            } else {
+                channel.overrideUserPermissions( user, allowed, denied );
+            }
+            return true;
+            
+        };
         
     }
     
     /**
-     * Prevents a user from writing to a given channel.
+     * Sets the timeout state for a user in a list of channels.
      *
-     * @param user User to be restricted.
-     * @param channel Channel to be restricted.
+     * @param user Target user.
+     * @param channels Target channels.
+     * @param timeout If <tt>true</tt>, places the user on timeout, that is, sets the channel
+     *                override SEND_TEXT permission of that user on each channel to deny the permission.
+     *                If <tt>false</tt>, removes the timeout (removes that override).
+     */
+    private void setPermissions( IUser user, List<IChannel> channels, boolean timeout ) {
+        
+        RequestBuilder request = new RequestBuilder( user.getClient() ).shouldBufferRequests( true )
+                .setAsync( false ).shouldFailOnException( false ).onDiscordError( ERROR_HANDLER )
+                .onMissingPermissionsError( MISSING_PERMS_HANDLER ).doAction( NO_OP );
+        for ( IChannel channel : channels ) {
+            
+            request.andThen( setTimeout( user, channel, timeout ) );
+            
+        }
+        request.execute();
+        
+    }
+    
+    /**
+     * Times out a user from a list of guilds.
+     *
+     * @param user User to be timed out.
+     * @param channels Channels to time out in.
      * @param timeout How long the timeout should last, in milliseconds.
-     * @return true if the user was timed out successfully.
-     *         false if the user was already timed out.
+     * @param taskID The ID of the timeout task.
+     * @return <tt>true</tt> if the user was timed out successfully.
+     *         <tt>false</tt> if the user was already timed out.
+     */
+    private synchronized boolean timeout( IUser user, List<IChannel> channels, long timeout, String taskID ) {
+        
+        if ( !pending.containsKey( taskID ) ) {
+            setPermissions( user, channels, true );
+            ScheduledUntimeout untimeout = new ScheduledUntimeout( user, channels, taskID );
+            pending.put( taskID, untimeout );
+            timer.schedule( untimeout, timeout, TimeUnit.MILLISECONDS );
+            return true;
+        } else {
+            return false;
+        }
+        
+    }
+    
+    /**
+     * Times out a user in a channel for a given time, preventing him/her from writing to
+     * the channel until the time has been elapsed or the timeout is lifted.
+     *
+     * @param user User to be timed out.
+     * @param channel Channel to time out in.
+     * @param timeout How long the timeout should last, in milliseconds.
+     * @return <tt>true</tt> if the user was timed out successfully.
+     *         <tt>false</tt> if the user was already timed out.
      */
     public boolean timeout( IUser user, IChannel channel, long timeout ) {
         
-        LOG.debug( "Timing out " + user.getName() + "@" + channel.getName() + "@" +
-                channel.getGuild().getName()  );
-        final String id = getTaskID( user, channel );
-        if ( !tasks.containsKey( id ) ) {
-            setPermission( user, channel, false );
-            addTask( new TimerTask() {
-                
-                @Override
-                public void run() {
-                    
-                    if ( !tasks.containsKey( getTaskID( user, channel.getGuild() ) ) ) {
-                        // Check if guild timeout pending.
-                        setPermission( user, channel, true );
-                    }
-                    tasks.remove( id );
-                    
-                }
-                
-            }, timeout, id );
-            return true;
-        } else {
-            return false;
-        }
+        LOG.debug( "Requested timing out {}@{}@{}.", user.getName(), channel.getName(),
+                channel.getGuild().getName() );
+        return timeout( user, Arrays.asList( channel ), timeout, getTaskID( user, channel ) );
         
     }
     
     /**
-     * Prevents a user from writing to a given guild.
+     * Times out a user in a guild for a given time, preventing him/her from writing to
+     * channels in the guild until the time has been elapsed or the timeout is lifted.
      *
-     * @param user User to be restricted.
-     * @param guild Guild to be restricted.
+     * @param user User to be timed out.
+     * @param guild Guild to time out in.
      * @param timeout How long the timeout should last, in milliseconds.
-     * @return true if the user was timed out successfully.
-     *         false if the user was already timed out.
+     * @return <tt>true</tt> if the user was timed out successfully.
+     *         <tt>false</tt> if the user was already timed out.
      */
     public boolean timeout( IUser user, IGuild guild, long timeout ) {
         
-        LOG.debug( "Timing out " + user.getName() + "@" + guild.getName() );
-        final String id = getTaskID( user, guild );
-        if ( !tasks.containsKey( id ) ) {
-            for ( IChannel channel : guild.getChannels() ) {
-                // Disables writing permissions for each channel the user is in on this server.
-                if ( channel.getUsersHere().contains( user ) ) {
-                    setPermission( user, channel, false );
-                }
-                
-            }
-            addTask( new TimerTask() {
-                
-                @Override
-                public void run() {
-                    
-                    for ( IChannel channel : guild.getChannels() ) {
-                        // Re-enables writing permissions for each channel the user is in
-                        if ( channel.getUsersHere().contains( user ) && // on this server.
-                                !tasks.containsKey( getTaskID( user, channel ) ) ) { 
-                            // Check if channel timeout pending.
-                            setPermission( user, channel, true );
-                        }
-                        
-                    }
-                    tasks.remove( id );
-                    
-                }
-                
-            }, timeout, id );
+        LOG.debug( "Requested timing out {}@{}.", user.getName(), guild.getName() );
+        return timeout( user, guild.getChannels(), timeout, getTaskID( user, guild ) );
+        
+    }
+    
+    /**
+     * Removes a currently placed timeout. 
+     *
+     * @param taskID The task ID of the timeout that was placed.
+     * @return <tt>true</tt> if the timeout was reverted successfully.
+     *         <tt>false</tt> if there is no timeout currently in place with the given ID.
+     */
+    private synchronized boolean untimeout( String taskID ) {
+        
+        if ( pending.containsKey( taskID ) ) {
+            pending.remove( taskID ).run();
             return true;
         } else {
             return false;
@@ -241,49 +293,39 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
     }
     
     /**
-     * Restores writing privileges of a user to a cetain channel.
+     * Lifts the timeout on a user in a channel, restoring his/her ability to write to
+     * the channel.<br>
+     * If a guild-wide timeout is still in effect, the user will still not be able to write
+     * until that timeout is also completed/lifted.
      *
-     * @param user User to be unrestricted.
-     * @param guild Guild to be unrestricted.
+     * @param user User to be un-timed out.
+     * @param channel Channel to un-time out in.
+     * @return <tt>true</tt> if the timeout was lifted successfully.
+     *         <tt>false</tt> if the user is not timed out in the given channel.
      */
-    public void untimeout( IUser user, IChannel channel ) {
+    public boolean untimeout( IUser user, IChannel channel ) {
 
-        LOG.debug( "Untiming out " + user.getName() + "@" + channel.getName() + "@" +
-                channel.getGuild().getName()  );
-        // Removes and stops timeout task if any.
-        TimerTask task = tasks.remove( getTaskID( user, channel ) );
-        if ( task != null ) {
-            task.cancel();
-        }
-        if ( !tasks.containsKey( getTaskID( user, channel.getGuild() ) ) ) {
-            setPermission( user, channel, true );
-        }
+        LOG.debug( "Requested un-timing out {}@{}@{}.", user.getName(), channel.getName(),
+                channel.getGuild().getName() );
+        return untimeout( getTaskID( user, channel ) );
         
     }
     
     /**
-     * Restores writing privileges of a user to a cetain guild.
+     * Lifts the timeout on a user in a guild, restoring his/her ability to write to
+     * channels in that guild (except in channels timeout is still in place).<br>
+     * In channels where a channel-wide timeout is still in effect, the user will
+     * still not be able to write until that timeout is also completed/lifted.
      *
-     * @param user User to be unrestricted.
-     * @param guild Guild to be unrestricted.
+     * @param user User to be un-timed out.
+     * @param guild Guild to un-time out in.
+     * @return <tt>true</tt> if the timeout was lifted successfully.
+     *         <tt>false</tt> if the user is not timed out in the given guild.
      */
-    public void untimeout( IUser user, IGuild guild ) {
+    public boolean untimeout( IUser user, IGuild guild ) {
         
-        LOG.debug( "Untiming out " + user.getName() + "@" + guild.getName() );
-        // Removes and stops timeout task if any.
-        TimerTask task = tasks.remove( getTaskID( user, guild ) );
-        if ( task != null ) {
-            task.cancel();
-        }
-        
-        for ( IChannel channel : guild.getChannels() ) {
-            // Re-enables writing permissions for each channel the user is in on this server.
-            if ( channel.getUsersHere().contains( user ) &&
-                    !tasks.containsKey( getTaskID( user, channel ) ) ) {
-                setPermission( user, channel, true );
-            }
-            
-        }
+        LOG.debug( "Requested un-timing out {}@{}.", user.getName(), guild.getName() );
+        return untimeout( getTaskID( user, guild ) );
         
     }
     
@@ -297,9 +339,9 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     public boolean hasTimeout( IUser user, IChannel channel ) {
         
-        LOG.trace( "Checking to for " + user.getName() + "@" + channel.getName() + "@" +
-                channel.getGuild().getName()  );
-        return tasks.containsKey( getTaskID( user, channel ) );
+        LOG.trace( "Checking timeout for {}@{}@{}", user.getName(), channel.getName(),
+                channel.getGuild().getName() );
+        return pending.containsKey( getTaskID( user, channel ) );
         
     }
     
@@ -313,13 +355,13 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     public boolean hasTimeout( IUser user, IGuild guild ) {
         
-        LOG.trace( "Checking to for " + user.getName() + "@" + guild.getName() );
-        return tasks.containsKey( getTaskID( user, guild ) );
+        LOG.trace( "Checking timeout for {}@{}", user.getName(), guild.getName() );
+        return pending.containsKey( getTaskID( user, guild ) );
         
     }
     
     /**
-     * Calculates the ID of a timeoutask executed over a given user in a given channel.
+     * Generates the ID of a timeout task executed over a given user in a given channel.
      *
      * @param user User the task is executed over.
      * @param channel Channel the task was executed in.
@@ -327,13 +369,13 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     private static String getTaskID( IUser user, IChannel channel ) {
         
-        return user.getLongID() + ID_SEPARATOR + channel.getLongID() + ID_SEPARATOR +
-                channel.getGuild().getLongID();
+        return String.format( CHANNEL_ID_FORMAT, user.getLongID(), channel.getLongID(),
+                channel.getGuild().getLongID() );
         
     }
     
     /**
-     * Calculates the ID of a timeoutask executed over a given user in a given guild.
+     * Generates the ID of a timeout task executed over a given user in a given guild.
      *
      * @param user User the task is executed over.
      * @param guild Guild the task was executed in.
@@ -341,7 +383,57 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     private static String getTaskID( IUser user, IGuild guild ) {
         
-        return user.getLongID() + ID_SEPARATOR + guild.getLongID();
+        return String.format( GUILD_ID_FORMAT, user.getLongID(), guild.getLongID() );
+        
+    }
+    
+    /**
+     * Un-timeout task to be scheduled when a timeout is set.<br>
+     * Can only be performed once, with additional run calls doing nothing.
+     *
+     * @version 1.0
+     * @author ThiagoTGM
+     * @since 2017-09-12
+     */
+    private class ScheduledUntimeout implements Runnable {
+        
+        private volatile boolean pending;
+        private final List<IChannel> channels;
+        private final IUser user;
+        private final String id;
+        
+        /**
+         * Initializes an untimeout task for the given user in the given channels.
+         *
+         * @param user The user to apply the untimeout for.
+         * @param channels The channels where the untimeout should be applied.
+         * @param id The ID of the task.
+         */
+        private ScheduledUntimeout( IUser user, List<IChannel> channels, String id ) {
+            
+            this.pending = true;
+            this.channels = new ArrayList<>( channels );
+            this.user = user;
+            this.id = id;
+            
+        }
+
+        /**
+         * Performs the configured untimeout. If was already performed before, does nothing.
+         */
+        @Override
+        public synchronized void run() {
+
+            if ( pending ) { // Task still pending.
+                pending = false; // Task will now start.
+            } else { // Task already started.
+                return; // Nothing to do.
+            }
+            
+            TimeoutController.this.pending.remove( id );
+            setPermissions( user, channels, true );
+            
+        }
         
     }
 

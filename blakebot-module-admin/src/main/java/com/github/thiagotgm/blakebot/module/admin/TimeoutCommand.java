@@ -17,17 +17,17 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
-import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;
-import sx.blah.discord.handle.obj.IChannel;
-import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.MessageBuilder;
@@ -42,335 +42,218 @@ import sx.blah.discord.util.MessageBuilder;
  */
 public class TimeoutCommand {
     
-    private static final String NAME_1 = "Timeout";
-    private static final String NAME_2 = "Untimeout";
-    private static final String NAME_3 = "Check Timeout";
-    private static final String SUB_NAME = "Un/Timeout Server";
-    private static final String SUB_ALIAS = "server";
+    private static final String TIMEOUT_NAME = "Timeout";
+    private static final String UNTIMEOUT_NAME = "Untimeout";
+    private static final String SERVER_MODIFIER = "Un/Timeout Server";
+    private static final String CHECK_NAME = "Check Timeout";
     
-    private static final Permissions REQUIRED_CHANNEL = Permissions.MANAGE_MESSAGES;
-    private static final Permissions REQUIRED_SERVER = Permissions.MANAGE_MESSAGES;
+    private static final Pattern TIME_PATTERN = Pattern.compile( "(\\d)([smh])" );
+    private static final String NOT_USER_ERROR = "Argument \"%s\" not an user.";
     
-    private final Hashtable<Long, List<Executor>> executors;
+    private final TimeoutController controller;
     
     /**
      * Creates a new instance of this class.
      */
     public TimeoutCommand() {
         
-        executors = new Hashtable<>();
+        controller = TimeoutController.getInstance();
         
     }
     
     @MainCommand(
-            name = NAME_1,
+            name = TIMEOUT_NAME,
             aliases = { "timeout", "to" },
-            description = "Times a user out.",
-            usage = "{}timeout|to <time> <user(s)>",
-            subCommands = { SUB_NAME }
+            description = "Times out a user out for the specified time. The time should be in the format #u, "
+                    + "where # is a postive nonzero integer number, and 'u' is the unit of time, where the "
+                    + "unit of time can be 's' (seconds), 'm' (minutes), or 'h' (hours). Timeout is "
+                    + "channel-wide unless the \"server\" modifier is used.",
+            usage = "{}timeout|to [server] <time> <user> [user]...",
+            subCommands = SERVER_MODIFIER,
+            requiredPermissions = Permissions.MANAGE_MESSAGES
     )
     public void timeoutCommand( CommandContext context ) {
         
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-   
-        boolean permission = true;
-        boolean hasSub = false; // Checks if has subcommand.
-        if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
-                permission = false; // No permissions to run command at this level.
-            } else {
-                hasSub = true;
-                args = new LinkedList<>( args );
-                args.remove( 0 );
-            }
-        } else {
-            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
-                permission = false; // No permissions to run command at this level.
-            }
-        }
+        List<Argument> args = context.getArguments();
+        MessageBuilder reply = context.getReplyBuilder();
         
-        if ( !permission ) {
-            msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
+        if ( args.size() < 2 ) { // Checks minimum amount of arguments.
+            reply.withContent( "Please specify a time and the user(s) to be timed out." ).build();
             return;
         }
         
-        if ( args.size() < 2 ) { // Checks minimum amount of arguments.
-            msgBuilder.withContent( "Please specify a time and the user(s) to be timed out." ).build();
+        /* Parse time */
+        
+        Matcher matcher = TIME_PATTERN.matcher( args.get( 0 ).getText() );
+        if ( !matcher.matches() ) {
+            reply.withContent( "Invalid time argument." ).build();
             return;
         }
         
         long timeout;
-        try { // Obtains time amount.
-            timeout = Long.parseLong( args.get( 0 ) );
+        try { // Obtain time amount.
+            timeout = Long.parseLong( matcher.group( 1 ) );
         } catch ( NumberFormatException e1 ) {
-            msgBuilder.withContent( "Invalid time amount." ).build();
+            reply.withContent( "Invalid time amount." ).build();
             return;
         }
-        timeout *= 1000; // Converts to milliseconds.
-        
-        List<IUser> targets = event.getMessage().getMentions();
-        if ( targets.isEmpty() ) { // Checks if a user was specified.
-            msgBuilder.withContent( "Please specify a the user(s) to be timed out." ).build();
+        if ( timeout <= 0 ) {
+            reply.withContent( "Time must be larger than 0." ).build();
             return;
         }
         
-        IUser thisUser = event.getClient().getOurUser();
-        IChannel channel = event.getMessage().getChannel();
-        List<Executor> execs = new LinkedList<>();
-        for ( IUser target : targets ) {
+        TimeUnit unit; // Obtain time unit.
+        switch ( matcher.group( 2 ).charAt( 0 ) ) {
             
-            if ( thisUser.equals( target ) ) {
-                continue; // Don't affect this bot.
-            }
-            
-            Executor exec = new Executor( target, msgBuilder ).withTimeout( timeout );
-            if ( hasSub ) { // Has subcommand, stores for it.
-                execs.add( exec );
-            } else { // No subcommand, run now.
-                exec.withTargetChannel( channel ).execute();
-            }
+            case 's':
+                unit = TimeUnit.SECONDS;
+                break;
+                
+            case 'm':
+                unit = TimeUnit.MINUTES;
+                break;
+                
+            case 'h':
+                unit = TimeUnit.HOURS;
+                break;
+                
+            default:
+                reply.withContent( "Invalid time unit." ).build();
+                return;
             
         }
-        if ( !execs.isEmpty() ) {
-            executors.put( event.getMessage().getLongID(), execs );
+        
+        timeout = unit.toMillis( timeout ); // Convert to milliseconds.
+        
+        /* Apply timeout to each user */
+        
+        boolean serverScope = context.getCommand().getName().equals( SERVER_MODIFIER );
+        String scope = serverScope ? "server" : "channel";
+        List<String> replies = new LinkedList<>();
+        
+        for ( Argument arg : args.subList( 1, args.size() ) ) {
+            
+            String message;
+            if ( arg.getType() == Argument.Type.USER_MENTION ) {
+                IUser user = (IUser) arg.getArgument();
+                boolean success;
+                if ( serverScope ) { // Apply on server-scope.
+                    success = controller.timeout( user, context.getGuild(), timeout );
+                } else { // Apply on channel-scope.
+                    success = controller.timeout( user, context.getChannel(), timeout );
+                }
+                String format = success ? "Timed out %s in this %s." : "%s is already timed out in this %s.";
+                message = String.format( format, user.mention(), scope );
+            } else { // Argument not a user mention.
+                message = String.format( NOT_USER_ERROR, arg.getText() );
+            }
+            replies.add( message );
+            
         }
+        
+        reply.withContent( String.join( "\n", replies ) ).build();
         
     }
     
     @MainCommand(
-            name = NAME_2,
+            name = UNTIMEOUT_NAME,
             aliases = { "untimeout", "uto" },
-            description = "Un-times out a user.",
-            usage = "{}untimeout|uto <user(s)>",
-            subCommands = { SUB_NAME }
+            description = "Lifts the timeout placed on the given users. Removes channel-wide timeouts "
+                    + "unless the \"server\" modifier is used.",
+            usage = "{}untimeout|uto [server] <user> [user]...",
+            subCommands = SERVER_MODIFIER,
+            requiredPermissions = Permissions.MANAGE_MESSAGES
     )
     public void untimeoutCommand( CommandContext context ) {
         
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-   
-        boolean permission = true;
-        boolean hasSub = false; // Checks if has subcommand.
-        if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            if ( !event.getMessage().getAuthor().getPermissionsForGuild( event.getMessage().getGuild() ).contains( REQUIRED_SERVER ) ) {
-                permission = false; // No permissions to run command at this level.
-            } else {
-                hasSub = true;
-                args = new LinkedList<>( args );
-                args.remove( 0 );
-            }
-        } else {
-            if ( !event.getMessage().getChannel().getModifiedPermissions( event.getMessage().getAuthor() ).contains( REQUIRED_CHANNEL ) ) {
-                permission = false; // No permissions to run command at this level.
-            }
-        }
+        List<Argument> args = context.getArguments();
+        MessageBuilder reply = context.getReplyBuilder();
         
-        if ( !permission ) {
-            msgBuilder.withContent( "You do not have the right permission to run this command." ).build();
+        if ( args.size() < 1 ) { // Checks minimum amount of arguments.
+            reply.withContent( "Please specify the user(s) to be un-timed out." ).build();
             return;
         }
         
-        List<IUser> targets = event.getMessage().getMentions();
-        if ( targets.isEmpty() ) { // Checks if a user was specified.
-            msgBuilder.withContent( "Please specify a the user(s) to be untimed out." ).build();
+        /* Lift timeout from each user */
+        
+        boolean serverScope = context.getCommand().getName().equals( SERVER_MODIFIER );
+        String scope = serverScope ? "server" : "channel";
+        List<String> replies = new LinkedList<>();
+        
+        for ( Argument arg : args.subList( 1, args.size() ) ) {
+            
+            String message;
+            if ( arg.getType() == Argument.Type.USER_MENTION ) {
+                IUser user = (IUser) arg.getArgument();
+                boolean success;
+                if ( serverScope ) { // Apply on server-scope.
+                    success = controller.untimeout( user, context.getGuild() );
+                } else { // Apply on channel-scope.
+                    success = controller.untimeout( user, context.getChannel() );
+                }
+                String format = success ? "Lifted timeout for %s in this %s." :
+                                          "%s is not timed out in this %s.";
+                message = String.format( format, user.mention(), scope );
+            } else { // Argument not a user mention.
+                message = String.format( NOT_USER_ERROR, arg.getText() );
+            }
+            replies.add( message );
+            
         }
         
-        IUser thisUser = event.getClient().getOurUser();
-        IChannel channel = event.getMessage().getChannel();
-        List<Executor> execs = new LinkedList<>();
-        for ( IUser target : targets ) {
-            
-            if ( thisUser.equals( target ) ) {
-                continue; // Don't affect this bot.
-            }
-            
-            Executor exec = new Executor( target, msgBuilder );
-            if ( hasSub ) { // Has subcommand, stores for it.
-                execs.add( exec );
-            } else { // No subcommand, run now.
-                exec.withTargetChannel( channel ).execute();
-            }
-            
-        }
-        if ( !execs.isEmpty() ) {
-            executors.put( event.getMessage().getLongID(), execs );
-        }
+        reply.withContent( String.join( "\n", replies ) ).build();
         
     }
     
     @SubCommand(
-            name = SUB_NAME,
-            aliases = { SUB_ALIAS },
-            description = "Applies the (un)timeout for the entire server.",
-            usage = "{}timeout|to/untimeout|uto server <user>"
+            name = SERVER_MODIFIER,
+            aliases = "server",
+            description = "Performs the command on a server-wide scope instead of channel-wide.",
+            usage = "{}timeout|to|untimeout|uto server <user> [user]...",
+            requiredGuildPermissions = Permissions.MANAGE_MESSAGES,
+            requiresParentPermissions = false,
+            executeParent = true
     )
-    public void serverSubCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        
-        List<Executor> execs = executors.remove( event.getMessage().getLongID() );
-        if ( execs != null ) { // If there are users to (un)time out.
-            IGuild guild = event.getMessage().getGuild();
-            for ( Executor exec : execs ) {
-                // Executes for each user with a guild-wide scope.
-                exec.withTargetGuild( guild ).execute();
-                
-            }
-        }
-        
-    }
+    public void serverSubCommand( CommandContext context ) {}
     
     @MainCommand(
-            name = NAME_3,
+            name = CHECK_NAME,
             aliases = { "istimedout", "isto" },
-            description = "Checks if a user is timed out. Checks current channel, or server"
-                    + "if the 'server' option is used.",
-            usage = "{}istimeout|isto [server] <user(s)>"
+            description = "Checks if the given users are timed out on the current channel "
+                    + "and/or server.",
+            usage = "{}istimeout|isto <user> [user]..."
     )
     public void checkCommand( CommandContext context ) {
-        
-        MessageReceivedEvent event = context.getEvent();
-        List<String> args = context.getArgs();
-        MessageBuilder msgBuilder = context.getReplyBuilder();
-   
-        boolean hasSub = false; // Checks if has subcommand.
-        if ( !args.isEmpty() && args.get( 0 ).equals( SUB_ALIAS ) ) {
-            hasSub = true;
-            args.remove( 0 );
-        }
-        
-        List<IUser> targets = event.getMessage().getMentions();
-        if ( targets.isEmpty() ) { // Checks if a user was specified.
-            msgBuilder.withContent( "Please specify a the user(s) to be checked." ).build();
+
+        List<Argument> args = context.getArguments();
+        MessageBuilder reply = context.getReplyBuilder();
+
+        if ( args.size() < 1 ) { // Checks minimum amount of arguments.
+            reply.withContent( "Please specify the user(s) to be checked." ).build();
             return;
         }
-        
-        TimeoutController controller = TimeoutController.getInstance();
-        IChannel channel = event.getMessage().getChannel();
-        IGuild guild = channel.getGuild();
-        for ( IUser target : targets ) {
-            // Checks if each user specified has a timeout.
-            boolean timedOut = ( hasSub ) ? controller.hasTimeout( target, guild ) :
-                                            controller.hasTimeout( target, channel );
-            String message = "User " + target.mention() + " is " + ( ( timedOut ) ? "" : "not " ) +
-                    "currently timed out on this " + ( ( hasSub ) ? "server" : "channel" ) + ".";
-            msgBuilder.withContent( message ).build();
-            
-        }
-        
-    }
-    
-    /**
-     * Executor class that calls in the appropriate (un)timeout for a particular scope.
-     * Will only use the last scope set (either a channel or a guild).
-     * If a timeout is set, performs a timeout. Else, performs an untimeout.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-03-07
-     */
-    private class Executor {
-        
-        private final IUser targetUser;
-        private IChannel targetChannel;
-        private IGuild targetGuild;
-        private long timeout;
-        private final MessageBuilder response;
-        
-        /**
-         * Creates a new instance of this object with a certain user as a target.
-         *
-         * @param targetUser User targeted by the command.
-         * @param response Message builder to be used for response messages.
-         */
-        public Executor( IUser targetUser, MessageBuilder response ) {
-            
-            this.targetUser = targetUser;
-            targetChannel = null;
-            targetGuild = null;
-            timeout = -1;
-            this.response = response;
-            
-        }
-        
-        /**
-         * Sets the scope to be a certain channel.
-         *
-         * @param targetChannel Command scope.
-         * @return A reference to this object.
-         */
-        public Executor withTargetChannel( IChannel targetChannel ) {
-            
-            this.targetChannel = targetChannel;
-            this.targetGuild = null;
-            return this;
-            
-        }
-        
-        /**
-         * Sets the scope to be a certain guild.
-         *
-         * @param targetGuild Command scope.
-         * @return A reference to this object.
-         */
-        public Executor withTargetGuild( IGuild targetGuild ) {
-            
-            this.targetGuild = targetGuild;
-            this.targetChannel = null;
-            return this;
-            
-        }
-        
-        /**
-         * Sets the time the timeout should last (executes a timeout).
-         *
-         * @param untimeout Time the timeout should last for.
-         * @return A reference to this object.
-         */
-        public Executor withTimeout( long timeout ) {
-            
-            this.timeout = timeout;
-            return this;
-            
-        }
-        
-        /**
-         * Executes the command appropriate for the conditions given.
-         *
-         * @throws IllegalStateException If the target scope wasn't set.
-         */
-        public void execute() throws IllegalStateException {
-            
-            if ( ( targetGuild == null ) && ( targetChannel == null ) ) {
-                throw new IllegalStateException();
+
+        /* Check timeout for each user */
+
+        List<String> replies = new LinkedList<>();
+
+        for ( Argument arg : args ) {
+
+            String message;
+            if ( arg.getType() == Argument.Type.USER_MENTION ) {
+                IUser user = (IUser) arg.getArgument();
+                message = String.format( "%s: %stimed out on channel, %stimed out on server.", user.mention(),
+                        controller.hasTimeout( user, context.getChannel() ) ? "" : "not ",
+                        controller.hasTimeout( user, context.getGuild() ) ? "" : "not " );
+            } else { // Argument not a user mention.
+                message = String.format( NOT_USER_ERROR, arg.getText() );
             }
-            
-            TimeoutController controller = TimeoutController.getInstance();
-            if ( timeout == -1 ) {
-                // Un-times out the user.
-                if ( targetGuild != null ) { // For the guild.
-                    controller.untimeout( targetUser, targetGuild );
-                } else { // For the channel.
-                    controller.untimeout( targetUser, targetChannel );
-                }
-                
-            } else {
-                boolean success; // Times out the user.
-                if ( targetGuild != null ) { // For the guild.
-                    success = controller.timeout( targetUser, targetGuild, timeout );
-                } else { // For the channel.
-                    success = controller.timeout( targetUser, targetChannel, timeout );
-                }
-                if ( !success ) {
-                    response.withContent( "User is already timed out." ).build();
-                }
-            }
-            
+            replies.add( message );
+
         }
-        
+
+        reply.withContent( String.join( "\n", replies ) ).build();
+
     }
 
 }
