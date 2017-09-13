@@ -65,12 +65,13 @@ public class TimeoutCommand {
             name = TIMEOUT_NAME,
             aliases = { "timeout", "to" },
             description = "Times out a user out for the specified time. The time should be in the format #u, "
-                    + "where # is a postive nonzero integer number, and 'u' is the unit of time, where the "
+                    + "where # is a positive nonzero integer number, and 'u' is the unit of time, where the "
                     + "unit of time can be 's' (seconds), 'm' (minutes), or 'h' (hours). Timeout is "
                     + "channel-wide unless the \"server\" modifier is used.",
             usage = "{}timeout|to [server] <time> <user> [user]...",
             subCommands = SERVER_MODIFIER,
-            requiredPermissions = Permissions.MANAGE_MESSAGES
+            requiredPermissions = Permissions.MANAGE_MESSAGES,
+            ignorePrivate = true
     )
     public void timeoutCommand( CommandContext context ) {
         
@@ -162,7 +163,8 @@ public class TimeoutCommand {
                     + "unless the \"server\" modifier is used.",
             usage = "{}untimeout|uto [server] <user> [user]...",
             subCommands = SERVER_MODIFIER,
-            requiredPermissions = Permissions.MANAGE_MESSAGES
+            requiredPermissions = Permissions.MANAGE_MESSAGES,
+            ignorePrivate = true
     )
     public void untimeoutCommand( CommandContext context ) {
         
@@ -212,7 +214,8 @@ public class TimeoutCommand {
             usage = "{}timeout|to|untimeout|uto server <user> [user]...",
             requiredGuildPermissions = Permissions.MANAGE_MESSAGES,
             requiresParentPermissions = false,
-            executeParent = true
+            executeParent = true,
+            ignorePrivate = true
     )
     public void serverSubCommand( CommandContext context ) {}
     
@@ -221,7 +224,8 @@ public class TimeoutCommand {
             aliases = { "istimedout", "isto" },
             description = "Checks if the given users are timed out on the current channel "
                     + "and/or server.",
-            usage = "{}istimeout|isto <user> [user]..."
+            usage = "{}istimeout|isto <user> [user]...",
+            ignorePrivate = true
     )
     public void checkCommand( CommandContext context ) {
 
