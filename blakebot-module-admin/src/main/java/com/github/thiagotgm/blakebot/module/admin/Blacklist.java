@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -43,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.SaveManager;
+import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.blakebot.common.utils.IDLinkedGraph;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
@@ -71,7 +71,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
     
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
-    private static final Path DEFAULT_PATH = Paths.get( "data", "Blacklist.xml" );
+    private static final Path DEFAULT_PATH = Settings.DATA_PATH.resolve( "Blacklist.xml" );
     private static Map<IDiscordClient, Blacklist> instances;
     
     static {

@@ -5,6 +5,8 @@
 <entry key="Auto-save delay">60</entry>
 <entry key="Console width">1000</entry>
 <entry key="Console height">800</entry>
+<entry key="Console height">800</entry>
+<entry key="Data path">data</entry>
 <entry key="Log uptimes">false</entry>
 <entry key="Log downtimes">false</entry>
 <entry key="Log connection events">false</entry>
