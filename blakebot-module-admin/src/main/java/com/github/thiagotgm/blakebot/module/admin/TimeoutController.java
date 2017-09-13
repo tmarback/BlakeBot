@@ -201,7 +201,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      *                override SEND_TEXT permission of that user on each channel to deny the permission.
      *                If <tt>false</tt>, removes the timeout (removes that override).
      */
-    private void setPermissions( IUser user, List<IChannel> channels, boolean timeout ) {
+    private void setTimeout( IUser user, List<IChannel> channels, boolean timeout ) {
         
         RequestBuilder request = new RequestBuilder( user.getClient() ).shouldBufferRequests( true )
                 .setAsync( false ).shouldFailOnException( false ).onDiscordError( ERROR_HANDLER )
@@ -228,7 +228,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
     private synchronized boolean timeout( IUser user, List<IChannel> channels, long timeout, String taskID ) {
         
         if ( !pending.containsKey( taskID ) ) {
-            setPermissions( user, channels, true );
+            setTimeout( user, channels, true );
             ScheduledUntimeout untimeout = new ScheduledUntimeout( user, channels, taskID );
             pending.put( taskID, untimeout );
             timer.schedule( untimeout, timeout, TimeUnit.MILLISECONDS );
@@ -251,8 +251,8 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     public boolean timeout( IUser user, IChannel channel, long timeout ) {
         
-        LOG.debug( "Requested timing out {}@{}@{}.", user.getName(), channel.getName(),
-                channel.getGuild().getName() );
+        LOG.debug( "Requested timing out {}@{}@{} for {}ms.", user.getName(), channel.getName(),
+                channel.getGuild().getName(), timeout );
         return timeout( user, Arrays.asList( channel ), timeout, getTaskID( user, channel ) );
         
     }
@@ -269,7 +269,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
      */
     public boolean timeout( IUser user, IGuild guild, long timeout ) {
         
-        LOG.debug( "Requested timing out {}@{}.", user.getName(), guild.getName() );
+        LOG.debug( "Requested timing out {}@{} for {}ms.", user.getName(), guild.getName(), timeout );
         return timeout( user, guild.getChannels(), timeout, getTaskID( user, guild ) );
         
     }
@@ -431,7 +431,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
             }
             
             TimeoutController.this.pending.remove( id );
-            setPermissions( user, channels, true );
+            setTimeout( user, channels, false );
             
         }
         
