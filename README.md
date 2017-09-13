@@ -39,11 +39,11 @@ To run your own instance of the bot:
 
 When the core executable is ran, a GUI will be provided to control the bot. If this is the first time the bot is started, it prompts for the bot token to be used (bot tokens described [here](https://discordapp.com/developers/docs/topics/oauth2#bots)). Subsequent restarts of the bot will use the same token. The token can be accessed and changed in the `properties.xml` file created in the same directory that the program is ran from.
 
+# Libraries
+
 This bot uses [ModularCommands](https://github.com/ThiagoTGM/ModularCommands).
 
-# 3rd-party Libraries
-
-Libraries used in this bot include:
+3rd-party libraries used in this bot include:
 
 - [Discord4J](https://github.com/austinv11/Discord4J) by austinv11, licensed under the [LGPL 3.0](https://www.gnu.org/licenses/lgpl-3.0.en.html).
 - [Discordinator](https://github.com/kvnxiao/Discordinator) by kvnxiao, licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
