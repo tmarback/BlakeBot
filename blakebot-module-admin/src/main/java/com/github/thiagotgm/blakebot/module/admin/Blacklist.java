@@ -138,6 +138,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
             LOG.info( "Loading Blacklist." );
             try {
                 Utils.readXMLDocument( new FileInputStream( inputFile ), blacklist );
+                LOG.debug( "Loaded Blacklist." );
             } catch ( FileNotFoundException e ) {
                 LOG.error( "Could not open blacklist file.", e );
             } catch ( XMLStreamException e ) {

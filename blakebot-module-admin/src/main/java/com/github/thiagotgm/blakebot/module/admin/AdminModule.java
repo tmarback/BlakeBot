@@ -41,6 +41,7 @@ public class AdminModule implements IModule {
     IDiscordClient client;
     private Blacklist blacklist;
     private BlacklistEnforcer enforcer;
+    private AutoRoleManager autoRole;
     
     
     @Override
@@ -58,6 +59,8 @@ public class AdminModule implements IModule {
         
         SaveManager.unregisterListener( blacklist );
         blacklist.save(); // Disables and saves blacklist.
+        SaveManager.unregisterListener( autoRole );
+        autoRole.save(); // Disables and saves autorole.
 
     }
 
@@ -68,6 +71,8 @@ public class AdminModule implements IModule {
         
         blacklist = Blacklist.getInstance( arg0 ); // Get blacklist.
         SaveManager.registerListener( blacklist );
+        autoRole = AutoRoleManager.getInstance(); // Get autorole manager.
+        SaveManager.registerListener( autoRole );
         
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry ); // Register commands.
