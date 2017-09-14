@@ -28,7 +28,6 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 /**
  * Command that makes a square out of a string.
  *
- *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-02-05
