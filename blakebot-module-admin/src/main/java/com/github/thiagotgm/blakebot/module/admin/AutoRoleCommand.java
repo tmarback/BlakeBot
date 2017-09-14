@@ -65,7 +65,8 @@ public class AutoRoleCommand {
             usage = "{}autorole|ar <subcommand>",
             subCommands = { SET, CHECK, REMOVE },
             ignorePrivate = true,
-            ignorePublic = true
+            ignorePublic = true,
+            requiredGuildPermissions = Permissions.MANAGE_ROLES
     )
     public void autoRoleCommand( CommandContext context ) {
     
@@ -78,7 +79,6 @@ public class AutoRoleCommand {
             aliases = "set",
             description = "Sets the role that new users should be assigned.",
             usage = "{}autorole|ar set <role>",
-            requiredGuildPermissions = Permissions.MANAGE_ROLES,
             successHandler = SUCCESS_HANDLER,
             failureHandler = FAILURE_HANDLER,
             ignorePrivate = true
@@ -110,7 +110,8 @@ public class AutoRoleCommand {
             description = "Checks what role new users are being assigned.",
             usage = "{}autorole|ar check <role>",
             successHandler = SUCCESS_HANDLER,
-            ignorePrivate = true
+            ignorePrivate = true,
+            requiresParentPermissions = false
     )
     public void checkRoleCommand( CommandContext context ) {
 
@@ -129,7 +130,6 @@ public class AutoRoleCommand {
             aliases = "remove",
             description = "Stops adding new users to a role.",
             usage = "{}autorole|ar remove",
-            requiredGuildPermissions = Permissions.MANAGE_ROLES,
             successHandler = SUCCESS_HANDLER,
             failureHandler = FAILURE_HANDLER,
             ignorePrivate = true
