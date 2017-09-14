@@ -83,7 +83,7 @@ public class BlacklistCommand {
     @MainCommand(
             name = NAME,
             aliases = { "blacklist", "bl" },
-            description = "Manages the message blacklist. A subcommand must be used. "
+            description = "Manages the message blacklist.\nA subcommand must be used. "
                     + "The scope is channel-wide unless the 'server' modifier is used.",
             usage = "{}blacklist|bl [server] <subcommand> <arguments>",
             ignorePrivate = true,
@@ -121,7 +121,7 @@ public class BlacklistCommand {
             name = WORD_NAME,
             aliases = "word",
             description = "Performs the operation (add or remove), but treating each entry as "
-                    + "a full word/expression. Is case insensitive.",
+                    + "a full word/expression.\nIs case insensitive.",
             usage = "{}blacklist|bl [server] <operation> word [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
@@ -134,7 +134,10 @@ public class BlacklistCommand {
             name = REGEX_NAME,
             aliases = "regex",
             description = "Performs the operation (add or remove), but treating each entry as "
-                    + "a regex expression. Is case sensitive.",
+                    + "a regex expression.\nA message will trigger a regex-type restriction if "
+                    + "any part of its text content matches the regex pattern. Uses Java's "
+                    + "Pattern class regex with no flags (the pattern is compiled as given, so "
+                    + "embedded flag expressions can be used).",
             usage = "{}blacklist|bl [server] <operation> regex [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
@@ -260,7 +263,7 @@ public class BlacklistCommand {
     @SubCommand(
             name = ADD_NAME,
             aliases = "add",
-            description = "Adds a new blacklist entry. By default, each entry is treated as "
+            description = "Adds a new blacklist entry.\nBy default, each entry is treated as "
                     + "content anywhere in each message. Modifiers can be used to make the "
                     + "entries be treated as words/expressions (must be surrounded by spaces) "
                     + "or a regex expression. With exception of when the regex modifier is used, "
@@ -351,8 +354,8 @@ public class BlacklistCommand {
     @SubCommand(
             name = REMOVE_NAME,
             aliases = { "remove", "rm" },
-            description = "Removes a blacklist entry. The modifier must match the modifier used "
-                    + "to add the entry.",
+            description = "Removes a blacklist entry.\nThe modifier must match the modifier used "
+                    + "to add the entry, if any.",
             usage = "{}blacklist|bl [server] remove|rm [modifier] [user/role]... <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
