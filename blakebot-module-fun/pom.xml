@@ -28,7 +28,6 @@
     </parent>
 
     <artifactId>blakebot-module-fun</artifactId>
-    <version>0.2.0</version>
 
     <name>blakebot-module-fun</name>
 
@@ -98,4 +97,5 @@
 
     </build>
 
+    <version>1.0.0</version>
 </project>
