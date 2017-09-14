@@ -64,10 +64,10 @@ public class TimeoutCommand {
     @MainCommand(
             name = TIMEOUT_NAME,
             aliases = { "timeout", "to" },
-            description = "Times out a user out for the specified time. The time should be in the format #u, "
-                    + "where # is a positive nonzero integer number, and 'u' is the unit of time, where the "
-                    + "unit of time can be 's' (seconds), 'm' (minutes), or 'h' (hours). Timeout is "
-                    + "channel-wide unless the \"server\" modifier is used.",
+            description = "Times out the given users for the specified time.\nThe time should be in "
+                    + "the format #u, where # is a positive nonzero integer number, and 'u' is the "
+                    + "unit of time, where the unit of time can be 's' (seconds), 'm' (minutes), "
+                    + "or 'h' (hours). Timeout is channel-wide unless the \"server\" modifier is used.",
             usage = "{}timeout|to [server] <time> <user> [user]...",
             subCommands = SERVER_MODIFIER,
             requiredPermissions = Permissions.MANAGE_MESSAGES,
@@ -159,7 +159,7 @@ public class TimeoutCommand {
     @MainCommand(
             name = UNTIMEOUT_NAME,
             aliases = { "untimeout", "uto" },
-            description = "Lifts the timeout placed on the given users. Removes channel-wide timeouts "
+            description = "Lifts the timeout placed on the given users.\nRemoves channel-wide timeouts "
                     + "unless the \"server\" modifier is used.",
             usage = "{}untimeout|uto [server] <user> [user]...",
             subCommands = SERVER_MODIFIER,
