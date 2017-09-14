@@ -65,6 +65,7 @@ public class FunModule implements IModule {
         registry.registerAnnotatedCommands( new LennysCommand() );
         registry.registerAnnotatedCommands( new SquareCommand() );
         registry.registerAnnotatedCommands( new ForTheGloryCommand() );
+        registry.registerAnnotatedCommands( new GetSomeHelpCommand() );
         
     }
 
