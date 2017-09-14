@@ -42,6 +42,7 @@ public class AdminModule implements IModule {
     private Blacklist blacklist;
     private BlacklistEnforcer enforcer;
     private AutoRoleManager autoRole;
+    private AutoRoleHandler roleHandler;
     
     
     @Override
@@ -49,6 +50,7 @@ public class AdminModule implements IModule {
         
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.unregisterListener( enforcer ); // Remove blacklist enforcer.
+        dispatcher.unregisterListener( roleHandler ); // Remove autorole handler.
         
         TimeoutController controller = TimeoutController.getInstance();
         LogoutManager.getManager( client ).unregisterListener( controller );
@@ -80,6 +82,8 @@ public class AdminModule implements IModule {
         EventDispatcher dispatcher = client.getDispatcher();
         enforcer = new BlacklistEnforcer( blacklist ); // Make blacklist enforcer.
         dispatcher.registerListener( enforcer );
+        roleHandler = new AutoRoleHandler(); // Make autorole handler.
+        dispatcher.registerListener( roleHandler );
         
         // Set timeout controller.
         LogoutManager.getManager( client ).registerListener( TimeoutController.getInstance() );
