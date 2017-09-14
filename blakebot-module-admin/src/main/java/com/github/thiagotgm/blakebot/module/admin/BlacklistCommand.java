@@ -458,7 +458,8 @@ public class BlacklistCommand {
             description = "Lists blacklist entries.",
             usage = "{}blacklist|bl [server] list [user/role]...",
             ignorePrivate = true,
-            executeParent = true
+            executeParent = true,
+            requiresParentPermissions = false
     )
     public void blacklistListCommand( CommandContext context ) {
         
