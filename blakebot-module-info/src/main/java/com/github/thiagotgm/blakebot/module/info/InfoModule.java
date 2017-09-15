@@ -17,6 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.info;
 
+import org.slf4j.LoggerFactory;
+
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -31,7 +33,7 @@ import sx.blah.discord.modules.IModule;
  */
 public class InfoModule implements IModule {
     
-    private static final String MODULE_NAME = "Status";
+    private static final String MODULE_NAME = "Info";
     
     private IDiscordClient client;
 
@@ -51,6 +53,8 @@ public class InfoModule implements IModule {
         CommandRegistry registry;
         registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry );
+        
+        LoggerFactory.getLogger( InfoModule.class ).info( ""+InfoManager.getInfo( "Status" ) );
 
         return true;
         
