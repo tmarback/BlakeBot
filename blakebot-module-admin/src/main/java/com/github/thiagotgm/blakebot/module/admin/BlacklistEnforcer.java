@@ -46,8 +46,8 @@ public class BlacklistEnforcer {
     
     private static final Logger LOG = LoggerFactory.getLogger( BlacklistEnforcer.class );
     
-    private static final ThreadGroup threads = new ThreadGroup( "Blacklist Enforcer" );
-    private static final Executor executor = AsyncTools.createFixedThreadPool( threads, ( t, e ) -> {
+    private static final ThreadGroup THREADS = new ThreadGroup( "Blacklist Enforcer" );
+    private static final Executor EXECUTOR = AsyncTools.createFixedThreadPool( THREADS, ( t, e ) -> {
         
         LOG.error( "Uncaught exception thrown while enforcing blacklist.", e );
         
@@ -84,7 +84,7 @@ public class BlacklistEnforcer {
         String content = message.getContent();
         
         // Check for match asynchronously.
-        executor.execute( () -> {
+        EXECUTOR.execute( () -> {
             
             Set<Restriction> restrictions = blacklist.getAllRestrictions( author, channel );
             LOG.trace( "Restrictions for author \"{}\" in channel \"{}\" of guild \"{}\": {}.",

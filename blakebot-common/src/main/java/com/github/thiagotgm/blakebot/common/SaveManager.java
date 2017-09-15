@@ -46,7 +46,7 @@ public class SaveManager implements ExitManager.ExitListener {
      */
     public static final long MIN_DELAY = 10;
     
-    private static final List<Saveable> listeners = new LinkedList<>();
+    private static final List<Saveable> LISTENERS = new LinkedList<>();
     private static final ThreadGroup THREADS = new ThreadGroup( "Auto-save Scheduler" );
     private static final ScheduledExecutorService EXECUTOR =
             AsyncTools.createScheduledThreadPool( 1, THREADS, ( t, e ) -> {
@@ -115,7 +115,7 @@ public class SaveManager implements ExitManager.ExitListener {
      */
     public synchronized static void registerListener( Saveable listener ) {
         
-        listeners.add( listener );
+        LISTENERS.add( listener );
         
     }
     
@@ -126,7 +126,7 @@ public class SaveManager implements ExitManager.ExitListener {
      */
     public synchronized static void unregisterListener( Saveable listener ) {
         
-        listeners.remove( listener );
+        LISTENERS.remove( listener );
         
     }
     
@@ -136,7 +136,7 @@ public class SaveManager implements ExitManager.ExitListener {
     public synchronized static void save() {
         
         LOG.debug( "Saving all listeners..." );
-        for ( Saveable listener : listeners ) { // Save each listener.
+        for ( Saveable listener : LISTENERS ) { // Save each listener.
             
             listener.save();
             

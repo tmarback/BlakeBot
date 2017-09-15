@@ -42,14 +42,14 @@ import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 public class ExitManager {
     
     private static final Logger LOG = LoggerFactory.getLogger( ExitManager.class );
-    private static final ThreadGroup threads = new ThreadGroup( "ExitManager Queue Handler" );
-    private static final ExecutorService executor = AsyncTools.createFixedThreadPool( threads, ( t, e ) -> {
+    private static final ThreadGroup THREADS = new ThreadGroup( "ExitManager Queue Handler" );
+    private static final ExecutorService EXECUTOR = AsyncTools.createFixedThreadPool( THREADS, ( t, e ) -> {
                 
                 LOG.error( "Uncaught exception thrown while processing exit queue.", e );
                 
             });
     
-    private static final List<ExitListener> listeners = new LinkedList<>();
+    private static final List<ExitListener> LISTENERS = new LinkedList<>();
     
     /**
      * Registers a listener to be called before exiting.
@@ -61,7 +61,7 @@ public class ExitManager {
      */
     public synchronized static void registerListener( ExitListener listener ) {
         
-        listeners.add( listener );
+        LISTENERS.add( listener );
         
     }
     
@@ -72,7 +72,7 @@ public class ExitManager {
      */
     public synchronized static void unregisterListener( ExitListener listener ) {
         
-        listeners.remove( listener );
+        LISTENERS.remove( listener );
         
     }
     
@@ -85,7 +85,7 @@ public class ExitManager {
         
         /* Executes exit queue */
         List<Callable<Object>> tasks = new LinkedList<>();
-        for ( ExitListener listener : listeners ) { // Build queue.
+        for ( ExitListener listener : LISTENERS ) { // Build queue.
             
             tasks.add( Executors.callable( () -> {
                 
@@ -96,7 +96,7 @@ public class ExitManager {
         }
         
         try {
-            executor.invokeAll( tasks ); // Execute and wait for queue.
+            EXECUTOR.invokeAll( tasks ); // Execute and wait for queue.
         } catch ( InterruptedException e ) {
             LOG.error( "Exit queue interrupted. Aborting.", e );
             return;
