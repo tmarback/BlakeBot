@@ -1,0 +1,24 @@
+STATUS
+Status Module
+${project.version}
+md
+<?block?>
+Module that provides information on the bot's current status, as well as statistics on its use.
+<?block?>
+# [COMMANDS]
+
+* **${prefix}ping**
+  Replies with a ping command. Used to check if the bot is receiving messages and responding properly.
+  
+* **${prefix}owner**
+  Displays information about the bot owner, in case contact is needed.
+  
+* **${prefix}stats**
+  Displays statistics on bot usage.
+  
+* **${prefix}uptime|up [stats] [full]**
+  Displays how long the bot has been connected to Discord (since the last disconnect).
+  Using the "stats" argument will also show statistics on the bot uptime since it was started.
+  Using the "full" argument after "stats" will also show statistics on the bot downtime.
+  
+_OBS: The commands are listed with their default prefixes_
