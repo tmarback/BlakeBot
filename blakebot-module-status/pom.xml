@@ -24,7 +24,7 @@
     <parent>
         <groupId>com.github.thiagotgm</groupId>
         <artifactId>blakebot</artifactId>
-        <version>0.2.1</version>
+        <version>0.3.0</version>
     </parent>
 
     <artifactId>blakebot-module-status</artifactId>
