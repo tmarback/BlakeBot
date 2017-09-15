@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 
 <!--
   ~     This file is part of BlakeBot.
@@ -16,29 +16,30 @@
   ~     You should have received a copy of the GNU Lesser General Public License
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  
+<project
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-
+    
     <parent>
         <groupId>com.github.thiagotgm</groupId>
         <artifactId>blakebot</artifactId>
         <version>0.3.0</version>
     </parent>
-
-    <artifactId>blakebot-module-status</artifactId>
-    <version>1.1.0</version>
-
-    <name>blakebot-module-status</name>
-    <description>Module that status information and statistics about the bot.</description>
     
+    <artifactId>blakebot-module-info</artifactId>
+    <version>1.0.0</version>
+    
+    <name>blakebot-module-info</name>
+    <description>Module that provides information about commands and modules.</description>
+
     <properties>
 
-        <prefix>^</prefix>
+        <prefix>tuna?</prefix>
 
     </properties>
-
+    
     <licenses>
 
         <license>
@@ -49,16 +50,6 @@
 
     </licenses>
     
-    <dependencies>
-    
-        <dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        
-    </dependencies>
-
     <build>
     
         <!-- Include info file -->
@@ -96,7 +87,7 @@
                     <archive>
                         <manifestEntries>
 
-                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
+                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.info.InfoModule</Discord4J-ModuleClass>
                             <Implementation-Version>${project.version}</Implementation-Version>
                             <Specification-Version>${discord4J.version}</Specification-Version>
 
@@ -125,7 +116,7 @@
                             <artifactSet>
                                 <includes>
 
-                                    <include>com.github.thiagotgm:blakebot-module-status</include>
+                                    <include>com.github.thiagotgm:blakebot-module-info</include>
 
                                 </includes>
                             </artifactSet>

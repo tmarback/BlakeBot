@@ -2,9 +2,9 @@ STATUS
 Status Module
 ${project.version}
 md
-<?block?>
+[?block?]
 Module that provides information on the bot's current status, as well as statistics on its use.
-<?block?>
+[?block?]
 # [COMMANDS]
 
 * **${prefix}ping**
