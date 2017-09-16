@@ -7,19 +7,17 @@ Module that provides information on the bot's current status, as well as statist
 [?block?]
 # [COMMANDS]
 
-* **${prefix}ping**
+> $[Prefix]ping
   Replies with a "pong!" message. Used to check if the bot is receiving messages and responding properly.
   
-* **${prefix}owner**
+> $[Prefix]owner
   Displays information about the bot owner, in case contact is needed.
   
-* **${prefix}stats**
+> $[Prefix]stats
   Displays statistics on bot usage.
   
-* **${prefix}uptime|up [stats] [full]**
+> $[Prefix]uptime|up [stats] [full]
   Displays how long the bot has been connected to Discord (since the last disconnect).
   Using the "stats" argument will also show statistics on the bot uptime since it was started.
   Using the "full" argument after "stats" will also show statistics on the bot downtime.
   Arguments can only be used by the bot owner.
-  
-_OBS: The commands are listed with their default prefixes_

@@ -7,9 +7,11 @@ Module that provides information on the bot's modules and their commands.
 [?block?]
 # [COMMANDS]
 
-* **${prefix}module [here] [_module_]**
+> $[Prefix]info
+  Shows information about the bot.
+  Normally, the info will be sent to the calling user in a DM. If the **here** subcommand is used, the info is sent to the same channel that the command was called from.
+
+> $[Prefix]module [here] [_module_]
   Shows all the modules in this bot, their versions, and a short description of each.
   If a module is specified (using the alias shown in the module list), shows a full description of the selected module.
-  Normally, the info will be send to the calling user in a DM. If the **here** subcommand is used, the info is sent to the same channel that the command was called from.
-  
-_OBS: The commands are listed with their default prefixes_
+  Normally, the info will be sent to the calling user in a DM. If the **here** subcommand is used, the info is sent to the same channel that the command was called from.

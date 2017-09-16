@@ -64,7 +64,6 @@
                 
                     <include>bot.info</include>
                     <include>module.info</include>
-                    <include>defaultProperties.xml</include>
                     
                 </includes>
             </resource>
@@ -75,7 +74,6 @@
                 
                     <exclude>bot.info</exclude>
                     <exclude>module.info</exclude>
-                    <exclude>defaultProperties.xml</exclude>
                 
                 </excludes>
             </resource>

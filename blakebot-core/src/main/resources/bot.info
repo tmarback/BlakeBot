@@ -10,8 +10,8 @@ Multi-purpose bot that provides a range of functionality from server administrat
 
 # Help Commands
 
-${prefix}help - Shows a list of all commands. If a command is given as an argument, shows the description of that command.
-${prefix}module - Shows a list of the modules in this bot. If a module is given as an argument, shows more information about that module.
+$[Prefix]help - Shows a list of all commands. If a command is given as an argument, shows the description of that command.
+$[Prefix]module - Shows a list of the modules in this bot. If a module is given as an argument, shows more information about that module.
 
 # Frameworks
 
