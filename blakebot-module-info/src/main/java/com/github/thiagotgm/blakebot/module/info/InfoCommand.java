@@ -29,6 +29,13 @@ import sx.blah.discord.handle.obj.IMessage;
 
 /**
  * Command that provides general information about the overall bot.
+ * <p>
+ * The bot info is obtained by processing a resource file named {@value #FILE_NAME}. The file is
+ * processed by {@link InfoProcessor}, so it must use the expected encoding and may use supported
+ * placeholders.<br>
+ * The file is sent in a message preceded by <tt>```</tt> and followed by <tt>\n```</tt> (a code
+ * block), so the first line of the file is used as the syntax highlighting (may be a blank line
+ * for no syntax highlighting).
  *
  * @version 1.0
  * @author ThiagoTGM

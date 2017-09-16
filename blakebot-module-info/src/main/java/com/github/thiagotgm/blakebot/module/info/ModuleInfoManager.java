@@ -37,7 +37,9 @@ import org.slf4j.LoggerFactory;
  * <p>
  * Module information is obtained by reading all resource files named
  * {@value #FILE_NAME} in root resource directories (eg the root folder of a jar).
- * This implies that only one per jar-based module can be provided.
+ * This implies that only one per jar-based module can be provided. The file is
+ * processed by {@link InfoProcessor}, so it must use the expected encoding and may
+ * use supported placeholders.
  * <p>
  * Info files are expected to follow the following format:
  * 
