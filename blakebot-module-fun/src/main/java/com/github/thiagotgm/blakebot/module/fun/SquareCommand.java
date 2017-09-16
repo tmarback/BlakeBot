@@ -25,6 +25,8 @@ import com.github.thiagotgm.modular_commands.api.FailureReason;
 import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
+import sx.blah.discord.util.MessageBuilder;
+
 /**
  * Command that makes a square out of a string.
  *
@@ -36,7 +38,7 @@ public class SquareCommand {
     
     private static final String NAME = "Square";
     private static final String FAILURE_HANDLER = "handler";
-    private static final Logger log = LoggerFactory.getLogger( SquareCommand.class );
+    private static final Logger LOG = LoggerFactory.getLogger( SquareCommand.class );
     
     @MainCommand(
             name = NAME,
@@ -45,24 +47,22 @@ public class SquareCommand {
             usage = "{}square <message>",
             failureHandler = FAILURE_HANDLER
     )
-    public void squareCommand( CommandContext context ) {
+    public boolean squareCommand( CommandContext context ) {
         
         /* Obtains full message w/o spaces. */
-        String message = "";
-        for ( String word : context.getArgs() ) {
-            
-            message += word;
-            
+        if ( context.getArgs().isEmpty() ) {
+            return false;
         }
+        String message = context.getArgs().get( 0 ).replaceAll( "\\s", "" );
         
         /* Makes first line of square. */
-        StringBuilder builder = new StringBuilder( "`\u200B " );
+        StringBuilder builder = new StringBuilder( "```\n " );
         for ( char letter : message.toCharArray() ) {
             
             builder.append( letter + " " );
             
         }
-        builder.append( "\u200B`\n" );
+        builder.append( "\n" );
         
         /* Makes middle lines of square. */
         int spaceSize = ( message.length() * 2 ) - 3; // Space size is double the string size (every char has a space
@@ -70,37 +70,44 @@ public class SquareCommand {
                                                       // space after last char.
         for ( int i = 1, j = message.length() - 2; j > 0; i++, j-- ) {
             
-            builder.append( "`\u200B " + message.charAt( i ) );
+            builder.append( " " + message.charAt( i ) );
             for ( int k = 0; k < spaceSize; k++ ) {
                 
                 builder.append( ' ' );
                 
             }
-            builder.append( message.charAt( j ) + " \u200B`\n" );
+            builder.append( message.charAt( j ) + " \n" );
             
         }
         
         /* Makes last line of square. */
-        builder.append( "`\u200B " );
+        builder.append( " " );
         for ( int i = message.length() - 1; i >= 0; i-- ) {
             
             builder.append( message.charAt( i ) + " " );
             
         }
-        builder.append( "\u200B`" );
+        builder.append( " \n```" );
         
         /* Outputs the message. */
         context.getReplyBuilder().withContent( builder.toString() ).build();  
+        return true;
 
     }
     
     @FailureHandler( FAILURE_HANDLER )
     public void failureHandler( CommandContext context, FailureReason reason ) {
         
+        MessageBuilder builder = context.getReplyBuilder();
         if ( reason == FailureReason.DISCORD_ERROR ) {
-            log.warn( "Exceeded maximum amount of characters." );
-            context.getReplyBuilder().withContent( "\u200BSorry, too many characters!" ).build();
+            LOG.warn( "Exceeded maximum amount of characters." );
+            builder.withContent( "Sorry, too many characters!" );
+        } else if ( reason == FailureReason.COMMAND_OPERATION_FAILED ) {
+            builder.withContent( "Please provide a message." );
+        } else {
+            return; // Do nothing.
         }
+        builder.build();
         
     }
 
