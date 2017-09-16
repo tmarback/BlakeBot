@@ -33,6 +33,12 @@
 
     <name>blakebot-module-admin</name>
     <description>Module that provides tools for server mods/admins.</description>
+    
+    <properties>
+    
+        <module.class>com.github.thiagotgm.blakebot.module.admin.AdminModule</module.class>
+    
+    </properties>
 
     <licenses>
 
@@ -67,37 +73,16 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-
-                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.admin.AdminModule</Discord4J-ModuleClass>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                            <Specification-Version>${discord4J.version}</Specification-Version>
-
-                        </manifestEntries>
-                    </archive>
-                </configuration>
             </plugin>
 
             <!-- To create an executable fat JAR when using mvn package -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
                 <executions>
 
                     <execution>
-                        <phase>package</phase>
-                        <goals>
-
-                            <goal>shade</goal>
-
-                        </goals>
                         <configuration>
-                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
                             <artifactSet>
                                 <includes>
 

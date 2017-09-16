@@ -32,6 +32,12 @@
 
     <name>blakebot-module-status</name>
     <description>Module that status information and statistics about the bot.</description>
+    
+    <properties>
+    
+        <module.class>com.github.thiagotgm.blakebot.module.status.StatusModule</module.class>
+    
+    </properties>
 
     <licenses>
 
@@ -54,30 +60,6 @@
     </dependencies>
 
     <build>
-    
-        <!-- Include info file -->
-        <resources>
-        
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-                <includes>
-                
-                    <include>module.info</include>
-                    
-                </includes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>false</filtering>
-                <excludes>
-                
-                    <exclude>module.info</exclude>
-                
-                </excludes>
-            </resource>
-        
-        </resources>
 
         <plugins>
 
@@ -85,48 +67,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-
-                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.status.StatusModule</Discord4J-ModuleClass>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                            <Specification-Version>${discord4J.version}</Specification-Version>
-
-                        </manifestEntries>
-                    </archive>
-                </configuration>
             </plugin>
-
+            
             <!-- To create an executable fat JAR when using mvn package -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-
-                            <goal>shade</goal>
-
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <artifactSet>
-                                <includes>
-
-                                    <include>com.github.thiagotgm:blakebot-module-status</include>
-
-                                </includes>
-                            </artifactSet>
-                        </configuration>
-                    </execution>
-
-                </executions>
             </plugin>
 
         </plugins>

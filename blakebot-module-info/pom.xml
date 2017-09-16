@@ -34,6 +34,12 @@
     <name>blakebot-module-info</name>
     <description>Module that provides information about commands and modules.</description>
     
+    <properties>
+    
+        <module.class>com.github.thiagotgm.blakebot.module.info.InfoModule</module.class>
+    
+    </properties>
+    
     <licenses>
 
         <license>
@@ -76,48 +82,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.0.2</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-
-                            <Discord4J-ModuleClass>com.github.thiagotgm.blakebot.module.info.InfoModule</Discord4J-ModuleClass>
-                            <Implementation-Version>${project.version}</Implementation-Version>
-                            <Specification-Version>${discord4J.version}</Specification-Version>
-
-                        </manifestEntries>
-                    </archive>
-                </configuration>
             </plugin>
 
             <!-- To create an executable fat JAR when using mvn package -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.3</version>
-                <executions>
-
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-
-                            <goal>shade</goal>
-
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <artifactSet>
-                                <includes>
-
-                                    <include>com.github.thiagotgm:blakebot-module-info</include>
-
-                                </includes>
-                            </artifactSet>
-                        </configuration>
-                    </execution>
-
-                </executions>
             </plugin>
 
         </plugins>

@@ -124,6 +124,86 @@
     </dependencyManagement>
 
     <build>
+    
+        <!-- Include module info file -->
+        <resources>
+        
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                
+                    <include>module.info</include>
+                    
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                
+                    <exclude>module.info</exclude>
+                
+                </excludes>
+            </resource>
+        
+        </resources>
+        
+        <pluginManagement>
+        
+            <plugins>
+                     
+                <!-- To set the module class and version in the manifest -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.0.2</version>
+                    <configuration>
+                        <archive>
+                            <manifestEntries>
+    
+                                <Discord4J-ModuleClass>${module.class}</Discord4J-ModuleClass>
+                                <Implementation-Version>${project.version}</Implementation-Version>
+                                <Specification-Version>${discord4J.version}</Specification-Version>
+    
+                            </manifestEntries>
+                        </archive>
+                    </configuration>
+                </plugin>
+            
+                <!-- To create an executable fat JAR when using mvn package -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>2.4.3</version>
+                    <executions>
+    
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+    
+                                <goal>shade</goal>
+    
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.parent.basedir}/output/modules</outputDirectory>
+                                <shadedArtifactAttached>true</shadedArtifactAttached>
+                                <artifactSet>
+                                    <includes>
+    
+                                        <include>${project.groupId}:${project.artifactId}</include>
+    
+                                    </includes>
+                                </artifactSet>
+                            </configuration>
+                        </execution>
+    
+                    </executions>
+                </plugin>
+            
+            </plugins>
+        
+        </pluginManagement>
 
         <plugins>
 
