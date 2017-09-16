@@ -50,6 +50,16 @@
 
     </licenses>
     
+    <dependencies>
+    
+        <dependency>
+            <groupId>com.github.thiagotgm</groupId>
+            <artifactId>blakebot-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+    
+    </dependencies>
+    
     <build>
     
         <!-- Include info file -->

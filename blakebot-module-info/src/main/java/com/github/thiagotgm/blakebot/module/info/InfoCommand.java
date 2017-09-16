@@ -18,8 +18,6 @@
 package com.github.thiagotgm.blakebot.module.info;
 
 import java.io.InputStream;
-import java.util.Scanner;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,15 +53,8 @@ public class InfoCommand {
         InputStream infoStream = InfoCommand.class.getClassLoader().getResourceAsStream( FILE_NAME );
         if ( infoStream != null ) {
             StringBuilder builder = new StringBuilder( "```" ); // Start code block.
-            Scanner scan = new Scanner( infoStream );
-            while ( scan.hasNextLine() ) { // Load each line of the info file.
-                
-                builder.append( scan.nextLine() );
-                builder.append( '\n' );
-                
-            }
+            builder.append( InfoProcessor.process( infoStream ) ); // Process file.
             builder.append( "\n```" ); // End code block.
-            scan.close();
             
             if ( builder.length() <= IMessage.MAX_MESSAGE_LENGTH ) { // Ensure info fits
                 INFO = builder.toString();                           // in a message.

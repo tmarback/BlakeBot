@@ -165,10 +165,7 @@ public class ModuleInfoManager {
      */
     private static ModuleInfo parseInfo( InputStream input ) throws InfoFormatException {
         
-        Scanner scan = new Scanner( input, ENCODING );
-        scan.useDelimiter( "\\A" ); // Get file blocks.
-        String[] blocks = DELIMITER.split( scan.next().trim() );
-        scan.close();
+        String[] blocks = DELIMITER.split( InfoProcessor.process( input ) );
         
         if ( blocks.length < 1 ) {
             throw new InfoFormatException( "Missing header." );
