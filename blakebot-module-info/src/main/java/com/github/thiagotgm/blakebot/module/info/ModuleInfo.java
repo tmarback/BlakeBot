@@ -17,6 +17,9 @@
 
 package com.github.thiagotgm.blakebot.module.info;
 
+import java.util.Arrays;
+import java.util.List;
+
 import sx.blah.discord.handle.obj.IMessage;
 
 /**
@@ -32,13 +35,13 @@ public class ModuleInfo {
      * Maximum size of a description.
      */
     public static final int MAX_DESCRIPTION_LENGTH = IMessage.MAX_MESSAGE_LENGTH / 4;
+    private static final String BLOCK_FORMAT = "```%s\n%s\n```";
     
     private final String alias;
     private final String name;
     private final String version;
-    private final String highlight;
     private final String description;
-    private final String[] info;
+    private final List<String> info;
     
     /**
      * Constructs a new instance.
@@ -59,12 +62,15 @@ public class ModuleInfo {
             throw new IllegalArgumentException( "Description exceeds maximum size." );
         }
         
-        int maxInfoSize = IMessage.MAX_MESSAGE_LENGTH - 
-                ( highlight == null ? 0 : highlight.length() ) - 8;
-        for ( String infoBlock : info ) { // Check that each info block fits in a message.
+        if ( highlight == null ) {
+            highlight = ""; // No highlight is an empty string.
+        }
+        for ( int i = 0; i < info.length; i++ ) { // Format each info block.
             
-            if ( infoBlock.length() > maxInfoSize ) {
-                throw new IllegalArgumentException( "Information block would not fit in a message." );
+            info[i] = String.format( BLOCK_FORMAT, highlight, info[i] );
+            if ( info[i].length() > IMessage.MAX_MESSAGE_LENGTH ) { // Ensure fits in a
+                throw new IllegalArgumentException( "Information block " + i + // message.
+                        " would not fit in a message." );
             }
             
         }
@@ -72,9 +78,8 @@ public class ModuleInfo {
         this.alias = alias;
         this.name = name;
         this.version = version;
-        this.highlight = ( highlight == null ) ? "" : highlight;
         this.description = description;
-        this.info = info;
+        this.info = Arrays.asList( info );
         
     }
 
@@ -112,17 +117,6 @@ public class ModuleInfo {
     }
 
     /**
-     * Retrieves the syntax highlighting to be used to display this info.
-     * 
-     * @return The syntaxh highlight. If none, returns the empty string.
-     */
-    public String getHighlight() {
-    
-        return highlight;
-        
-    }
-
-    /**
      * Retrieves the description of the described module.
      * 
      * @return The description.
@@ -134,11 +128,14 @@ public class ModuleInfo {
     }
 
     /**
-     * Retrives the info of the described module.
+     * Retrieves the info of the described module.
+     * <p>
+     * Each block is already formatted as a code block to send in a message (including
+     * the syntax highlighting).
      * 
-     * @return The info. May be an empty array.
+     * @return The info blocks. May be an empty array.
      */
-    public String[] getInfo() {
+    public List<String> getInfo() {
     
         return info;
         

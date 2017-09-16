@@ -44,10 +44,9 @@ public class ModuleCommand {
     private static final String HERE_MODIFIER = "Local Module Command";
     private static final String FAILURE_HANDLER = "failure";
     
-    private static final String BLOCK_FORMAT = "```%s\n%s\n```";
-    private static final String NO_HIGHLIGHT_FORMAT = String.format( BLOCK_FORMAT, "", "%s" );
+    private static final String BLOCK_FORMAT = "```\n%s\n```";
     private static final int LIST_BLOCK_MAX =
-            IMessage.MAX_MESSAGE_LENGTH - String.format( NO_HIGHLIGHT_FORMAT, "" ).length();
+            IMessage.MAX_MESSAGE_LENGTH - String.format( BLOCK_FORMAT, "" ).length();
     private static final String LIST_HEADER = "===[MODULE LIST]===\nTo display the information of a "
             + "specific module, use this command followed by the module name.";
     private static final String LIST_ITEM = "[%s]\n(version %s)\n%s";
@@ -106,7 +105,7 @@ public class ModuleCommand {
     private static List<String> formatList( Collection<ModuleInfo> infos ) {
         
         List<String> blocks = new LinkedList<>(); // Create header.
-        blocks.add( String.format( NO_HIGHLIGHT_FORMAT, LIST_HEADER ) );
+        blocks.add( String.format( BLOCK_FORMAT, LIST_HEADER ) );
         
         Iterator<ModuleInfo> iter = infos.iterator(); // First block starts with first info.
         StringBuilder builder = new StringBuilder( formatInfoShort( iter.next() ) );
@@ -114,7 +113,7 @@ public class ModuleCommand {
             
             String next = formatInfoShort( iter.next() );
             if ( builder.length() + 2 + next.length() > LIST_BLOCK_MAX ) { // Finished block.
-                blocks.add( String.format( NO_HIGHLIGHT_FORMAT, builder.toString() ) );
+                blocks.add( String.format( BLOCK_FORMAT, builder.toString() ) );
                 builder = new StringBuilder( next ); // Start another block.
             } else { // Still fits in current block.
                 builder.append( "\n\n" );
@@ -122,7 +121,7 @@ public class ModuleCommand {
             }
             
         }
-        blocks.add( String.format( NO_HIGHLIGHT_FORMAT, builder.toString() ) );
+        blocks.add( String.format( BLOCK_FORMAT, builder.toString() ) );
         
         return blocks;
         
@@ -158,13 +157,9 @@ public class ModuleCommand {
         List<String> blocks = new LinkedList<>();
         String header = String.format( INFO_HEADER, info.getAlias(), info.getName(),
                 info.getVersion(), info.getDescription() ); // Create header.
-        blocks.add( String.format( NO_HIGHLIGHT_FORMAT, header ) );
+        blocks.add( String.format( BLOCK_FORMAT, header ) );
         
-        for ( String infoBlock : info.getInfo() ) { // Add each info block.
-            
-            blocks.add( String.format( BLOCK_FORMAT, info.getHighlight(), infoBlock ) );
-            
-        }
+        blocks.addAll( info.getInfo() ); // Add each info block.
         
         return blocks;
         
