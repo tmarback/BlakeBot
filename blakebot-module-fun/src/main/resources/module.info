@@ -1,0 +1,35 @@
+FUN
+Fun Module
+${project.version}
+md
+[?block?]
+Module that provides memes and jokes to use for fun in normal chat.
+[?block?]
+# [COMMANDS]
+
+> $[Prefix]why
+  Shows the best reason to do anything.
+  
+> $[Prefix]getHelp
+  Lets someone know they went too far.
+  
+> $[Prefix]lenny
+  Calls Lenny.
+  
+> $[Prefix]sneakylenny
+  Calls Lenny's sneaky cousin.
+  
+> $[Prefix]senseilenny
+  Calls Lenny's wise cousin.
+  
+> $[Prefix]lennyarmy
+  Calls Lenny's family.
+  
+> $[Prefix]noseylenny
+  Calls Lenny's nosey cousin.
+  
+> $[Prefix]brawlerlenny
+  Calls Lenny's brawler cousin.
+  
+> $[Prefix]square <message>
+  Makes a square with the given message.
