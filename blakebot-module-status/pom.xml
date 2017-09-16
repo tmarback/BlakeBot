@@ -35,7 +35,7 @@
     
     <properties>
 
-        <prefix>^</prefix>
+        <prefix>b?</prefix>
 
     </properties>
 

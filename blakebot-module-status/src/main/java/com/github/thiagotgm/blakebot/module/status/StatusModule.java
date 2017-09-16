@@ -31,7 +31,7 @@ import sx.blah.discord.modules.IModule;
  * @version 1.0.0
  * @since 2016-12-31
  */
-@HasPrefix( "^" )
+@HasPrefix( "b?" )
 public class StatusModule implements IModule {
     
     private static final String MODULE_NAME = "Status";
