@@ -14,7 +14,10 @@
   ~
   ~     You should have received a copy of the GNU Lesser General Public License
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
-  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  -->
+  
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.thiagotgm</groupId>
@@ -29,8 +32,9 @@
         <module>blakebot-module-status</module>
         <module>blakebot-module-fun</module>
         <module>blakebot-module-admin</module>
-    <module>blakebot-module-info</module>
-  </modules>
+        <module>blakebot-module-info</module>
+        
+    </modules>
 
     <name>BlakeBot</name>
     <url>https://github.com/ThiagoTGM/BlakeBot</url>
@@ -43,6 +47,7 @@
         <maven.compiler.testTarget>1.8</maven.compiler.testTarget>
         <maven.compiler.testSource>1.8</maven.compiler.testSource>
         <discord4J.version>2.9</discord4J.version> <!-- Version of Discord4J being used -->
+        <modularCommands.version>1.2.0</modularCommands.version> <!-- Version of ModularCommands being used -->
 
     </properties>
 
@@ -88,7 +93,7 @@
         <dependency>
             <groupId>com.github.ThiagoTGM</groupId>
             <artifactId>ModularCommands</artifactId>
-            <version>1.2.0</version>
+            <version>${modularCommands.version}</version>
         </dependency>
 
         <dependency>
@@ -107,7 +112,7 @@
                 <artifactId>woodstox-core</artifactId>
                 <version>5.0.3</version>
             </dependency>
-            
+
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>

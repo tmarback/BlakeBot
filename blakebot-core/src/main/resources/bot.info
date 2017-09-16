@@ -1,0 +1,19 @@
+md
+# BlakeBot
+
+Version ${parent.version}
+Made by ThiagoTGM
+
+Multi-purpose bot that provides a range of functionality from server administration to general banter.
+
+# Help Commands
+
+${prefix}help - Shows a list of all commands. If a command is given as an argument, shows the description of that command.
+${prefix}module - Shows a list of the modules in this bot. If a module is given as an argument, shows more information about that module.
+
+_OBS: The commands are listed with their default prefixes_
+
+# Frameworks
+
+Discord API: [Discord4J by austinv11](https://github.com/austinv11/Discord4J), version ${discord4J.version}
+Command Framework: [ModularCommands by ThiagoTGM](https://github.com/ThiagoTGM/ModularCommands), version ${modularCommands.version}

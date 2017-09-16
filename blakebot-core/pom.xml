@@ -31,6 +31,12 @@
     <version>2.0.0</version>
 
     <name>blakebot-core</name>
+    
+    <properties>
+
+        <prefix>b?</prefix>
+
+    </properties>
 
     <licenses>
 
@@ -53,6 +59,30 @@
     </dependencies>
 
     <build>
+    
+        <!-- Include info files -->
+        <resources>
+        
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                
+                    <include>bot.info</include>
+                    
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <excludes>
+                
+                    <exclude>bot.info</exclude>
+                
+                </excludes>
+            </resource>
+        
+        </resources>
 
         <plugins>
 
