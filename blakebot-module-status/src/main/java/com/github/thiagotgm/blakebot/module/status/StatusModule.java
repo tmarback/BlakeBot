@@ -18,8 +18,6 @@
 package com.github.thiagotgm.blakebot.module.status;
 
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
-import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.modules.IModule;
@@ -31,7 +29,6 @@ import sx.blah.discord.modules.IModule;
  * @version 1.0.0
  * @since 2016-12-31
  */
-@HasPrefix( "b?" )
 public class StatusModule implements IModule {
     
     private static final String MODULE_NAME = "Status";

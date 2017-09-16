@@ -18,8 +18,6 @@
 package com.github.thiagotgm.blakebot.module.fun;
 
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
-import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
 
@@ -30,7 +28,6 @@ import sx.blah.discord.modules.IModule;
  * @version 0.2.0
  * @since 2017-02-04
  */
-@HasPrefix( "^" )
 public class FunModule implements IModule {
 
     private static final String MODULE_NAME = "Fun";

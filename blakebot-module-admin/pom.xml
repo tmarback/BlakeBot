@@ -32,6 +32,7 @@
     <version>1.0.0</version>
 
     <name>blakebot-module-admin</name>
+    <description>Module that provides tools for server mods/admins.</description>
 
     <licenses>
 

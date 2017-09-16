@@ -32,12 +32,6 @@
 
     <name>blakebot-module-status</name>
     <description>Module that status information and statistics about the bot.</description>
-    
-    <properties>
-
-        <prefix>b?</prefix>
-
-    </properties>
 
     <licenses>
 

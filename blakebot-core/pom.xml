@@ -31,12 +31,6 @@
     <version>2.0.0</version>
 
     <name>blakebot-core</name>
-    
-    <properties>
-
-        <prefix>b?</prefix>
-
-    </properties>
 
     <licenses>
 
@@ -69,6 +63,7 @@
                 <includes>
                 
                     <include>bot.info</include>
+                    <include>defaultProperties.xml</include>
                     
                 </includes>
             </resource>
@@ -78,6 +73,7 @@
                 <excludes>
                 
                     <exclude>bot.info</exclude>
+                    <exclude>defaultProperties.xml</exclude>
                 
                 </excludes>
             </resource>

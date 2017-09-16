@@ -30,6 +30,7 @@
     <artifactId>blakebot-module-fun</artifactId>
 
     <name>blakebot-module-fun</name>
+    <description>Module that provides jokes for use in-chat.</description>
 
     <licenses>
 

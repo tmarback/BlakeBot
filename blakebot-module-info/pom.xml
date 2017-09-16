@@ -33,12 +33,6 @@
     
     <name>blakebot-module-info</name>
     <description>Module that provides information about commands and modules.</description>
-
-    <properties>
-
-        <prefix>b?</prefix>
-
-    </properties>
     
     <licenses>
 

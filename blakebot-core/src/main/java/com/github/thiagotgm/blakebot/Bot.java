@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.LogoutManager;
 import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
+import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 
 import sx.blah.discord.api.ClientBuilder;
 import sx.blah.discord.api.IDiscordClient;
@@ -64,13 +65,18 @@ public class Bot {
         
         String token = Settings.getStringSetting( LOGIN_TOKEN_SETTING );
         try {
-            this.client = new ClientBuilder().withToken( token ).build();
+            client = new ClientBuilder().withToken( token ).build();
         } catch ( DiscordException e ) {
             LOG.error( "Failed to create bot.", e );
             System.exit( 5 );
         }
-        this.client.getModuleLoader().loadModule( new ModularCommandsModule() );
         listeners = new ArrayList<>();
+        
+        /* Set up commands */
+        client.getModuleLoader().loadModule( new ModularCommandsModule() );
+        String prefix = Settings.getStringSetting( "Prefix" );
+        LOG.info( "Using prefix {}.", prefix );
+        CommandRegistry.getRegistry( client ).setPrefix( prefix );
         
     }
 

@@ -48,6 +48,7 @@
         <maven.compiler.testSource>1.8</maven.compiler.testSource>
         <discord4J.version>2.9</discord4J.version> <!-- Version of Discord4J being used -->
         <modularCommands.version>1.2.0</modularCommands.version> <!-- Version of ModularCommands being used -->
+        <prefix>b$</prefix> <!-- Default prefix for bot commands -->
 
     </properties>
 

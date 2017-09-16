@@ -10,4 +10,5 @@
 <entry key="Log uptimes">false</entry>
 <entry key="Log downtimes">false</entry>
 <entry key="Log connection events">false</entry>
+<entry key="Prefix">${prefix}</entry>
 </properties>

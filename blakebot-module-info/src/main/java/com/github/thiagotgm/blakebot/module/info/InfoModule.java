@@ -18,8 +18,6 @@
 package com.github.thiagotgm.blakebot.module.info;
 
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
-import com.github.thiagotgm.modular_commands.registry.annotation.HasPrefix;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
 
@@ -30,7 +28,6 @@ import sx.blah.discord.modules.IModule;
  * @author ThiagoTGM
  * @since 2017-09-15
  */
-@HasPrefix( "b?" )
 public class InfoModule implements IModule {
     
     private static final String MODULE_NAME = "Info";

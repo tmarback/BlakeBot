@@ -1,7 +1,7 @@
 md
 # BlakeBot
 
-Version ${parent.version}
+Core Version ${project.version}
 Made by ThiagoTGM
 
 Multi-purpose bot that provides a range of functionality from server administration to general banter.
