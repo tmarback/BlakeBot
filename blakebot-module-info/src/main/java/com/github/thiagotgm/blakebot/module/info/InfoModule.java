@@ -65,7 +65,7 @@ public class InfoModule implements IModule {
      */
     private void registerCommands( CommandRegistry registry ) {
         
-        registry.registerAnnotatedCommands( new InfoCommand() );
+        registry.registerAnnotatedCommands( new ModuleCommand() );
         
     }
 

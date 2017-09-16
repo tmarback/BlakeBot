@@ -26,7 +26,7 @@ import sx.blah.discord.handle.obj.IMessage;
  * @author ThiagoTGM
  * @since 2017-09-15
  */
-public class Info {
+public class ModuleInfo {
     
     /**
      * Maximum size of a description.
@@ -51,7 +51,7 @@ public class Info {
      * @param description The description of the module.
      * @param info The additional info of the module.
      */
-    Info( String alias, String name, String version,
+    ModuleInfo( String alias, String name, String version,
             String highlight, String description, String[] info )
                     throws IllegalArgumentException {
         

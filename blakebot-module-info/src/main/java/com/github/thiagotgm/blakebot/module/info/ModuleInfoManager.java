@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  *           highlighting.</li>
  *      </ul></li>
  *  <li>The second block is the <i>description</i>. It should shortly describe what
- *      the module does, and cannot be longer than {@link Info#MAX_DESCRIPTION_LENGTH}
+ *      the module does, and cannot be longer than {@link ModuleInfo#MAX_DESCRIPTION_LENGTH}
  *      characters. It is displayed with the alias and version in the module list.</li>
  *  <li>Any further blocks are <i>information blocks</i>. They are displayed along with
  *      the header info and description when information on a specific module is
@@ -100,9 +100,9 @@ import org.slf4j.LoggerFactory;
  * @author ThiagoTGM
  * @since 2017-09-15
  */
-public class InfoManager {
+public class ModuleInfoManager {
     
-    private static final Logger LOG = LoggerFactory.getLogger( InfoManager.class );
+    private static final Logger LOG = LoggerFactory.getLogger( ModuleInfoManager.class );
     
     /**
      * Encoding that the info files are expected to use.
@@ -122,34 +122,34 @@ public class InfoManager {
             Pattern.compile( String.format( "\\s*\n\\s*%s\\s*\n",
                     Pattern.quote( BLOCK_DELIMITER ) ) );
     
-    private static final Map<String,Info> INFOS;
+    private static final Map<String,ModuleInfo> INFOS;
     
     static {
         
-        LOG.info( "Loading info files." );
+        LOG.info( "Loading module info files." );
         
-        Map<String,Info> infos = new HashMap<>();
+        Map<String,ModuleInfo> infos = new HashMap<>();
         Enumeration<URL> files;
         try {
-            files = InfoManager.class.getClassLoader()
+            files = ModuleInfoManager.class.getClassLoader()
                     .getResources( FILE_NAME );
             while ( files.hasMoreElements() ) {
                 
                 try {
                     URL next = files.nextElement();
-                    LOG.info( "Parsing info file {}.", next );
-                    Info info = parseInfo( next.openStream() );
+                    LOG.info( "Parsing module info file {}.", next );
+                    ModuleInfo info = parseInfo( next.openStream() );
                     infos.put( info.getAlias(), info );
                 } catch ( IOException e ) {
-                    LOG.error( "Could not read info file.", e );
+                    LOG.error( "Could not read module info file.", e );
                 } catch ( InfoFormatException e ) {
-                    LOG.error( "Could not parse info file.", e );
+                    LOG.error( "Could not parse module info file.", e );
                 }
                 
             }
-            LOG.info( "Finished loading info files." );
+            LOG.info( "Finished loading module info files." );
         } catch ( IOException e ) {
-            LOG.error( "Could not retrieve info files.", e );
+            LOG.error( "Could not retrieve module info files.", e );
         }
         
         INFOS = Collections.unmodifiableMap( infos );
@@ -163,7 +163,7 @@ public class InfoManager {
      * @return The module information in the file.
      * @throws InfoFormatException if the file does not match the expected format.
      */
-    private static Info parseInfo( InputStream input ) throws InfoFormatException {
+    private static ModuleInfo parseInfo( InputStream input ) throws InfoFormatException {
         
         Scanner scan = new Scanner( input, ENCODING );
         scan.useDelimiter( "\\A" ); // Get file blocks.
@@ -182,7 +182,7 @@ public class InfoManager {
         String[] info = Arrays.copyOfRange( blocks, 2, blocks.length );
         
         try {
-            return new Info( headerInfo[0], headerInfo[1], headerInfo[2],
+            return new ModuleInfo( headerInfo[0], headerInfo[1], headerInfo[2],
                              headerInfo[3], description, info );
         } catch ( IllegalArgumentException e ) {
             throw new InfoFormatException( "Invalid info file.", e );
@@ -259,7 +259,7 @@ public class InfoManager {
      * @return The information for that alias, or <tt>null</tt> if there is no
      *         information registered for that alias.
      */
-    public static Info getInfo( String alias ) {
+    public static ModuleInfo getInfo( String alias ) {
         
         return INFOS.get( alias );
         
@@ -270,7 +270,7 @@ public class InfoManager {
      * 
      * @return The stored information.
      */
-    public static Collection<Info> getInfos() {
+    public static Collection<ModuleInfo> getInfos() {
         
         return INFOS.values();
         

@@ -33,15 +33,15 @@ import sx.blah.discord.util.MessageBuilder;
 import sx.blah.discord.util.RequestBuilder;
 
 /**
- * Commands that display information about installed modules and their commands.
+ * Command that display information about installed modules and their commands.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-09-15
  */
-public class InfoCommand {
+public class ModuleCommand {
     
-    private static final String HERE_MODIFIER = "Local Info Command";
+    private static final String HERE_MODIFIER = "Local Module Command";
     private static final String FAILURE_HANDLER = "failure";
     
     private static final String BLOCK_FORMAT = "```%s\n%s\n```";
@@ -54,23 +54,23 @@ public class InfoCommand {
     private static final String INFO_HEADER = "[%s]\n%s\nVersion %s\n\n%s";
     
     @MainCommand(
-            name = "Info Command",
-            aliases = "info",
+            name = "Module Command",
+            aliases = "module",
             description = "Shows the modules installed on this bot. If a module is specified "
                     + "as an argument (using the name shown in the module list), shows the "
                     + "information of that module.",
-            usage = "{}info [module]",
+            usage = "{}module [module]",
             replyPrivately = true,
             subCommands = HERE_MODIFIER,
             failureHandler = FAILURE_HANDLER
             )
-    public boolean info( CommandContext context ) {
+    public boolean module( CommandContext context ) {
         
         List<String> blocks;
         if ( context.getArgs().isEmpty() ) { // No args.
-            blocks = formatList( InfoManager.getInfos() ); // Show module list.
+            blocks = formatList( ModuleInfoManager.getInfos() ); // Show module list.
         } else { // Arg given. Find module with the arg alias.
-            Info info = InfoManager.getInfo( context.getArgs().get( 0 ) );
+            ModuleInfo info = ModuleInfoManager.getInfo( context.getArgs().get( 0 ) );
             if ( info == null ) {
                 return false; // Invalid module alias.
             }
@@ -103,12 +103,12 @@ public class InfoCommand {
      * @param infos The colletion of information instances to be formatted.
      * @return The list of blocks containing the short-format of the given informations.
      */
-    private static List<String> formatList( Collection<Info> infos ) {
+    private static List<String> formatList( Collection<ModuleInfo> infos ) {
         
         List<String> blocks = new LinkedList<>(); // Create header.
         blocks.add( String.format( NO_HIGHLIGHT_FORMAT, LIST_HEADER ) );
         
-        Iterator<Info> iter = infos.iterator(); // First block starts with first info.
+        Iterator<ModuleInfo> iter = infos.iterator(); // First block starts with first info.
         StringBuilder builder = new StringBuilder( formatInfoShort( iter.next() ) );
         while ( iter.hasNext() ) {
             
@@ -136,7 +136,7 @@ public class InfoCommand {
      * @param info The information to be formatted.
      * @return The short format of the information.
      */
-    private static String formatInfoShort( Info info ) {
+    private static String formatInfoShort( ModuleInfo info ) {
         
         return String.format( LIST_ITEM, info.getAlias(), info.getVersion(), info.getDescription() );
         
@@ -153,7 +153,7 @@ public class InfoCommand {
      * @param info The information to format.
      * @return The full information, in blocks.
      */
-    private static List<String> formatInfoLong( Info info ) {
+    private static List<String> formatInfoLong( ModuleInfo info ) {
         
         List<String> blocks = new LinkedList<>();
         String header = String.format( INFO_HEADER, info.getAlias(), info.getName(),
@@ -175,7 +175,7 @@ public class InfoCommand {
             aliases = "here",
             description = "Sends the requested information to the channel where "
                     + "the command was called, instead of always sending a private message.",
-            usage = "{}info here [module]",
+            usage = "{}module here [module]",
             executeParent = true,
             failureHandler = FAILURE_HANDLER
             )
