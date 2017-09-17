@@ -68,8 +68,8 @@ public class ModuleInfo {
         for ( int i = 0; i < info.length; i++ ) { // Format each info block.
             
             info[i] = String.format( BLOCK_FORMAT, highlight, info[i] );
-            if ( info[i].length() > IMessage.MAX_MESSAGE_LENGTH ) { // Ensure fits in a
-                throw new IllegalArgumentException( "Information block " + i + // message.
+            if ( info[i].length() > IMessage.MAX_MESSAGE_LENGTH ) {           // Ensure fits in a
+                throw new IllegalArgumentException( "Information block " + ( i + 1 ) + // message.
                         " would not fit in a message." );
             }
             

@@ -1,0 +1,73 @@
+ADMIN
+Admin Module
+${project.version}
+md
+[?block?]
+Module that provides server management functionality for mods and admins.
+[?block?]
+# [COMMANDS]
+
+> $[Prefix]blacklist|bl [server] <subcommand>
+  Manages a blacklist that automatically deletes messages that have content restricted in the blacklist.
+  The commands use a channel-wide scope by default, but the **server** modifier can be used to make them use a server-wide scope.
+  The subcommands are:
+  
+  > add [modifier] [user/role]... <entry> [entry]...
+    Adds one or more entries to the blacklist.
+    The restriction applies in the current scope (channel or server).
+    If one or more users/roles are specified, the entry will only apply to them. Else, they are applied to everyone.
+    By default, each entry will be treated as **content**, that is, the restriction will be triggered by any message that contain that entry _anwywhere_ within the message (case insensitive).
+    This may be changed by using a modifier:
+    > word
+      Will only be triggered by a message that has the entry text as a full word/expression; that is, preceded by a space/line break or the beginning of the message, and followed by a space/line break or the end of the message (case insensitive).
+    > regex
+      The entry is treated as a regex expression, and is triggered by messages that *contain* a match to the expression.
+      Uses Java's [Pattern](https://docs.oracle.com/javase/8/docs/api/java/util/regex/Pattern.html) regex with no flags. The expression is compiled as given, so embedded flags may be used.
+      Is case sensitive by default, but case-insensitive matching can be enabled via the embedded flag expression (?i).
+    Duplicate entries are not allowed, but two entries are only duplicates if they are **exactly** equal (eg same text, modifier, scope, same user/role/context-wide, etc).
+[?block?]
+  > remove|rm [modifier] [user/role]... <entry> [entry]...
+    Removes one or more blacklist entries that were previously added.
+    Will work only with entries that were added to the *same scope*, using the *same modifier*, and the *same target* (user/role/context-wide, etc).
+    
+  > list [user/role]...
+    Lists the restrictions that apply in the scope (server or channel), either to the specified users/roles (if any were specified), or to the entire scope (if no arguments were given).
+  
+  The add and remove subcommands require "Manage Messages" permission on the selected scope, and either "Manage Server" or "Manage Channel" depending on the scope. 
+  
+> $[Prefix]autorole|ar <subcommand>
+  Manages the role that users joining the server should be automatically set to.
+  The subcommands are:
+  
+  > set <role>
+    Sets the role new users should be assigned to.
+    
+  > remove
+    Removes the set role, disabling role auto-assigning.
+    
+  > check
+    Displays the role that new users are being auto-assigned to.
+    
+  The set and remove subcommands require "Manage Roles" permission.
+[?block?]
+> $[Prefix]timeout|to [server] <time> <user> [user]...
+  Times out the specified user(s) for the specified time.
+  The user will be blocked from sending messages until the time has elapsed or the timeout is lifted.
+  By default this applies only to the current channel, but when the **server** modifier is used, applies to the entire server.
+  The time should be in the format #u, where # is a positive nonzero integer number, and u is the unit of time, which can be s (seconds), m (minutes), or h (hours).
+  Requires "Manage Messages" permission on the selected scope (channel or server).
+  The same user cannot be timed out in a server/channel if there is still a pending timeout for that user there (eg he/she can't be timed out twice), but a user may be timed out on both a server and a channel (or multiple channels) in that server at the same time.
+  
+  **NOTE**: When the bot is shut down (for maintenance reasons), all pending timeouts are lifted.
+  **NOTE 2**: If, for some reason (like a bot crash), a user is stuck in timeout, the timeout can fixed by either
+    * Manually removing the "Send Messages" permission deny on the affected channels;
+    * (once the bot is working again) timing out the user again then lifting the timeout.
+    
+> $[Prefix]untimeout|uto [server] <user> [user]...
+  Lifts the timeout applied to the specified user(s).
+  By default lifts only timeouts for the current channel, but the **server** modifier causes it to lift timeouts for the current server (and NOT the current channel).
+  If the user still has a pending timeout on the other scope, he/she will still be unable to send messages until the other timeout is also lifted or runs out.
+  Requires "Manage Messages" permission on the selected scope (channel or server).
+  
+> $[Prefix]istimeout|isto <user> [user]...
+  Checks if the specified user(s) are timed out in the current channel or guild (will specify which scopes the user is timed out in).
