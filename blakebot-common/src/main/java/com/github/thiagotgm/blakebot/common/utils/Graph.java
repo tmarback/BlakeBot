@@ -37,13 +37,17 @@ public interface Graph<K,V> {
     
     /**
      * Retrieves the value mapped to the given sequence of keys.
+     * <p>
+     * A mapping will be matched if, for the corresponding values <tt>p</tt>
+     * and <tt>m</tt> at each step in the path and mapping,
+     * <tt>p==null ? m==null : p.equals(m)</tt>. 
      *
      * @param path The sequence of keys that map to the value.
      * @return The value linked to the given path, or null if there is none.
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
-    V get( K... path ) throws IllegalArgumentException;
+    V get( Object... path ) throws IllegalArgumentException;
     
     /**
      * Retrieves the values mapped to each step of the given sequence of keys.<br>
@@ -71,7 +75,7 @@ public interface Graph<K,V> {
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
-    V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException, IllegalArgumentException;
+	V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException, IllegalArgumentException;
     
     /**
      * Maps a value to a sequence of keys only if there is no current mapping
@@ -100,7 +104,7 @@ public interface Graph<K,V> {
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
-    V remove( K... path ) throws UnsupportedOperationException, IllegalArgumentException;
+    V remove( Object... path ) throws UnsupportedOperationException, IllegalArgumentException;
     
     /**
      * Returns a Set view of the path-value mappings in this graph. Changes to the set are <b>not</b>

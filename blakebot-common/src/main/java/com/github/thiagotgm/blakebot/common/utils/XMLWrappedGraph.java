@@ -122,11 +122,18 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
         
     }
 
-    @SafeVarargs
+	@SafeVarargs
     @Override
-    public final V get( K... path ) {
+    public final V get( Object... path ) {
 
-        VW wrap = graph.get( wrap( path ) );
+    	VW wrap;
+    	try {
+    	    @SuppressWarnings("unchecked")
+    	    K[] p = (K[]) path;
+    		wrap = graph.get( (Object[]) wrap( p ) );
+    	} catch ( ClassCastException e ) {
+    		return null; // Part of the path wasn't of the right type.
+    	}
         return wrap == null ? null : wrap.getObject();
         
     }
@@ -161,9 +168,16 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
 
     @SafeVarargs
     @Override
-    public final V remove( K... path ) throws UnsupportedOperationException {
+    public final V remove( Object... path ) throws UnsupportedOperationException {
 
-        VW wrap = graph.remove( wrap( path ) );
+        VW wrap;
+        try {
+    	    @SuppressWarnings("unchecked")
+    	    K[] p = (K[]) path;
+    	    wrap = graph.remove( (Object[]) wrap( p ) );
+        } catch ( ClassCastException e ) {
+    		return null; // Part of the path wasn't of the right type.
+    	}
         return wrap == null ? null : wrap.getObject();
         
     }
