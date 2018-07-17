@@ -72,6 +72,11 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     protected int nMappings;
     
     /**
+     * How many mappings are stored in each level of this graph.
+     */
+    protected List<Integer> levelMappings;
+    
+    /**
      * Constructs a TreeGraph with an empty root (the root node exists, but is empty).<br>
      * Same as calling {@link #TreeGraph(Object) TreeGraph(V)} with argument <b>null</b>.
      */
@@ -79,6 +84,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
         this.root = new TreeNode();
         this.nMappings = 0;
+        levelMappings = new ArrayList<>();
         
     }
     
@@ -286,6 +292,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         V old = getOrCreateDescendant( path ).setValue( value );
         if ( old == null ) { // There wasn't a mapping to this path yet,
             nMappings++;     // so a new mapping was added.
+            levelMappings.set( path.length, levelMappings.get( path.length ) + 1 );
         }
         return old;
         
@@ -305,6 +312,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         node.setValue( value );
         nMappings++; // A mapping was added.
+        levelMappings.set( path.length, levelMappings.get( path.length ) + 1 );
         return true;
         
     }
@@ -344,6 +352,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         
         nMappings--; // A mapping was removed.
+        levelMappings.set( path.length, levelMappings.get( path.length ) - 1 );
         return value; // Retrieve deleted value.
         
     }
@@ -358,6 +367,15 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     }
     
     @Override
+    public Set<Entry<K,V>> entrySet( int level ) {
+        
+        Collection<Entry<K,V>> entries = new ArrayList<>( size() );
+        root.getEntries( entries, new Stack<>(), level ); // Get entries.
+        return new HashSet<>( entries ); // Store in a set and return.
+        
+    }
+    
+    @Override
     public int size() {
         
         return nMappings;
@@ -365,10 +383,18 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     }
     
     @Override
+    public int size( int level ) {
+        
+        return levelMappings.size() > level ? levelMappings.get( level ) : 0;
+        
+    }
+    
+    @Override
     public void clear() {
         
         this.root = root.newInstance(); // Delete all nodes.
-        this.nMappings = 0; // Reset counter.
+        this.nMappings = 0; // Reset counters.
+        this.levelMappings.clear();
         
     }
     
@@ -634,6 +660,44 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
                 
                 child.getEntries( entries, path );
                 
+            }
+            
+            if ( getKey() != null ) {
+                path.pop(); // Remove this node's path.
+            }
+            
+        }
+        
+        /**
+         * Retrieves the path-value mapping entries for the nodes in the given level of,
+         * the subtree represented by this node, placing them into the given entry collection.
+         *
+         * @param entries The collection to place the entries in.
+         * @param path The path that maps to this node, where the bottom of the stack is
+         *             the beginning of the path.
+         * @param level The level of this subtree to get entries for. 0 is root (this node).
+         */
+        public void getEntries( Collection<Entry<K,V>> entries, Stack<K> path, int level ) {
+            
+            if ( getKey() != null ) {
+                path.push( getKey() ); // Add this node's path.
+            }
+            
+            if ( level == 0 ) { // In desired level.
+            
+	            if ( getValue() != null ) { // This node represents a mapping.
+	                entries.add( new TreeGraphEntry( path, this ) );
+	            }
+            
+            } else {
+            
+	            /* Recursively gets entries for each child */
+	            for ( SELF child : getChildren() ) {
+	                
+	                child.getEntries( entries, path, level - 1 ); // Child is in next level.
+	                
+	            }
+            
             }
             
             if ( getKey() != null ) {

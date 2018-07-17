@@ -114,12 +114,35 @@ public interface Graph<K,V> {
     Set<Entry<K,V>> entrySet();
     
     /**
+     * Retrieves the mapping set only for the given level of the graph.
+     * <p>
+     * If the Graph being implemented does not have a concept of "level",
+     * returns the same as {@link #entrySet()}.
+     * 
+     * @param level The level to get mappings for. The root is level 0.
+     * @return A Set view of the given level of the Graph.
+     */
+    Set<Entry<K,V>> entrySet( int level );
+    
+    /**
      * Retrieves the amount of path-value mappings that are stored in
      * this graph.
      *
      * @return The amount of mappings in this graph.
      */
     int size();
+    
+    /**
+     * Retrieves the amount of path-value mappings that are stored in the
+     * given level of this graph.
+     * <p>
+     * If the Graph being implemented does not have a concept of "level",
+     * returns the same value as {@link #size()}.
+     *
+     * @param level The level to get mappings for. The root is level 0.
+     * @return The amount of mappings in this graph.
+     */
+    int size( int level );
     
     /**
      * Determines whether the graph is empty.
@@ -130,6 +153,22 @@ public interface Graph<K,V> {
     default boolean isEmpty() {
         
         return size() == 0;
+        
+    }
+    
+    /**
+     * Determines whether the given level in the graph is empty.
+     * <p>
+     * If the Graph being implemented does not have a concept of "level",
+     * returns the same value as {@link #isEmpty()}.
+     *
+     * @param level The level to check. The root is level 0.
+     * @return <tt>true</tt> if this map contains no path-value mappings.
+     *         <tt>false</tt> otherwise.
+     */
+    default boolean isEmpty( int level ) {
+        
+        return size( level ) == 0;
         
     }
     

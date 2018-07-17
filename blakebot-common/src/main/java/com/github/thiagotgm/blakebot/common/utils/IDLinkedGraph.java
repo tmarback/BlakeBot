@@ -146,11 +146,25 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
         return wrappedGraph.entrySet();
         
     }
+    
+    @Override
+    public Set<Graph.Entry<IIDLinkedObject,V>> entrySet( int level ) {
+
+        return wrappedGraph.entrySet( level );
+        
+    }
 
     @Override
     public int size() {
 
         return wrappedGraph.size();
+        
+    }
+    
+    @Override
+    public int size( int level ) {
+
+        return wrappedGraph.size( level );
         
     }
 

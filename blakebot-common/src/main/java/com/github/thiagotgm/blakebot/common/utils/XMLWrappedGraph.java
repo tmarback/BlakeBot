@@ -182,11 +182,35 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
         return entries;
         
     }
+    
+    @Override
+    public Set<Graph.Entry<K,V>> entrySet( int level ) {
+
+        Set<Graph.Entry<K,V>> entries = new HashSet<>();
+        graph.entrySet().stream().forEach( ( entry ) -> {
+            
+        	if ( entry.getPath().size() == level ) {
+	            List<K> path = new ArrayList<>( entry.getPath().size() );
+	            entry.getPath().stream().forEachOrdered( key -> path.add( key.getObject() ) );
+	            entries.add( new WrappedEntry( path, entry ) );
+        	}
+            
+        });
+        return entries;
+        
+    }
 
     @Override
     public int size() {
 
         return graph.size();
+        
+    }
+    
+    @Override
+    public int size( int level ) {
+
+        return graph.size( level );
         
     }
 
