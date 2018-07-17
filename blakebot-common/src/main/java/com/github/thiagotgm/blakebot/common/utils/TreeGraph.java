@@ -31,9 +31,7 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * Represents a directed tree graph, eg a graph where the same keys in different orders
- * map to different values, and the graph always starts at a immutable <i>root</i> element
- * (represented by an empty path). 
+ * Implementation of the {@link Tree} interface. The root note is accessible.
  * <p>
  * The default behavior of the graph is to directly map each key to the next node in the
  * graph. Subclasses can alter or tweak the graph's behavior by creating a subclass of {@link Node}
@@ -56,7 +54,7 @@ import java.util.Stack;
  * @param <K> The type of the keys that define connections on the graph.
  * @param <V> The type of the values to be stored.
  */
-public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Serializable {
+public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Serializable {
     
     /**
      * UID that represents the class.

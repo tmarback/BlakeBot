@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Represents a graph that links sequences of keys to values.
+ * Represents a graph that links sequences of keys to values. The empty
+ * path may or may not be valid depending on implementation.
  * <p>
  * Does not allow storing <tt>null</tt> values.
  *
@@ -39,8 +40,10 @@ public interface Graph<K,V> {
      *
      * @param path The sequence of keys that map to the value.
      * @return The value linked to the given path, or null if there is none.
+     * @throws IllegalArgumentException if the path is empty but such a path
+     *         is not valid under the current implementation.
      */
-    V get( K... path );
+    V get( K... path ) throws IllegalArgumentException;
     
     /**
      * Retrieves the values mapped to each step of the given sequence of keys.<br>
@@ -49,8 +52,10 @@ public interface Graph<K,V> {
      * @param path The sequence of keys that map to the values.
      * @return The values linked to each step of the given path, in the order that
      *         the path is traversed (same order that the keys are given).
+     * @throws IllegalArgumentException if the path is empty but such a path
+     *         is not valid under the current implementation.
      */
-    List<V> getAll( K... path );
+    List<V> getAll( K... path ) throws IllegalArgumentException;
     
     /**
      * Maps a value to a sequence of keys, replacing the value currently mapped
@@ -63,8 +68,10 @@ public interface Graph<K,V> {
      *         was none.
      * @throws UnsupportedOperationException if the set operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
+     * @throws IllegalArgumentException if the path is empty but such a path
+     *         is not valid under the current implementation.
      */
-    V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
+    V set( V value, K... path ) throws UnsupportedOperationException, NullPointerException, IllegalArgumentException;
     
     /**
      * Maps a value to a sequence of keys only if there is no current mapping
@@ -77,8 +84,10 @@ public interface Graph<K,V> {
      *         <tt>false</tt> if there is already a value mapped to the given path.
      * @throws UnsupportedOperationException if the add operation is not supported by this map.
      * @throws NullPointerException if the value given is null.
+     * @throws IllegalArgumentException if the path is empty but such a path
+     *         is not valid under the current implementation.
      */
-    boolean add( V value, K... path ) throws UnsupportedOperationException, NullPointerException;
+    boolean add( V value, K... path ) throws UnsupportedOperationException, NullPointerException, IllegalArgumentException;
     
     /**
      * Removes a mapping from this graph.<br>
@@ -88,8 +97,10 @@ public interface Graph<K,V> {
      * @return The removed value, or <tt>null</tt> if there is no mapping for the
      *         given path.
      * @throws UnsupportedOperationException if the remove operation is not supported by this map.
+     * @throws IllegalArgumentException if the path is empty but such a path
+     *         is not valid under the current implementation.
      */
-    V remove( K... path ) throws UnsupportedOperationException;
+    V remove( K... path ) throws UnsupportedOperationException, IllegalArgumentException;
     
     /**
      * Returns a Set view of the path-value mappings in this graph. Changes to the set are <b>not</b>
