@@ -160,13 +160,6 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
         return wrappedGraph.size();
         
     }
-    
-    @Override
-    public int size( int level ) {
-
-        return wrappedGraph.size( level );
-        
-    }
 
     @Override
     public void clear() {

@@ -137,18 +137,6 @@ public interface Graph<K,V> {
     int size();
     
     /**
-     * Retrieves the amount of path-value mappings that are stored in the
-     * given level of this graph.
-     * <p>
-     * If the Graph being implemented does not have a concept of "level",
-     * returns the same value as {@link #size()}.
-     *
-     * @param level The level to get mappings for. The root is level 0.
-     * @return The amount of mappings in this graph.
-     */
-    int size( int level );
-    
-    /**
      * Determines whether the graph is empty.
      *
      * @return <tt>true</tt> if this map contains no path-value mappings.
@@ -157,22 +145,6 @@ public interface Graph<K,V> {
     default boolean isEmpty() {
         
         return size() == 0;
-        
-    }
-    
-    /**
-     * Determines whether the given level in the graph is empty.
-     * <p>
-     * If the Graph being implemented does not have a concept of "level",
-     * returns the same value as {@link #isEmpty()}.
-     *
-     * @param level The level to check. The root is level 0.
-     * @return <tt>true</tt> if this map contains no path-value mappings.
-     *         <tt>false</tt> otherwise.
-     */
-    default boolean isEmpty( int level ) {
-        
-        return size( level ) == 0;
         
     }
     

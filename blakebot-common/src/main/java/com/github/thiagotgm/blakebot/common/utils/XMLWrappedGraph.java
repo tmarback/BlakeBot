@@ -206,13 +206,6 @@ public class XMLWrappedGraph<K,V,KW extends XMLWrapper<K>,VW extends XMLWrapper<
         return graph.size();
         
     }
-    
-    @Override
-    public int size( int level ) {
-
-        return graph.size( level );
-        
-    }
 
     @Override
     public void clear() {
