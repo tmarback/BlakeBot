@@ -136,10 +136,10 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      *         If there is not an element that corresponds to the given path, null.
      */
     @SafeVarargs
-    protected final Node<?> getDescendant( Node<?> parent, Object... path ) {
+    protected final Node<?> getDescendant( Node<?> parent, K... path ) {
         
         Node<?> element = parent;
-        for ( Object next : path ) {
+        for ( K next : path ) {
             
             element = element.getChild( next );
             if ( element == null ) {
@@ -160,7 +160,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      *         If there is not an element that corresponds to the given path, null.
      */
     @SafeVarargs
-    protected final Node<?> getDescendant( Object... path ) {
+    protected final Node<?> getDescendant( K... path ) {
         
         return getDescendant( root, path );
         
@@ -252,7 +252,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     
     @Override
     @SafeVarargs
-    public final V get( Object... path ) {
+    public final V get( K... path ) {
         
         Node<?> node = getDescendant( path );
         return ( node == null ) ? null : node.getValue();
@@ -319,11 +319,11 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     
     @Override
     @SafeVarargs
-    public final V remove( Object... path ) {
+    public final V remove( K... path ) {
         
         Stack<Node<?>> nodes = new Stack<>();
         Node<?> cur = root;
-        for ( Object key : path ) {
+        for ( K key : path ) {
             
             if ( cur != null ) {
                 nodes.add( cur );
@@ -542,7 +542,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          * @return The child that corresponds to the given key, or <tt>null</tt> if there is
          *         no such child.
          */
-        public SELF getChild( Object key ) {
+        public SELF getChild( K key ) {
             
             return children.get( key );
             
@@ -631,7 +631,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          * @param key The key the child corresponds to.
          * @return The deleted child, or null if there is no child for that key.
          */
-        public SELF removeChild( Object key ) {
+        public SELF removeChild( K key ) {
             
             return children.remove( key );
             

@@ -104,7 +104,7 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
     }
 
     @Override
-    public V get( Object... path ) {
+    public V get( IIDLinkedObject... path ) {
 
         return wrappedGraph.get( path );
         
@@ -134,7 +134,7 @@ public class IDLinkedGraph<V extends XMLElement> extends AbstractGraph<IIDLinked
     }
 
     @Override
-    public V remove( Object... path ) throws UnsupportedOperationException {
+    public V remove( IIDLinkedObject... path ) throws UnsupportedOperationException {
 
         return wrappedGraph.remove( path );
         

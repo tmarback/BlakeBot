@@ -47,7 +47,7 @@ public interface Graph<K,V> {
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
-    V get( Object... path ) throws IllegalArgumentException;
+    V get( K... path ) throws IllegalArgumentException;
     
     /**
      * Retrieves the values mapped to each step of the given sequence of keys.<br>
@@ -104,7 +104,7 @@ public interface Graph<K,V> {
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
-    V remove( Object... path ) throws UnsupportedOperationException, IllegalArgumentException;
+    V remove( K... path ) throws UnsupportedOperationException, IllegalArgumentException;
     
     /**
      * Returns a Set view of the path-value mappings in this graph. Changes to the set are <b>not</b>
