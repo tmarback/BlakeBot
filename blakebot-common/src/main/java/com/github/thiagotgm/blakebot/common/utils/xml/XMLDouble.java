@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>double</tt>s.
+ * XML translator for <tt>double</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLDouble extends XMLTextData<Double> {
      * Local name of the XML element.
      */
     public static final String TAG = "double";
-
-    /**
-     * Initializes a wrapper with no wrapped double.
-     */
-    public XMLDouble() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given double.
-     *
-     * @param num The double to be wrapped.
-     */
-    public XMLDouble( Double num ) {
-        
-        super( num );
-        
-    }
     
     @Override
     public String getTag() {
@@ -80,40 +58,6 @@ public class XMLDouble extends XMLTextData<Double> {
     protected String toString( Double obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLDouble> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLDouble> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -1068547784097592204L;
-
-        @Override
-        public XMLDouble newInstance() {
-
-            return new XMLDouble();
-            
-        }
         
     }
 

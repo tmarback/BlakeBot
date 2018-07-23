@@ -17,19 +17,17 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
- * XML wrapper for <tt>IGuild</tt> objects.
+ * XML translator for <tt>IGuild</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-09-02
  */
-public class XMLGuild extends AbstractXMLIDLinkedObject<IGuild> {
+public class XMLGuild extends AbstractXMLIDLinkedTranslator<IGuild> {
     
     /**
      * UID that represents this class.
@@ -42,25 +40,13 @@ public class XMLGuild extends AbstractXMLIDLinkedObject<IGuild> {
     public static final String TAG = "guild";
 
     /**
-     * Instantiates a wrapper with no guild.
+     * Instantiates a translator.
      *
      * @param client Client to use to obtain guilds.
      */
     public XMLGuild( IDiscordClient client ) {
         
         super( client );
-        
-    }
-    
-    /**
-     * Instantiates a wrapper with the given guild.
-     *
-     * @param client Client to use to obtain guilds.
-     * @param guild The guild to wrap initially.
-     */
-    public XMLGuild( IDiscordClient client, IGuild guild ) {
-        
-        super( client, guild );
         
     }
 
@@ -77,59 +63,18 @@ public class XMLGuild extends AbstractXMLIDLinkedObject<IGuild> {
         return TAG;
         
     }
+    
+    @Override
+    public Class<IGuild> getTranslatedClass() {
+    	
+    	return IGuild.class;
+    	
+    }
 
     @Override
-    protected IGuild getGuild() {
+    protected IGuild getGuild( IGuild obj ) {
 
         return null;
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @param client The client the wrappers should use to obtain the objects.
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLGuild> newFactory( IDiscordClient client ) {
-        
-        return new Factory( client );
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLGuild> {
-        
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -2837445536215031771L;
-        
-        private final IDiscordClient client;
-        
-        /**
-         * Creates an instance that produces wrappers that use the given client 
-         *
-         * @param client The client the wrappers should use to obtain the objects.
-         */
-        public Factory( IDiscordClient client ) {
-            
-            this.client = client;
-            
-        }
-
-        @Override
-        public XMLGuild newInstance() {
-
-            return new XMLGuild( client );
-            
-        }
         
     }
 

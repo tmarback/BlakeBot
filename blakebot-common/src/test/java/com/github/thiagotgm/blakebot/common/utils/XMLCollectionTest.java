@@ -22,13 +22,14 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
 import org.junit.Test;
 
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLCollection;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLList;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
 
 /**
@@ -40,37 +41,37 @@ import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
  */
 public class XMLCollectionTest {
     
-    private static final XMLCollection<XMLString> EXPECTED;
+    private static final Collection<String> EXPECTED;
     
     static {
         
-        EXPECTED = new XMLList<>( new ArrayList<>( 5 ), XMLString.newFactory() );
-        EXPECTED.add( new XMLString( "hi" ) );
-        EXPECTED.add( new XMLString( "potato salad" ) );
-        EXPECTED.add( new XMLString( "spaceship" ) );
-        EXPECTED.add( new XMLString( "lul" ) );
-        EXPECTED.add( new XMLString( "Best Girl (TM)" ) );
+        EXPECTED = new ArrayList<>( 5 );
+        EXPECTED.add( "hi" );
+        EXPECTED.add( "potato salad" );
+        EXPECTED.add( "spaceship" );
+        EXPECTED.add( "lul" );
+        EXPECTED.add( "Best Girl (TM)" );
         
     }
 
     @Test
     public void testRead() throws XMLStreamException {
 
-        XMLCollection<XMLString> collection = new XMLList<>( new ArrayList<>( 5 ),
-                XMLString.newFactory() );
         InputStream in = this.getClass().getResourceAsStream( "/Collection.xml" );
-        Utils.readXMLDocument( in, collection );
+        @SuppressWarnings("unchecked")
+		Collection<String> collection = Utils.readXMLDocument( in,
+        		new XMLCollection<String>( (Class<List<String>>) (Class<?>) ArrayList.class, new XMLString() ) );
         
-        assertEquals( "Read collection is not correct.", EXPECTED, EXPECTED );
+        assertEquals( "Read collection is not correct.", EXPECTED, collection );
         
     }
     
-    @Test
+	@Test
+    @SuppressWarnings("unchecked")
     public void testWrite() throws XMLStreamException, IOException {
         
-        XMLCollection<XMLString> collection = new XMLList<>( new ArrayList<>( 5 ),
-                XMLString.newFactory() );
-        XMLTestHelper.testReadWrite( EXPECTED, collection );
+        XMLTestHelper.testReadWrite( EXPECTED, new XMLCollection<String>
+        		( (Class<List<String>>) (Class<?>) ArrayList.class, new XMLString() ) );
         
     }
 

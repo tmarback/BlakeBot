@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>int</tt>egers.
+ * XML translator for <tt>int</tt>egers.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLInteger extends XMLTextData<Integer> {
      * Local name of the XML element.
      */
     public static final String TAG = "int";
-    
-    /**
-     * Initializes a wrapper with no wrapped integer.
-     */
-    public XMLInteger() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given integer.
-     *
-     * @param num The integer to be wrapped.
-     */
-    public XMLInteger( Integer num ) {
-        
-        super( num );
-        
-    }
     
     @Override
     public String getTag() {
@@ -80,40 +58,6 @@ public class XMLInteger extends XMLTextData<Integer> {
     protected String toString( Integer obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLInteger> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLInteger> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = 6366258581271253268L;        
-
-        @Override
-        public XMLInteger newInstance() {
-
-            return new XMLInteger();
-            
-        }
         
     }
 

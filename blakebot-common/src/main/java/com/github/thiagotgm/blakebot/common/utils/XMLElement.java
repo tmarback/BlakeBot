@@ -52,15 +52,18 @@ public interface XMLElement extends Serializable {
     void write( XMLStreamWriter out ) throws XMLStreamException;
     
     /**
-     * Factory that creates instances of an XMLElement.
+     * Translator for objects that are already capable of being written to/read from an XML
+     * stream, that delegates reading and writing to the natural methods of the object.
+     * <p>
+     * Only necessary operation is creating new instances of the object.
      *
      * @version 1.0
      * @author ThiagoTGM
      * @since 2017-08-19
-     * @param <T> The type of element that the factory creates.
+     * @param <T> The type of element that is translated.
      */
     @FunctionalInterface
-    static interface Factory<T extends XMLElement> extends Serializable {
+    static interface Translator<T extends XMLElement> extends XMLTranslator<T> {
         
         /**
          * Creates a new instance.
@@ -68,6 +71,23 @@ public interface XMLElement extends Serializable {
          * @return A new instance.
          */
         T newInstance();
+        
+        @Override
+        default T read( XMLStreamReader in ) throws XMLStreamException {
+        	
+        	T instance = newInstance();
+        	instance.read( in );
+        	
+        	return instance;
+        	
+        }
+        
+        @Override
+        default void write( XMLStreamWriter out, T instance ) throws XMLStreamException {
+        	
+        	instance.write( out );
+        	
+        }
         
     }
 

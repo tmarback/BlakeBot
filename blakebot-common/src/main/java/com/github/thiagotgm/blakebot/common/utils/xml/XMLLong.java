@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>long</tt>s.
+ * XML translator for <tt>long</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLLong extends XMLTextData<Long> {
      * Local name of the XML element.
      */
     public static final String TAG = "long";
-
-    /**
-     * Initializes a wrapper with no wrapped long.
-     */
-    public XMLLong() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given long.
-     *
-     * @param num The long to be wrapped.
-     */
-    public XMLLong( Long num ) {
-        
-        super( num );
-        
-    }
     
     @Override
     public String getTag() {
@@ -80,40 +58,6 @@ public class XMLLong extends XMLTextData<Long> {
     protected String toString( Long obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLLong> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLLong> {  
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -7317024187839932039L;
-
-        @Override
-        public XMLLong newInstance() {
-
-            return new XMLLong();
-            
-        }
         
     }
 

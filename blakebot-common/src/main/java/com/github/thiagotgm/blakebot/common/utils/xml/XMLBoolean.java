@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>boolean</tt>s.
+ * XML translator for <tt>boolean</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLBoolean extends XMLTextData<Boolean> {
      * Local name of the XML element.
      */
     public static final String TAG = "boolean";
-    
-    /**
-     * Initializes a wrapper with no wrapped boolean.
-     */
-    public XMLBoolean() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given boolean.
-     *
-     * @param bool The boolean to be wrapped.
-     */
-    public XMLBoolean( Boolean bool ) {
-        
-        super( bool );
-        
-    }
     
     @Override
     public String getTag() {
@@ -82,41 +60,6 @@ public class XMLBoolean extends XMLTextData<Boolean> {
     protected String toString( Boolean obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLBoolean> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLBoolean> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = 6366258581271253268L;
-        
-
-        @Override
-        public XMLBoolean newInstance() {
-
-            return new XMLBoolean();
-            
-        }
         
     }
 

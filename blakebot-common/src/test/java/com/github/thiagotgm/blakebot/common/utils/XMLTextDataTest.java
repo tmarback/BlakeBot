@@ -52,16 +52,16 @@ public class XMLTextDataTest {
      * Reads data from a stream, testing if the read data matches the expected value.
      *
      * @param in The stream to read from.
-     * @param instance The instance to read data with.
+     * @param translator The translator to read data with.
      * @param expected The expected value.
      * @throws XMLStreamException if an error was encountered.
      */
-    private <T> void readTest( XMLStreamReader in, XMLTextData<T> instance, T expected )
+    private <T> void readTest( XMLStreamReader in, XMLTextData<T> translator, T expected )
             throws XMLStreamException {
         
         while ( in.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip space.
-        instance.read( in );
-        assertEquals( "Read value does not match expected.", expected, instance.getObject() );
+        T actual = translator.read( in );
+        assertEquals( "Read value does not match expected.", expected, actual );
         
     }
 
@@ -109,64 +109,64 @@ public class XMLTextDataTest {
     @Test
     public void testBooleanWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLBoolean( true ), new XMLBoolean() );
-        XMLTestHelper.testReadWrite( new XMLBoolean( false ), new XMLBoolean() );
+        XMLTestHelper.testReadWrite( true, new XMLBoolean() );
+        XMLTestHelper.testReadWrite( false, new XMLBoolean() );
         
     }
     
     @Test
     public void testByteWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLByte( (byte) 4 ), new XMLByte() );
-        XMLTestHelper.testReadWrite( new XMLByte( (byte) -7 ), new XMLByte() );
+        XMLTestHelper.testReadWrite( (byte) 4, new XMLByte() );
+        XMLTestHelper.testReadWrite( (byte) -7, new XMLByte() );
         
     }
     
     @Test
     public void testShortWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLShort( (short) 44 ), new XMLShort() );
-        XMLTestHelper.testReadWrite( new XMLShort( (short) -98 ), new XMLShort() );
+        XMLTestHelper.testReadWrite( (short) 44, new XMLShort() );
+        XMLTestHelper.testReadWrite( (short) -98, new XMLShort() );
         
     }
     
     @Test
     public void testIntWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLInteger( 444 ), new XMLInteger() );
-        XMLTestHelper.testReadWrite( new XMLInteger( -989 ), new XMLInteger() );
-        XMLTestHelper.testReadWrite( new XMLInteger( 0 ), new XMLInteger() );
+        XMLTestHelper.testReadWrite( 444, new XMLInteger() );
+        XMLTestHelper.testReadWrite( -989, new XMLInteger() );
+        XMLTestHelper.testReadWrite( 0, new XMLInteger() );
         
     }
     
     @Test
     public void testLongWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLLong( 4444L ), new XMLLong() );
-        XMLTestHelper.testReadWrite( new XMLLong( -9891L ), new XMLLong() );
+        XMLTestHelper.testReadWrite( 4444L, new XMLLong() );
+        XMLTestHelper.testReadWrite( -9891L, new XMLLong() );
         
     }
     
     @Test
     public void testFloatWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLFloat( 4444.4f ), new XMLFloat() );
-        XMLTestHelper.testReadWrite( new XMLFloat( -9891.87f ), new XMLFloat() );
+        XMLTestHelper.testReadWrite( 4444.4f, new XMLFloat() );
+        XMLTestHelper.testReadWrite( -9891.87f, new XMLFloat() );
         
     }
     
     @Test
     public void testDoubleWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLDouble( 4444.44 ), new XMLDouble() );
-        XMLTestHelper.testReadWrite( new XMLDouble( -234656.8723 ), new XMLDouble() );
+        XMLTestHelper.testReadWrite( 4444.44, new XMLDouble() );
+        XMLTestHelper.testReadWrite( -234656.8723, new XMLDouble() );
         
     }
     
     @Test
     public void testStringWrite() throws XMLStreamException, IOException {
         
-        XMLTestHelper.testReadWrite( new XMLString( "Potato is here" ), new XMLString() );
+        XMLTestHelper.testReadWrite( "Potato is here", new XMLString() );
         
     }
 

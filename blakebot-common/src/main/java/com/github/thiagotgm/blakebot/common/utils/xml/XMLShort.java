@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>short</tt>s.
+ * XML translator for <tt>short</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLShort extends XMLTextData<Short> {
      * Local name of the XML element.
      */
     public static final String TAG = "short";
-    
-    /**
-     * Initializes a wrapper with no wrapped short.
-     */
-    public XMLShort() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given short.
-     *
-     * @param num The short to be wrapped.
-     */
-    public XMLShort( Short num ) {
-        
-        super( num );
-        
-    }
     
     @Override
     public String getTag() {
@@ -80,40 +58,6 @@ public class XMLShort extends XMLTextData<Short> {
     protected String toString( Short obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLShort> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLShort> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = 2384344069819925075L; 
-
-        @Override
-        public XMLShort newInstance() {
-
-            return new XMLShort();
-            
-        }
         
     }
 

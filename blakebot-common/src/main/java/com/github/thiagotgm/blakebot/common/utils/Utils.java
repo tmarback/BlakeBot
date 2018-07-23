@@ -146,22 +146,40 @@ public abstract class Utils {
      */
     public static final String DEFAULT_ENCODING = "UTF-8";
     
+    public static <T> void writeXMLDocument( OutputStream out, T content, XMLTranslator<T> translator,
+    		String encoding ) throws XMLStreamException {
+    	
+    	XMLStreamWriter outStream = XMLOutputFactory.newFactory().createXMLStreamWriter( out, encoding );
+        outStream.writeStartDocument();
+        translator.write( outStream, content );
+        outStream.writeEndDocument();
+    	
+    }
+    
+    public static <T> void writeXMLDocument( OutputStream out, T content, XMLTranslator<T> translator )
+    		throws XMLStreamException {
+    	
+    	writeXMLDocument( out, content, translator, DEFAULT_ENCODING );
+    	
+    }
+    
     /**
      * Writes an XML document to a stream, where the content of the document is the XMLElement
      * given.
      *
      * @param out The stream to write to.
-     * @param encoding The character encoding to use.
      * @param content The content of the document to be written.
+     * @param encoding The character encoding to use.
      * @throws XMLStreamException if an error is encountered while writing.
      */
-    public static void writeXMLDocument( OutputStream out, String encoding, XMLElement content )
+    public static void writeXMLDocument( OutputStream out, XMLElement content, String encoding )
             throws XMLStreamException {
         
-        XMLStreamWriter outStream = XMLOutputFactory.newFactory().createXMLStreamWriter( out, encoding );
-        outStream.writeStartDocument();
-        content.write( outStream );
-        outStream.writeEndDocument();
+        writeXMLDocument( out, content, (XMLElement.Translator<XMLElement>) () -> {
+        	
+        	return null;
+        	
+        }, encoding );
         
     }
     
@@ -169,7 +187,7 @@ public abstract class Utils {
      * Writes an XML document to a stream, where the content of the document is the XMLElement
      * given. Uses the {@link #DEFAULT_ENCODING default character encoding}.
      * <p>
-     * Same as calling {@link #writeXMLDocument(OutputStream, String, XMLElement)} with second parameter
+     * Same as calling {@link #writeXMLDocument(OutputStream, XMLElement, String)} with third parameter
      * {@value #DEFAULT_ENCODING}.
      *
      * @param out The stream to write to.
@@ -178,8 +196,41 @@ public abstract class Utils {
      */
     public static void writeXMLDocument( OutputStream out, XMLElement content ) throws XMLStreamException {
         
-        writeXMLDocument( out, DEFAULT_ENCODING, content );
+        writeXMLDocument( out, content, DEFAULT_ENCODING );
         
+    }
+    
+    public static <T> T readXMLDocument( InputStream in, XMLTranslator<T> translator, String encoding )
+            throws XMLStreamException {
+        
+        XMLStreamReader inStream = XMLInputFactory.newFactory().createXMLStreamReader( in, encoding );
+        while ( inStream.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
+        T content = translator.read( inStream );
+        while ( inStream.hasNext() ) { inStream.next(); } // Go to end of document.
+        
+        return content;
+        
+    }
+    
+    public static <T> T readXMLDocument( InputStream in, XMLTranslator<T> translator )
+            throws XMLStreamException {
+    	
+    	return readXMLDocument( in, translator, DEFAULT_ENCODING );
+    	
+    }
+    
+    public static <T extends XMLElement> T readXMLDocument( InputStream in, XMLElement.Translator<T> translator,
+    		String encoding ) throws XMLStreamException {
+    	
+    	return readXMLDocument( in, (XMLTranslator<T>) translator, encoding );
+    	
+    }
+    
+    public static <T extends XMLElement> T readXMLDocument( InputStream in, XMLElement.Translator<T> translator )
+            throws XMLStreamException {
+    	
+    	return readXMLDocument( in, (XMLTranslator<T>) translator, DEFAULT_ENCODING );
+    	
     }
     
     /**
@@ -191,17 +242,18 @@ public abstract class Utils {
      * is found.
      *
      * @param in The stream to read to.
-     * @param encoding The character encoding of the stream.
      * @param content The element that will read the document's content.
+     * @param encoding The character encoding of the stream.
      * @throws XMLStreamException if an error is encountered while reading.
      */
-    public static void readXMLDocument( InputStream in, String encoding, XMLElement content )
+    public static <T extends XMLElement> T readXMLDocument( InputStream in, T content, String encoding )
             throws XMLStreamException {
         
-        XMLStreamReader inStream = XMLInputFactory.newFactory().createXMLStreamReader( in, encoding );
-        while ( inStream.next() != XMLStreamConstants.START_ELEMENT ) {} // Skip comments.
-        content.read( inStream );
-        while ( inStream.hasNext() ) { inStream.next(); } // Go to end of document.
+        return readXMLDocument( in, (XMLElement.Translator<T>) () -> {
+        	
+        	return content;
+        	
+        }, encoding );
         
     }
     
@@ -209,7 +261,7 @@ public abstract class Utils {
      * Reads an XML document from a stream, where the content of the document is to be read
      * by the given XMLElement. Uses the {@link #DEFAULT_ENCODING default character encoding}.
      * <p>
-     * Same as calling {@link #readXMLDocument(InputStream, String, XMLElement)} with second parameter
+     * Same as calling {@link #readXMLDocument(InputStream, T, String)} with third parameter
      * {@value #DEFAULT_ENCODING}.
      * <p>
      * If there is any content after what is read by the given XMLElement, that extra content
@@ -220,9 +272,10 @@ public abstract class Utils {
      * @param content The element that will read the document's content.
      * @throws XMLStreamException if an error is encountered while reading.
      */
-    public static void readXMLDocument( InputStream in, XMLElement content ) throws XMLStreamException {
+    public static <T extends XMLElement> T readXMLDocument( InputStream in, T content )
+    		throws XMLStreamException {
         
-        readXMLDocument( in, DEFAULT_ENCODING, content );
+        return readXMLDocument( in, content, DEFAULT_ENCODING );
         
     }
 

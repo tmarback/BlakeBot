@@ -17,20 +17,18 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 
 /**
- * XML wrapper for <tt>IChannel</tt> objects.
+ * XML translator for <tt>IChannel</tt> objects.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-09-02
  */
-public class XMLChannel extends AbstractXMLIDLinkedObject<IChannel> {
+public class XMLChannel extends AbstractXMLIDLinkedTranslator<IChannel> {
     
     /**
      * UID that represents this class.
@@ -43,25 +41,13 @@ public class XMLChannel extends AbstractXMLIDLinkedObject<IChannel> {
     public static final String TAG = "channel";
 
     /**
-     * Instantiates a wrapper with no channel.
+     * Instantiates a translator.
      *
      * @param client Client to use to obtain channels.
      */
     public XMLChannel( IDiscordClient client ) {
         
         super( client );
-        
-    }
-    
-    /**
-     * Instantiates a wrapper with the given channel.
-     *
-     * @param client Client to use to obtain channels.
-     * @param channel The channel to wrap initially.
-     */
-    public XMLChannel( IDiscordClient client, IChannel channel ) {
-        
-        super( client, channel );
         
     }
 
@@ -78,59 +64,18 @@ public class XMLChannel extends AbstractXMLIDLinkedObject<IChannel> {
         return TAG;
         
     }
+    
+    @Override
+    public Class<IChannel> getTranslatedClass() {
+    	
+    	return IChannel.class;
+    	
+    }
 
     @Override
-    protected IGuild getGuild() {
+    protected IGuild getGuild( IChannel obj ) {
 
         return null;
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @param client The client the wrappers should use to obtain the objects.
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLChannel> newFactory( IDiscordClient client ) {
-        
-        return new Factory( client );
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLChannel> {
-        
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -725197107670169662L;
-        
-        private final IDiscordClient client;
-        
-        /**
-         * Creates an instance that produces wrappers that use the given client 
-         *
-         * @param client The client the wrappers should use to obtain the objects.
-         */
-        public Factory( IDiscordClient client ) {
-            
-            this.client = client;
-            
-        }
-
-        @Override
-        public XMLChannel newInstance() {
-
-            return new XMLChannel( client );
-            
-        }
         
     }
 

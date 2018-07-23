@@ -37,39 +37,39 @@ import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
  */
 public class XMLTreeGraphTest {
     
-    private static final XMLTreeGraph<XMLString,XMLInteger> EXPECTED;
+    private static final XMLTreeGraph<String,Integer> EXPECTED;
     
     static {
         
-        EXPECTED = new XMLTreeGraph<XMLString,XMLInteger>(
-                XMLString.newFactory(), XMLInteger.newFactory() );
-        EXPECTED.add( new XMLInteger( 0 ) );
-        EXPECTED.add( new XMLInteger( 34 ), new XMLString( "hi" ) );
-        EXPECTED.add( new XMLInteger( 420 ), new XMLString( "hi" ), new XMLString( "I" ) );
-        EXPECTED.add( new XMLInteger( 90 ), new XMLString( "hi" ), new XMLString( "I" ),
-                new XMLString( "am" ) );
-        EXPECTED.add( new XMLInteger( -29 ), new XMLString( "hi" ), new XMLString( "I" ),
-                new XMLString( "am" ), new XMLString( "here" ) );
+        EXPECTED = new XMLTreeGraph<>( new XMLString(), new XMLInteger() );
+        EXPECTED.add( 0 );
+        EXPECTED.add( 34, "hi" );
+        EXPECTED.add( 420, "hi", "I" );
+        EXPECTED.add( 90, "hi", "I", "am" );
+        EXPECTED.add( -29, "hi", "I", "am", "here" );
         
     }
+    
+    private static final XMLElement.Translator<XMLTreeGraph<String,Integer>> TRANSLATOR = () -> {
+    	
+    	return new XMLTreeGraph<>( new XMLString(), new XMLInteger() );
+    	
+    };
 
     @Test
     public void testRead() throws XMLStreamException, FactoryConfigurationError {
 
-        XMLTreeGraph<XMLString,XMLInteger> graph = new XMLTreeGraph<XMLString,XMLInteger>(
-                XMLString.newFactory(), XMLInteger.newFactory() );
         InputStream in = this.getClass().getResourceAsStream( "/TreeGraph.xml" );
-        Utils.readXMLDocument( in, graph );
+        XMLTreeGraph<String,Integer> actual = Utils.readXMLDocument( in, TRANSLATOR );
         
-        assertEquals( "Read graph is not correct.", EXPECTED, graph );
+        assertEquals( "Read graph is not correct.", EXPECTED, actual );
         
     }
     
     @Test
     public void testWrite() throws XMLStreamException, IOException {
      
-        XMLTreeGraph<XMLString,XMLInteger> graph = new XMLTreeGraph<XMLString,XMLInteger>();
-        XMLTestHelper.testReadWrite( EXPECTED, graph );
+        XMLTestHelper.testReadWrite( EXPECTED, TRANSLATOR );
         
     }
 

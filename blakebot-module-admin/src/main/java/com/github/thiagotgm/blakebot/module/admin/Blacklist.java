@@ -24,7 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,9 +42,10 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.utils.IDLinkedGraph;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
+import com.github.thiagotgm.blakebot.common.utils.XMLTreeGraph;
+import com.github.thiagotgm.blakebot.common.utils.xml.XMLIIDLinkedObject;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -81,7 +81,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
     }
     
     private final Path filePath;
-    private final IDLinkedGraph<RestrictionSet> blacklist;
+    private final XMLTreeGraph<IIDLinkedObject,Set<Restriction>> blacklist;
     
     /**
      * Creates a new instance using data loaded from the blacklist file.<br>
@@ -92,9 +92,16 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
      *                 it in. If it does not exist, a new file and empty blacklist
      *                 are created.
      */
-    protected Blacklist( IDiscordClient client, Path filePath ) {
+    @SuppressWarnings("unchecked")
+	protected Blacklist( IDiscordClient client, Path filePath ) {
         
-        this.blacklist = new IDLinkedGraph<>( client, RestrictionSet.newFactory() );
+        this.blacklist = new XMLTreeGraph<>( new XMLIIDLinkedObject( client ),
+        		new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
+        				(XMLElement.Translator<Restriction>) () -> {
+        					
+        					return new Restriction();
+        					
+        				}));
         this.filePath = filePath;
         client.getDispatcher().registerTemporaryListener( this );
         
@@ -192,7 +199,12 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
      */
     protected Set<Restriction> get( IIDLinkedObject... path ) {
         
-        return new RestrictionSet( blacklist.get( path ) );
+    	Set<Restriction> restrictions = blacklist.get( path );
+    	if ( restrictions == null ) {
+    		return new HashSet<>();
+    	} else {
+    		return new HashSet<>( restrictions );
+    	}
         
     }
     
@@ -316,9 +328,9 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
      */
     protected synchronized boolean add( Restriction restriction, IIDLinkedObject... path ) {
         
-        RestrictionSet restrictions = blacklist.get( path );
+        Set<Restriction> restrictions = blacklist.get( path );
         if ( restrictions == null ) {
-            restrictions = new RestrictionSet();
+            restrictions = new HashSet<>();
             blacklist.add( restrictions, path );
         }
         return restrictions.add( restriction );
@@ -425,7 +437,7 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
      */
     protected synchronized boolean remove( Restriction restriction, IIDLinkedObject... path ) {
         
-        RestrictionSet restrictions = blacklist.get( path );
+        Set<Restriction> restrictions = blacklist.get( path );
         return ( ( restrictions != null ) && restrictions.remove( restriction ) );
         
     }
@@ -768,128 +780,6 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
             
             return String.format( "[%s] (%s)", getText(), getType().toString() );
             
-        }
-        
-        /**
-         * Creates a factory that produces blank Restriction instances.
-         *
-         * @return The new Restriction factory.
-         */
-        public static XMLElement.Factory<Restriction> newFactory() {
-            
-            return new Factory();
-            
-        }
-        
-        /**
-         * Factory that creates new blank Restriction instances.
-         *
-         * @version 1.0
-         * @author ThiagoTGM
-         * @since 2017-09-11
-         */
-        private static class Factory implements XMLElement.Factory<Restriction> {
-
-            /**
-             * UID that represents this class.
-             */
-            private static final long serialVersionUID = 1230290568027312086L;
-
-            @Override
-            public Restriction newInstance() {
-
-                return new Restriction();
-
-            }
-
-        }
-        
-    }
-    
-    /**
-     * Contains a set of restrictions.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-09-11
-     */
-    public static class RestrictionSet extends XMLSet<Restriction> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = 4465227673053178038L;
-        
-        /**
-         * Local name that identifies this XML element.
-         */
-        public static final String TAG = "restrictions";
-
-        /**
-         * Creates a new instance.
-         */
-        public RestrictionSet() {
-            
-            super( new HashSet<>(), Restriction.newFactory() );
-            
-        }
-        
-        /**
-         * Creates a new instance, initializing it to have the restrictions in the given
-         * collection.
-         *
-         * @param restrictions The restrictions that the instantiated set should have.
-         *                     If empty or <tt>null</tt>, the instantiated RestrictionSet
-         *                     is empty.
-         */
-        public RestrictionSet( Collection<? extends Restriction> restrictions ) {
-            
-            this();
-            if ( restrictions != null ) {
-                addAll( restrictions );
-            }
-            
-        }
-        
-        @Override
-        public String getTag() {
-            
-            return TAG;
-            
-        }
-        
-        /**
-         * Creates a factory that produces empty RestrictionSets.
-         *
-         * @return The new RestrictionSet factory.
-         */
-        public static XMLElement.Factory<RestrictionSet> newFactory() {
-            
-            return new Factory();
-            
-        }
-        
-        /**
-         * Factory that creates new empty RestrictionSets.
-         *
-         * @version 1.0
-         * @author ThiagoTGM
-         * @since 2017-09-11
-         */
-        private static class Factory implements XMLElement.Factory<RestrictionSet> {
-
-            /**
-             * UID that represents this class.
-             */
-            private static final long serialVersionUID = -912979037728857291L;
-
-            @Override
-            public RestrictionSet newInstance() {
-
-                return new RestrictionSet();
-
-            }
-
         }
         
     }

@@ -18,225 +18,47 @@
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
 import java.util.Collection;
-import java.util.Iterator;
 
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
+import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
 
 /**
- * Adapter for a Collection of objects that allows writing the collection's contents
- * to an XML stream, or read them from one.
- *
+ * Translator for generalized Collection objects.
+ * 
  * @version 1.0
  * @author ThiagoTGM
- * @since 2017-09-10
+ * @since 2018-07-22
  * @param <E> The type of elements being stored in the collection.
  */
-public abstract class XMLCollection<E extends XMLElement> implements XMLElement, Collection<E> {
-
+public class XMLCollection<E> extends AbstractXMLCollection<E,Collection<E>> {
+	
     /**
-     * UID that represents this class.
-     */
-    private static final long serialVersionUID = -5857045540745890723L;
-
-    /**
+	 * UID that represents this class.
+	 */
+	private static final long serialVersionUID = 1003839832146887345L;
+	
+	/**
      * Local name of the XML element.
      */
     public static final String TAG = "collection";
     
-    private final Collection<E> collection;
-    private final XMLElement.Factory<? extends E> factory;
-
     /**
-     * Instantiates an XMLColletion backed by the given collection that uses the given factory
-     * to create new element instances.
+     * Instantiates an collection translator that uses instances of the given Collection class and
+     * uses the given translator for the elements.
      *
-     * @param collection The backing collection.
-     * @param factory The factory to create element instances with.
+     * @param collectionClass The class of collection to instantiate.
+     * @param translator The translator to use for the collection elements.
      */
-    public XMLCollection( Collection<E> collection, XMLElement.Factory<? extends E> factory ) {
-        
-        this.collection = collection;
-        this.factory = factory;
-        
+    public XMLCollection( Class<? extends Collection<E>> collectionClass, XMLTranslator<E> translator )
+    		throws IllegalArgumentException {
+    	
+    	super( collectionClass, translator );
+    	
     }
-    
-    /**
-     * Retrieves the tag that identifies the object.
-     *
-     * @return The object tag.
-     */
-    public String getTag() {
+	
+	@Override
+	public String getTag() {
         
         return TAG;
-        
-    }
-
-    /**
-     * Reads the elements of the collection from an XML stream. The collection is cleared before
-     * reading, so any pre-existing elements are removed.
-     */
-    @Override
-    public void read( XMLStreamReader in ) throws XMLStreamException {
-
-        if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-              !in.getLocalName().equals( getTag() ) ) {
-            throw new XMLStreamException( "Did not find element start." );
-        }
-        
-        collection.clear();
-        while ( in.hasNext() ) { // Read each element.
-            
-            switch ( in.next() ) {
-                
-                case XMLStreamConstants.START_ELEMENT:
-                    E elem = factory.newInstance();
-                    elem.read( in );
-                    collection.add( elem );
-                    break;
-                    
-                case XMLStreamConstants.END_ELEMENT:
-                    if ( in.getLocalName().equals( getTag() ) ) {
-                        return; // Done reading.
-                    } else {
-                        throw new XMLStreamException( "Unexpected end element." );
-                    }
-                
-            }
-            
-        }
-        throw new XMLStreamException( "Unexpected end of document." );
-
-    }
-
-    @Override
-    public void write( XMLStreamWriter out ) throws XMLStreamException {
-
-        out.writeStartElement( getTag() );
-        for ( E elem : collection ) { // Write each element.
-            
-            elem.write( out );
-            
-        }
-        out.writeEndElement();
-
-    }
-
-    /* Delegates to wrapped collection */
-
-    @Override
-    public int size() {
-
-        return collection.size();
-        
-    }
-
-    @Override
-    public boolean isEmpty() {
-
-        return collection.isEmpty();
-        
-    }
-
-    @Override
-    public boolean contains( Object o ) {
-
-        return collection.contains( o );
-        
-    }
-
-    @Override
-    public Iterator<E> iterator() {
-
-        return collection.iterator();
-        
-    }
-
-    @Override
-    public Object[] toArray() {
-
-        return collection.toArray();
-        
-    }
-
-    @Override
-    public <T> T[] toArray( T[] a ) {
-
-        return collection.toArray( a );
-        
-    }
-
-    @Override
-    public boolean add( E e ) {
-
-        return collection.add( e );
-        
-    }
-
-    @Override
-    public boolean remove( Object o ) {
-
-        return collection.remove( o );
-        
-    }
-
-    @Override
-    public boolean containsAll( Collection<?> c ) {
-
-        return collection.containsAll( c );
-        
-    }
-
-    @Override
-    public boolean addAll( Collection<? extends E> c ) {
-
-        return collection.addAll( c );
-        
-    }
-
-    @Override
-    public boolean removeAll( Collection<?> c ) {
-
-        return collection.removeAll( c );
-        
-    }
-
-    @Override
-    public boolean retainAll( Collection<?> c ) {
-
-        return collection.retainAll( c );
-        
-    }
-
-    @Override
-    public void clear() {
-
-        collection.clear();
-        
-    }
-
-    @Override
-    public boolean equals( Object o ) {
-
-        return collection.equals( o );
-        
-    }
-
-    @Override
-    public int hashCode() {
-
-        return collection.hashCode();
-        
-    }
-    
-    @Override
-    public String toString() {
-        
-        return collection.toString();
         
     }
 

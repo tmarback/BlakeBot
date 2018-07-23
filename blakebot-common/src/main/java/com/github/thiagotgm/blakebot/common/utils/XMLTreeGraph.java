@@ -31,8 +31,7 @@ import javax.xml.stream.XMLStreamWriter;
  * @param <K> The type of the keys that define connections on the graph.
  * @param <V> The type of the values to be stored.
  */
-public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends TreeGraph<K,V>
-        implements XMLGraph<K,V> {
+public class XMLTreeGraph<K,V> extends TreeGraph<K,V> implements XMLGraph<K,V> {
     
     /**
      * UID that represents this class.
@@ -45,94 +44,105 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
     public static final String GRAPH_TAG = "treeGraph";
     
     /**
-     * Text used in the opening and closing tags for the key factory element.
-     */
-    protected static final String KEY_FACTORY_TAG = "keyFactory";
-    
-    /**
-     * Text used in the opening and closing tags for the value factory element.
-     */
-    protected static final String VALUE_FACTORY_TAG = "valueFactory";
-    
-    /**
      * Factory that instantiates new keys.
      */
-    protected XMLElement.Factory<? extends K> keyFactory;
+    protected XMLTranslator<K> keyTranslator;
     
     /**
      * Factory that instantiates new values.
      */
-    protected XMLElement.Factory<? extends V> valueFactory;
+    protected XMLTranslator<V> valueTranslator;
     
     /**
-     * Instantiates an XMLTreeGraph that uses {@link XMLElementIO#write(XMLStreamWriter, XMLElement)}
-     * and {@link XMLElementIO#read(XMLStreamReader)} to save and write key and value elements.
-     * <p>
-     * Same as calling {@link #XMLTreeGraph(XMLElement.Factory, XMLElement.Factory)} with
-     * both arguments <tt>null</tt>.
-     */
-    public XMLTreeGraph() {
-        
-        this( null, null );
-        
-    }
-    
-    /**
-     * Instantiates an XMLTreeGraph that uses the given factories to create new instances of
-     * keys and values when loading from an XML.
-     * <p>
-     * If either of the factories is <tt>null</tt>, the corresponding element is instead saved
-     * and loaded using {@link XMLElementIO#write(XMLStreamWriter, XMLElement)} and
-     * {@link XMLElementIO#read(XMLStreamReader)}. If {@link #read(XMLStreamReader)} is later
-     * called and a factory is specified in the stream, it will be used.<br>
-     * If provided, it cannot be replaced when loading. That is, if a factory is provided here
-     * and the stream given to {@link #read(XMLStreamReader)} specifies another factory for the
-     * same element, the one given here is maintained (the one from the stream is ignored).
+     * Instantiates an XMLTreeGraph that uses the given translators to encode and decode elements
+     * to/from XML.
      *
-     * @param keyFactory The factory to use to create new key instances.
-     * @param valueFactory The factory to use to create new value instances.
+     * @param keyTranslator The translator for element keys.
+     * @param valueTranslator The translator for element values.
+     * @throws NullPointerException if either translator is <tt>null</tt>.
      */
-    public XMLTreeGraph( XMLElement.Factory<? extends K> keyFactory,
-            XMLElement.Factory<? extends V> valueFactory ) {
+    public XMLTreeGraph( XMLTranslator<K> keyTranslator, XMLTranslator<V> valueTranslator )
+    		throws NullPointerException {
         
+    	// Check translators.
+    	if ( keyTranslator == null ) {
+    		throw new NullPointerException( "Key translator cannot be null." );
+    	}
+    	if ( valueTranslator == null ) {
+    		throw new NullPointerException( "Value translator cannot be null." );
+    	}
+    	
         setRoot( new XMLNode() );
-        this.keyFactory = keyFactory;
-        this.valueFactory = valueFactory;
+        this.keyTranslator = keyTranslator;
+        this.valueTranslator = valueTranslator;
         
     }
     
+    /**
+     * Convenience method for creating a new tree that uses XMLELements as keys.
+     * <p>
+     * Same effect as using the constructor, but lambdas can be used.
+     * 
+     * @param keyTranslator The translator for element keys.
+     * @param valueTranslator The translator for element values.
+     * @return The constructed tree.
+     * @throws NullPointerException if either translator is <tt>null</tt>.
+     * @param <K> The type of the keys.
+     * @param <V> The type of the values.
+     */
+    public static <K extends XMLElement,V> XMLTreeGraph<K,V>
+    		newTree( XMLElement.Translator<K> keyTranslator, XMLTranslator<V> valueTranslator )
+    		throws NullPointerException {
+    	
+    	return new XMLTreeGraph<K,V>( keyTranslator, valueTranslator );
+    	
+    }
+    
+    /**
+     * Convenience method for creating a new tree that uses XMLELements as values.
+     * <p>
+     * Same effect as using the constructor, but lambdas can be used.
+     * 
+     * @param keyTranslator The translator for element keys.
+     * @param valueTranslator The translator for element values.
+     * @return The constructed tree.
+     * @throws NullPointerException if either translator is <tt>null</tt>.
+     * @param <K> The type of the keys.
+     * @param <V> The type of the values.
+     */
+    public static <K,V extends XMLElement> XMLTreeGraph<K,V>
+			newTree( XMLTranslator<K> keyTranslator, XMLElement.Translator<V> valueTranslator )
+			throws NullPointerException {
+
+    	return new XMLTreeGraph<K,V>( keyTranslator, valueTranslator );
+	
+	}
+    
+    /**
+     * Convenience method for creating a new tree that uses XMLELements as keys and values.
+     * <p>
+     * Same effect as using the constructor, but lambdas can be used.
+     * 
+     * @param keyTranslator The translator for element keys.
+     * @param valueTranslator The translator for element values.
+     * @return The constructed tree.
+     * @throws NullPointerException if either translator is <tt>null</tt>.
+     * @param <K> The type of the keys.
+     * @param <V> The type of the values.
+     */
+    public static <K extends XMLElement,V extends XMLElement> XMLTreeGraph<K,V>
+			newTree( XMLElement.Translator<K> keyTranslator, XMLElement.Translator<V> valueTranslator )
+			throws NullPointerException {
+		
+		return new XMLTreeGraph<K,V>( keyTranslator, valueTranslator );
+	
+	}
+
     @Override
     @SuppressWarnings( "unchecked" )
     protected XMLNode getRoot() {
         
         return (XMLNode) super.getRoot();
-        
-    }
-    
-    /**
-     * Reads a factory from the given stream.
-     * <p>
-     * The stream should be on the opening tag of the factory element.
-     *
-     * @param in The stream to read from.
-     * @param tag The tag of the factory element.
-     * @param <T> The type that the factory generates.
-     * @return The factory specified on the stream.
-     * @throws XMLStreamException if an error occurred while reading.
-     */
-    private <T extends XMLElement> XMLElement.Factory<T> readFactory( XMLStreamReader in, String tag )
-            throws XMLStreamException {
-        
-        if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-              !in.getLocalName().equals( tag ) ) {
-           throw new XMLStreamException( "Stream not in opening tag of a factory element." );
-        }
-  
-        XMLElement.Factory<T> factory = Utils.stringToSerializable( in.getElementText() );
-        if ( factory == null ) {
-            throw new XMLStreamException( "Could not read factory." );
-        }
-        return factory;
         
     }
     
@@ -167,20 +177,6 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
                 
                 case XMLStreamConstants.START_ELEMENT:
                     switch ( in.getLocalName() ) {
-                        
-                        case KEY_FACTORY_TAG: // Key factory.
-                            XMLElement.Factory<K> keyFactory = readFactory( in, KEY_FACTORY_TAG );
-                            if ( this.keyFactory == null ) {  // Use factory only if none were
-                                this.keyFactory = keyFactory; // specified on construction.
-                            }
-                            break;
-                            
-                        case VALUE_FACTORY_TAG: // Value factory.
-                            XMLElement.Factory<V> valueFactory = readFactory( in, VALUE_FACTORY_TAG );
-                            if ( this.valueFactory == null ) {    // Use factory only if none were
-                                this.valueFactory = valueFactory; // specified on construction.
-                            }
-                            break;
                             
                         case XMLNode.NODE_TAG: // Root node.
                             if ( hasRoot ) {
@@ -213,32 +209,6 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
     }
     
     /**
-     * Writes a factory to the given stream (by serializing it to text). If the given
-     * factory is <tt>null</tt>, nothing is written.
-     *
-     * @param out The stream to write data to.
-     * @param factory The factory to write to the stream.
-     * @param tag The tag of the factory element.
-     * @throws NullPointerException if the tag is null.
-     * @throws XMLStreamException if an error was encountered while writing.
-     */
-    protected void writeFactory( XMLStreamWriter out, XMLElement.Factory<?> factory, String tag )
-            throws NullPointerException, XMLStreamException {
-        
-        if ( factory == null ) {
-            return; // No factory to write.
-        }
-        if ( tag == null ) {
-            throw new NullPointerException( "Tag cannot be null." );
-        }
-        
-        out.writeStartElement( tag );
-        out.writeCharacters( Utils.serializableToString( factory ) );
-        out.writeEndElement();
-        
-    }
-    
-    /**
      * Writes the state of the graph to an XML stream.
      * <p>
      * In situations where the graph will always have key and value factories specified on construction,
@@ -253,10 +223,6 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
     public void write( XMLStreamWriter out, boolean includeFactories ) throws XMLStreamException {
         
         out.writeStartElement( getTag() );
-        if ( includeFactories ) { // Should write existing factories.
-            writeFactory( out, keyFactory, KEY_FACTORY_TAG );
-            writeFactory( out, valueFactory, VALUE_FACTORY_TAG );
-        }
         getRoot().write( out );
         out.writeEndElement();
         
@@ -360,13 +326,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
          */
         protected K readKey( XMLStreamReader in ) throws XMLStreamException {
             
-            if ( keyFactory != null ) {
-                K key = keyFactory.newInstance();
-                key.read( in );
-                return key;
-            } else {
-                return XMLElementIO.read( in );
-            }
+            return keyTranslator.read( in );
             
         }
         
@@ -384,13 +344,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
          */
         protected V readValue( XMLStreamReader in ) throws XMLStreamException {
             
-            if ( valueFactory != null ) {
-                V value = valueFactory.newInstance();
-                value.read( in );
-                return value;
-            } else {
-                return XMLElementIO.read( in );
-            }
+            return valueTranslator.read( in );
             
         }
 
@@ -511,11 +465,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
          */
         protected void writeKey( XMLStreamWriter out ) throws XMLStreamException {
             
-            if ( keyFactory != null ) {
-                getKey().write( out );
-            } else {
-                XMLElementIO.write( out, getKey() );
-            }
+            keyTranslator.write( out, getKey() );
             
         }
         
@@ -531,11 +481,7 @@ public class XMLTreeGraph<K extends XMLElement, V extends XMLElement> extends Tr
          */
         protected void writeValue( XMLStreamWriter out ) throws XMLStreamException {
             
-            if ( valueFactory != null ) {
-                getValue().write( out );
-            } else {
-                XMLElementIO.write( out, getValue() );
-            }
+        	valueTranslator.write( out, getValue() );
             
         }
 

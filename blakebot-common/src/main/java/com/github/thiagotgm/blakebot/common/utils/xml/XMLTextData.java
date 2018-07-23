@@ -22,45 +22,25 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
+import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
 
 /**
- * Common implementation for wrappers that store wrapped objects in XML format by converting
- * them to or from a string. The XML format of the wrapped element does not have any opening or closing
+ * Common implementation for translators that encode/decode objects in XML format by converting
+ * them to or from a string. The XML format of the element does not have any opening or closing
  * tags, it is only a single string.
  *
- * @version 1.0
+ * @version 2.0
  * @author ThiagoTGM
  * @since 2017-08-29
- * @param <T> The type of object being wrapped.
+ * @param <T> The type of object being translated.
  */
-public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
+public abstract class XMLTextData<T> implements XMLTranslator<T> {
     
     /**
      * UID that represents this class.
      */
     private static final long serialVersionUID = -987321998278933537L;
-    
-    /**
-     * Initializes a wrapper with no wrapped object.
-     */
-    public XMLTextData() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given object.
-     *
-     * @param obj The object to be wrapped.
-     */
-    public XMLTextData( T obj ) {
-        
-        super( obj );
-        
-    }
-    
+
     /**
      * Retrieves the tag that identifies the object.
      *
@@ -78,7 +58,7 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
     protected abstract T fromString( String str );
 
     @Override
-    public void read( XMLStreamReader in ) throws XMLStreamException {
+    public T read( XMLStreamReader in ) throws XMLStreamException {
 
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
               !in.getLocalName().equals( getTag() ) ) {
@@ -89,7 +69,8 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
         if ( obj == null ) {
             throw new XMLStreamException( "Could not read data." );
         }
-        setObject( obj );
+
+        return obj;
         
     }
     
@@ -102,14 +83,10 @@ public abstract class XMLTextData<T> extends AbstractXMLWrapper<T> {
     protected abstract String toString( T obj );
 
     @Override
-    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
-
-        if ( getObject() == null ) {
-            throw new IllegalStateException( "No object currently wrapped." );
-        }
-        
+    public void write( XMLStreamWriter out, T instance ) throws XMLStreamException {
+    	
         out.writeStartElement( getTag() );
-        out.writeCharacters( toString( getObject() ) );
+        out.writeCharacters( toString( instance ) );
         out.writeEndElement();
         
     }

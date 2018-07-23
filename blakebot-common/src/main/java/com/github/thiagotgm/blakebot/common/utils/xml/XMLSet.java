@@ -20,17 +20,17 @@ package com.github.thiagotgm.blakebot.common.utils.xml;
 import java.util.Set;
 
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
+import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
 
 /**
- * Adapter for a Set of objects that allows writing the set's contents
- * to an XML stream, or read them from one.
+ * Translator for generalized Set objects.
  *
- * @version 1.0
+ * @version 2.0
  * @author ThiagoTGM
  * @since 2017-09-10
  * @param <E> The type of elements being stored in the set.
  */
-public class XMLSet<E extends XMLElement> extends XMLCollection<E> implements Set<E> {
+public class XMLSet<E extends XMLElement> extends AbstractXMLCollection<E,Set<E>> {
 
     /**
      * UID that represents this class.
@@ -38,15 +38,28 @@ public class XMLSet<E extends XMLElement> extends XMLCollection<E> implements Se
     private static final long serialVersionUID = -7391823040267850261L;
 
     /**
-     * Instantiates an XMLSet backed by the given set that uses the given factory
-     * to create new element instances.
-     *
-     * @param set The backing set.
-     * @param factory The factory to create element instances with.
+     * Local name of the XML element.
      */
-    public XMLSet( Set<E> set, Factory<? extends E> factory ) {
+    public static final String TAG = "set";
+    
+    /**
+     * Instantiates an set translator that uses instances of the given Set class and
+     * uses the given translator for the elements.
+     *
+     * @param setClass The class of set to instantiate.
+     * @param translator The translator to use for the set elements.
+     */
+    public XMLSet( Class<? extends Set<E>> setClass, XMLTranslator<E> translator )
+    		throws IllegalArgumentException {
+    	
+    	super( setClass, translator );
+    	
+    }
+	
+	@Override
+	public String getTag() {
         
-        super( set, factory );
+        return TAG;
         
     }
 

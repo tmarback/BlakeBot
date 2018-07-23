@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>float</tt>s.
+ * XML translator for <tt>float</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLFloat extends XMLTextData<Float> {
      * Local name of the XML element.
      */
     public static final String TAG = "float";
-
-    /**
-     * Initializes a wrapper with no wrapped float.
-     */
-    public XMLFloat() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given float.
-     *
-     * @param num The float to be wrapped.
-     */
-    public XMLFloat( Float num ) {
-        
-        super( num );
-        
-    }
     
     @Override
     public String getTag() {
@@ -80,40 +58,6 @@ public class XMLFloat extends XMLTextData<Float> {
     protected String toString( Float obj ) {
 
         return String.valueOf( obj );
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLFloat> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLFloat> {     
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -7770878362967506463L;
-
-        @Override
-        public XMLFloat newInstance() {
-
-            return new XMLFloat();
-            
-        }
         
     }
 

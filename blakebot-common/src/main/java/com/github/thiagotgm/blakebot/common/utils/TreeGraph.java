@@ -312,6 +312,9 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         node.setValue( value );
         nMappings++; // A mapping was added.
+        while ( levelMappings.size() <= path.length ) {
+        	levelMappings.add( 0 ); // Ensure an element for every level.
+        }
         levelMappings.set( path.length, levelMappings.get( path.length ) + 1 );
         return true;
         

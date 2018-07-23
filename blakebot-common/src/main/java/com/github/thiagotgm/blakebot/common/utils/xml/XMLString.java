@@ -17,10 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.utils.xml;
 
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-
 /**
- * XML wrapper for <tt>String</tt>s.
+ * XML translator for <tt>String</tt>s.
  *
  * @version 1.0
  * @author ThiagoTGM
@@ -37,26 +35,6 @@ public class XMLString extends XMLTextData<String> {
      * Local name of the XML element.
      */
     public static final String TAG = "string";
-    
-    /**
-     * Initializes a wrapper with no wrapped string.
-     */
-    public XMLString() {
-        
-        super();
-        
-    }
-    
-    /**
-     * Initializes a wrapper that initially wraps the given string.
-     *
-     * @param str The string to be wrapped.
-     */
-    public XMLString( String str ) {
-        
-        super( str );
-        
-    }
     
     @Override
     public String getTag() {
@@ -76,40 +54,6 @@ public class XMLString extends XMLTextData<String> {
     protected String toString( String obj ) {
 
         return obj;
-        
-    }
-    
-    /**
-     * Creates a factory that produces instances of this class.
-     *
-     * @return A new factory.
-     */
-    public static XMLElement.Factory<XMLString> newFactory() {
-        
-        return new Factory();
-        
-    }
-    
-    /**
-     * Factory for new instances of the class.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-29
-     */
-    private static class Factory implements XMLElement.Factory<XMLString> {
-
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -4889730359972410684L;
-
-        @Override
-        public XMLString newInstance() {
-
-            return new XMLString();
-            
-        }
         
     }
 

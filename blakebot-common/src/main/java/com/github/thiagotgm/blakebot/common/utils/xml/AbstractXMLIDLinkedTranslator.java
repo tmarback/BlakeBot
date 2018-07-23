@@ -22,20 +22,21 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.github.thiagotgm.blakebot.common.utils.AbstractXMLWrapper;
+import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
+
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
 
 /**
- * Shared implementation for wrappers for objects with an ID.
+ * Shared implementation for translators for objects with a Discord ID.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-09-02
- * @param <T> Type of object being wrapped.
+ * @param <T> Type of object being translated.
  */
-abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends AbstractXMLWrapper<T> {
+abstract class AbstractXMLIDLinkedTranslator<T extends IIDLinkedObject> implements XMLTranslator<T> {
     
     /**
      * UID that represents this class.
@@ -52,26 +53,13 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
     protected final IDiscordClient client;
     
     /**
-     * Instantiates a wrapper with no object.
+     * Instantiates a translator.
      *
      * @param client The client to use for obtaining objects.
      */
-    public AbstractXMLIDLinkedObject( IDiscordClient client ) {
+    public AbstractXMLIDLinkedTranslator( IDiscordClient client ) {
         
-        this( client, null );
-        
-    }
-    
-    /**
-     * Instantiates a wrapper with the given object.
-     *
-     * @param client The client to use for obtaining objects.
-     * @param obj The object to wrap initially.
-     */
-    public AbstractXMLIDLinkedObject( IDiscordClient client, T obj ) {
-        
-        super( obj );
-        this.client = client;
+    	this.client = client;
         
     }
     
@@ -85,17 +73,8 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
      */
     protected abstract T getObject( long id, IGuild guild );
     
-    /**
-     * Reads only the start element from the XML stream.
-     * <p>
-     * The object will already be read, but will not reach the end element in
-     * the stream yet. Advancing the stream until the end element is then responsibility
-     * of the caller.
-     *
-     * @param in The stream to read data from.
-     * @throws XMLStreamException if an error occurred.
-     */
-    public void readStart( XMLStreamReader in ) throws XMLStreamException {
+    @Override
+    public T read( XMLStreamReader in ) throws XMLStreamException {
 
         if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
               !in.getLocalName().equals( getTag() ) ) {
@@ -127,52 +106,17 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
         if ( obj == null ) {
             throw new XMLStreamException( "Could not get object." );
         }
-        setObject( obj );
-
-    }
-    
-    /**
-     * Reads the stream until the end of the element.
-     * <p>
-     * The start element is expected to already have been read, and no data is expected
-     * to be found.
-     *
-     * @param in The stream to read data from.
-     * @throws XMLStreamException if an error occurred.
-     */
-    public void readEnd( XMLStreamReader in ) throws XMLStreamException {
         
-        while ( in.hasNext() ) {
-            
-            switch ( in.next() ) {
-                
-                case XMLStreamConstants.START_ELEMENT:
-                    throw new XMLStreamException( "Unexpected subelement found." );
-                    
-                case XMLStreamConstants.CHARACTERS:
-                    throw new XMLStreamException( "Unexpected character data found." );
-                
-                case XMLStreamConstants.END_ELEMENT:
-                    if ( in.getLocalName().equals( getTag() ) ) {
-                        return;
-                    } else {
-                        throw new XMLStreamException( "Unexpected closing tag found." );
-                    }
-                
-            }
-            
+        while ( in.next() == XMLStreamConstants.ATTRIBUTE ); // Move until end of tag.
+        
+        /* Check element ended properly */
+        if ( ( in.getEventType() != XMLStreamConstants.END_ELEMENT ) ||
+                !in.getLocalName().equals( getTag() ) ) {
+            throw new XMLStreamException( "Did not find element end." );
         }
         
-        throw new XMLStreamException( "Unexpected end of document encountered." );
-        
-    }
+        return obj;
 
-    @Override
-    public void read( XMLStreamReader in ) throws XMLStreamException {
-
-        readStart( in );
-        readEnd( in );
-        
     }
     
     /**
@@ -183,46 +127,55 @@ abstract class AbstractXMLIDLinkedObject<T extends IIDLinkedObject> extends Abst
     public abstract String getTag();
     
     /**
+     * Retrieves the class that is translated.
+     * 
+     * @return The supported class.
+     */
+    public abstract Class<T> getTranslatedClass();
+    
+    /**
      * Retrieves the guild that the object is in.
      * <p>
      * If the guild is not necessary for obtaining the object from its ID (eg it can be obtained
      * directly from an <tt>IDiscordClient</tt>), <tt>null</tt> may be retrieved.
      *
+     * @param obj The object to get the guild for.
      * @return The associated guild, or <tt>null</tt> if not necessary.
      */
-    protected abstract IGuild getGuild();
-    
-    /**
-     * Writes only the start element to the XML stream.
-     * <p>
-     * Eventually closing the element (using {@link XMLStreamWriter#writeEndElement()}) is
-     * responsibility of the caller.
-     *
-     * @param out The stream to write data to.
-     * @throws XMLStreamException if an error occurred while writing.
-     * @throws IllegalStateException if there is no object currently wrapped.
-     */
-    public void writeStart( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
-        
-        if ( getObject() == null ) {
-            throw new IllegalStateException( "No object currently wrapped." );
-        }
-        
-        out.writeStartElement( getTag() );
-        IGuild guild = getGuild();
+    protected abstract IGuild getGuild( T obj );
+
+    @Override
+    public void write( XMLStreamWriter out, T instance ) throws XMLStreamException {
+
+    	out.writeStartElement( getTag() );
+        IGuild guild = getGuild( instance );
         if ( guild != null ) {
             out.writeAttribute( GUILD_ATTRIBUTE, Long.toUnsignedString( guild.getLongID() ) );
         }
-        out.writeAttribute( ID_ATTRIBUTE, Long.toUnsignedString( getObject().getLongID() ) );
-        
-    }
-
-    @Override
-    public void write( XMLStreamWriter out ) throws XMLStreamException, IllegalStateException {
-
-        writeStart( out );
+        out.writeAttribute( ID_ATTRIBUTE, Long.toUnsignedString( instance.getLongID() ) );
         out.writeEndElement();
         
+    }
+    
+    /**
+     * Writes an instance, under the generic type, to an XML file.
+     * 
+     * @param out The stream to write to.
+     * @param instance The instance to encode.
+     * @throws XMLStreamException if an error was encountered while encoding.
+     * @throws IllegalArgumentException if the instance is not of the subtype that this
+     *                                  translator can handle.
+     */
+    @SuppressWarnings("unchecked")
+	void writeGeneric( XMLStreamWriter out, IIDLinkedObject instance )
+    		throws XMLStreamException, IllegalArgumentException {
+    	
+    	if ( !getTranslatedClass().isAssignableFrom( instance.getClass() ) ) {
+    		throw new IllegalArgumentException( "Given instance is of the incorrect type." );
+    	}
+    	
+    	write( out, (T) instance );
+    	
     }
     
 }
