@@ -17,6 +17,8 @@
 
 package com.github.thiagotgm.blakebot.common.storage;
 
+import java.io.IOException;
+
 /**
  * Translates (converts) objects of a certain type to a string and vice versa.
  * 
@@ -32,15 +34,17 @@ public interface Translator<T> {
 	 * 
 	 * @param obj The object to be encoded.
 	 * @return The String encoding of the object.
+	 * @throws IOException if an error was encountered while encoding.
 	 */
-	String encode( T obj );
+	String encode( T obj ) throws IOException;
 	
 	/**
 	 * Restores an object from a String created using {@link #encode(Object)}.
 	 * 
 	 * @param str The string to be decoded.
 	 * @return The translated object.
+	 * @throws IOException if an error was encountered while decoding.
 	 */
-	T decode( String str );
+	T decode( String str ) throws IOException;
 
 }
