@@ -20,10 +20,12 @@ package com.github.thiagotgm.blakebot.common.utils;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -126,6 +128,17 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
     }
     
+    @Override
+    public boolean containsValue( V value ) {
+    	
+    	if ( value == null ) {
+    		return false; // No null values allowed.
+    	}
+    	
+    	return root.findValue( value, new Stack<>() ) != null;
+    	
+    }
+    
     /**
      * Retrieves the descendant of a given element that represent the given sequence
      * of keys.
@@ -135,8 +148,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @return The descendant. If no keys given, the parent.<br>
      *         If there is not an element that corresponds to the given path, null.
      */
-    @SafeVarargs
-    protected final Node<?> getDescendant( Node<?> parent, K... path ) {
+    protected Node<?> getDescendant( Node<?> parent, List<K> path ) {
         
         Node<?> element = parent;
         for ( K next : path ) {
@@ -159,8 +171,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @return The descendant. If no keys given, the root.<br>
      *         If there is not an element that corresponds to the given path, null.
      */
-    @SafeVarargs
-    protected final Node<?> getDescendant( K... path ) {
+    protected Node<?> getDescendant( List<K> path ) {
         
         return getDescendant( root, path );
         
@@ -177,8 +188,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of keys that represent the descendants.
      * @return The farthest descendant found. If no keys given, the parent.
      */
-    @SafeVarargs
-    protected final Node<?> getMaxDescendant( Node<?> parent, K... path ) {
+    protected Node<?> getMaxDescendant( Node<?> parent, List<K> path ) {
         
         Node<?> element = parent;
         for ( K obj : path ) {
@@ -204,8 +214,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of keys that represent the descendants.
      * @return The farthest descendant found. If no keys given, the root.
      */
-    @SafeVarargs
-    protected final Node<?> getMaxDescendant( K... path ) {
+    protected Node<?> getMaxDescendant( List<K> path ) {
         
         return getMaxDescendant( root, path );
         
@@ -221,8 +230,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of objects that represent the descendants.
      * @return The descendant. If no objects given, the parent.
      */
-    @SafeVarargs
-    protected final Node<?> getOrCreateDescendant( Node<?> parent, K... path ) {
+    protected Node<?> getOrCreateDescendant( Node<?> parent, List<K> path ) {
         
         Node<?> element = parent;
         for ( K obj : path ) {
@@ -243,16 +251,14 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of objects that represent the descendants.
      * @return The descendant. If no objects given, the root.
      */
-    @SafeVarargs
-    protected final Node<?> getOrCreateDescendant( K... path ) {
+    protected Node<?> getOrCreateDescendant( List<K> path ) {
         
         return getOrCreateDescendant( root, path );
         
     }
     
     @Override
-    @SafeVarargs
-    public final V get( K... path ) {
+    public V get( List<K> path ) {
         
         Node<?> node = getDescendant( path );
         return ( node == null ) ? null : node.getValue();
@@ -260,8 +266,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     }
     
     @Override
-    @SafeVarargs
-    public final List<V> getAll( K...path ) {
+    public List<V> getAll( List<K> path ) {
         
         Node<?> cur = root;
         List<V> values = new LinkedList<>();
@@ -282,8 +287,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     }
     
     @Override
-    @SafeVarargs
-    public final V set( V value, K... path ) throws NullPointerException {
+    public V set( V value, List<K> path ) throws NullPointerException {
         
         if ( value == null ) {
             throw new NullPointerException( "Value cannot be null." );
@@ -292,15 +296,14 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         V old = getOrCreateDescendant( path ).setValue( value );
         if ( old == null ) { // There wasn't a mapping to this path yet,
             nMappings++;     // so a new mapping was added.
-            levelMappings.set( path.length, levelMappings.get( path.length ) + 1 );
+            levelMappings.set( path.size(), levelMappings.get( path.size() ) + 1 );
         }
         return old;
         
     }
     
     @Override
-    @SafeVarargs
-    public final boolean add( V value, K... path ) throws NullPointerException {
+    public boolean add( V value, List<K> path ) throws NullPointerException {
         
         if ( value == null ) {
             throw new NullPointerException( "Value cannot be null." );
@@ -312,17 +315,16 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         node.setValue( value );
         nMappings++; // A mapping was added.
-        while ( levelMappings.size() <= path.length ) {
+        while ( levelMappings.size() <= path.size() ) {
         	levelMappings.add( 0 ); // Ensure an element for every level.
         }
-        levelMappings.set( path.length, levelMappings.get( path.length ) + 1 );
+        levelMappings.set( path.size(), levelMappings.get( path.size() ) + 1 );
         return true;
         
     }
     
     @Override
-    @SafeVarargs
-    public final V remove( K... path ) {
+    public V remove( List<K> path ) {
         
         Stack<Node<?>> nodes = new Stack<>();
         Node<?> cur = root;
@@ -343,11 +345,11 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         cur.setValue( null ); // Delete its value.
         
-        for ( int i = path.length - 1; i >= 0; i-- ) { // Cleans up any nodes that became irrelevant.
+        for ( int i = path.size() - 1; i >= 0; i-- ) { // Cleans up any nodes that became irrelevant.
             
             if ( ( cur.getValue() == null ) && cur.getChildren().isEmpty() ) {
                 cur = nodes.pop(); // Node has no value or children now, so delete it.
-                cur.removeChild( path[i] );
+                cur.removeChild( path.get( i ) );
             } else {
                 break; // Found a node that can't be deleted.
             }
@@ -355,26 +357,787 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         
         nMappings--; // A mapping was removed.
-        levelMappings.set( path.length, levelMappings.get( path.length ) - 1 );
+        levelMappings.set( path.size(), levelMappings.get( path.size() ) - 1 );
         return value; // Retrieve deleted value.
         
     }
     
     @Override
-    public Set<Entry<K,V>> entrySet() {
-        
-        Collection<Entry<K,V>> entries = new ArrayList<>( size() );
-        root.getEntries( entries, new Stack<>() ); // Get entries.
-        return new HashSet<>( entries ); // Store in a set and return.
-        
+    public Set<List<K>> pathSet() {
+    	
+    	return new Set<List<K>>() {
+
+			@Override
+			public int size() {
+
+				return TreeGraph.this.size();
+				
+			}
+
+			@Override
+			public boolean isEmpty() {
+
+				return TreeGraph.this.isEmpty();
+				
+			}
+			
+			@Override
+			@SuppressWarnings("unchecked")
+			public boolean contains( Object o ) {
+
+				if ( o instanceof List ) {
+					return containsPath( (List<K>) o );
+				} else {
+					return false; // Wrong type.
+				}
+				
+			}
+
+			@Override
+			public Iterator<List<K>> iterator() {
+				
+				final Iterator<Entry<K,V>> backing = entrySet().iterator();
+				return new Iterator<List<K>>() {
+
+					@Override
+					public boolean hasNext() {
+						
+						return backing.hasNext();
+						
+					}
+
+					@Override
+					public List<K> next() {
+
+						return backing.next().getPath();
+						
+					}
+					
+					@Override
+					public void remove() {
+						
+						backing.remove();
+						
+					}
+					
+				};
+				
+			}
+
+			@Override
+			public Object[] toArray() {
+
+				return toArray( new Object[0] );
+				
+			}
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> T[] toArray( T[] a )  {
+
+				Entry<K,V>[] arr = entrySet().toArray( new Entry[0] );
+				
+				if ( a.length < arr.length ) { // Resize if necessary.
+					a = (T[]) Array.newInstance( a.getClass().getComponentType(), arr.length );
+				}
+				
+				int i;
+				for ( i = 0; i < arr.length; i++ ) {
+					
+					try {
+						a[i] = (T) arr[i].getPath(); // Insert each element.
+					} catch ( ClassCastException e ) {
+		        		throw new ArrayStoreException( "Cannot store in given array type." );
+		        	}
+					
+				}
+				if ( i < a.length ) {
+		        	
+		        	a[i] = null; // Fill next space with null, if necessary.
+		        	
+		        }
+				
+				return a;
+				
+			}
+
+			@Override
+			public boolean add( List<K> e ) {
+
+				throw new UnsupportedOperationException( "Set view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean remove( Object o ) {
+
+				if ( contains( o ) ) {
+					@SuppressWarnings("unchecked")
+					List<K> path = (List<K>) o; // Being in graph implies right type.
+					TreeGraph.this.remove( path );
+					return true; // Removed entry.
+				} else {
+					return false; // Not contained in graph.
+				}
+				
+			}
+
+			@Override
+			public boolean containsAll( Collection<?> c ) {
+				
+				for ( Object o : c ) {
+					
+					if ( !contains( o ) ) {
+						return false; // Found element that is not contained.
+					}
+					
+				}
+				return true; // All contained.
+				
+			}
+
+			@Override
+			public boolean addAll( Collection<? extends List<K>> c ) {
+				
+				throw new UnsupportedOperationException( "Set view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean retainAll( Collection<?> c ) {
+				
+				List<List<K>> toRemove = new LinkedList<>();
+				for ( List<K> path : this ) {
+					
+					if ( !c.contains( path ) ) { // Not in given collection.
+						toRemove.add( path ); // Mark for deletion.
+					}
+					
+				}
+				
+				for ( List<K> path : toRemove ) {
+					
+					remove( path ); // Remove each marked entry.
+					
+				}
+				
+				return !toRemove.isEmpty();
+				
+			}
+
+			@Override
+			public boolean removeAll( Collection<?> c ) {
+				
+				boolean changed = false;
+				for ( Object o : c ) {
+					
+					if ( remove( o ) ) { // Try to remove element.
+						changed = true;
+					}
+					
+				}
+				return changed;
+
+			}
+
+			@Override
+			public void clear() {
+				
+				TreeGraph.this.clear();
+				
+			}
+			
+			@Override
+			public boolean equals( Object o ) {
+				
+				if ( !( o instanceof Set ) ) {
+					return false;
+				}
+				
+				Set<?> other = (Set<?>) o;
+				
+				if ( other.size() != this.size() ) {
+					return false; // Must be of the same size.
+				}
+				
+				for ( Object elem : other ) {
+					
+					if ( !contains( elem ) ) {
+						return false; // One element not in this set.
+					}
+					
+				}
+				
+				return true;
+				
+			}
+			
+			@Override
+			public int hashCode() {
+				
+				int sum = 0;
+				for ( List<K> elem : this ) {
+					
+					sum += elem.hashCode();
+					
+				}
+				return sum;
+				
+			}
+			
+			@Override
+			public String toString() {
+				
+				StringBuilder builder = new StringBuilder();
+				
+				builder.append( '[' );
+				for ( List<K> elem : this ) {
+					
+					builder.append( elem.toString() );
+					builder.append( ", " );
+					
+				}
+				builder.delete( builder.length() - 2, builder.length() );
+				builder.append( ']' );
+				
+				return builder.toString();
+				
+			}
+    		
+    	};
+    	
     }
     
     @Override
+    public Collection<V> values() {
+    	
+    	return new Collection<V>() {
+
+			@Override
+			public int size() {
+
+				return TreeGraph.this.size();
+				
+			}
+
+			@Override
+			public boolean isEmpty() {
+
+				return TreeGraph.this.isEmpty();
+				
+			}
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public boolean contains( Object o ) {
+
+				try {
+					return containsValue( (V) o );
+				} catch ( ClassCastException e ) {
+					return false; // Wrong type.
+				}
+				
+			}
+
+			@Override
+			public Iterator<V> iterator() {
+				
+				final Iterator<Entry<K,V>> backing = entrySet().iterator();
+				return new Iterator<V>() {
+
+					@Override
+					public boolean hasNext() {
+						
+						return backing.hasNext();
+						
+					}
+
+					@Override
+					public V next() {
+
+						return backing.next().getValue();
+						
+					}
+					
+					@Override
+					public void remove() {
+						
+						backing.remove();
+						
+					}
+					
+				};
+				
+			}
+
+			@Override
+			public Object[] toArray() {
+
+				return toArray( new Object[0] );
+				
+			}
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> T[] toArray( T[] a )  {
+
+				Entry<K,V>[] arr = entrySet().toArray( new Entry[0] );
+				
+				if ( a.length < arr.length ) { // Resize if necessary.
+					a = (T[]) Array.newInstance( a.getClass().getComponentType(), arr.length );
+				}
+				
+				int i;
+				for ( i = 0; i < arr.length; i++ ) {
+					
+					try {
+						a[i] = (T) arr[i].getValue(); // Insert each element.
+					} catch ( ClassCastException e ) {
+		        		throw new ArrayStoreException( "Cannot store in given array type." );
+		        	}
+					
+				}
+				if ( i < a.length ) {
+		        	
+		        	a[i] = null; // Fill next space with null, if necessary.
+		        	
+		        }
+				
+				return a;
+				
+			}
+
+			@Override
+			public boolean add( V e ) {
+
+				throw new UnsupportedOperationException( "Collection view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean remove( Object o ) {
+
+				if ( contains( o ) ) {
+					@SuppressWarnings("unchecked")
+					V value = (V) o; // Being in graph implies right type.
+					remove( root.findValue( value, new Stack<K>() ) );
+					return true; // Removed entry.
+				} else {
+					return false; // Not contained in graph.
+				}
+				
+			}
+
+			@Override
+			public boolean containsAll( Collection<?> c ) {
+				
+				for ( Object o : c ) {
+					
+					if ( !contains( o ) ) {
+						return false; // Found element that is not contained.
+					}
+					
+				}
+				return true; // All contained.
+				
+			}
+
+			@Override
+			public boolean addAll( Collection<? extends V> c ) {
+				
+				throw new UnsupportedOperationException( "Collection view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean retainAll( Collection<?> c ) {
+				
+				List<V> toRemove = new LinkedList<>();
+				for ( V value : this ) {
+					
+					if ( !c.contains( value ) ) { // Not in given collection.
+						toRemove.add( value ); // Mark for deletion.
+					}
+					
+				}
+				
+				for ( V value : toRemove ) {
+					
+					remove( value ); // Remove each marked entry.
+					
+				}
+				
+				return !toRemove.isEmpty();
+				
+			}
+
+			@Override
+			public boolean removeAll( Collection<?> c ) {
+				
+				boolean changed = false;
+				for ( Object o : c ) {
+					
+					if ( remove( o ) ) { // Try to remove element.
+						changed = true;
+					}
+					
+				}
+				return changed;
+
+			}
+
+			@Override
+			public void clear() {
+				
+				TreeGraph.this.clear();
+				
+			}
+			
+			@Override
+			public boolean equals( Object o ) {
+				
+				if ( !( o instanceof Collection ) ) {
+					return false;
+				}
+				
+				Collection<?> other = (Collection<?>) o;
+				
+				if ( other.size() != this.size() ) {
+					return false; // Must be of the same size.
+				}
+				
+				for ( Object elem : other ) {
+					
+					if ( !contains( elem ) ) {
+						return false; // One element not in this set.
+					}
+					
+				}
+				
+				return true;
+				
+			}
+			
+			@Override
+			public int hashCode() {
+				
+				int sum = 0;
+				for ( V elem : this ) {
+					
+					sum += elem.hashCode();
+					
+				}
+				return sum;
+				
+			}
+			
+			@Override
+			public String toString() {
+				
+				StringBuilder builder = new StringBuilder();
+				
+				builder.append( '[' );
+				for ( V elem : this ) {
+					
+					builder.append( elem.toString() );
+					builder.append( ", " );
+					
+				}
+				builder.delete( builder.length() - 2, builder.length() );
+				builder.append( ']' );
+				
+				return builder.toString();
+				
+			}
+    		
+    	};
+    	
+    }
+    
+    /**
+     * Retrieves the set of path-value mappings <i>currently</i> stored in this
+     * graph. Changes to the graph are <i>not</i> reflected in the set and vice-versa,
+     * except for the {@link Entry#setValue(V)} method.
+     * 
+     * @return The current entry set.
+     */
+    protected Set<Entry<K,V>> getEntries() {
+    	
+    	Set<Entry<K,V>> entries = new HashSet<>();
+        root.getEntries( entries, new Stack<>() ); // Get entries.
+        return entries;
+    	
+    }
+    
+    @Override
+    public Set<Entry<K,V>> entrySet() {
+        
+        return new Set<Entry<K,V>>() {
+
+			@Override
+			public int size() {
+				
+				return TreeGraph.this.size();
+				
+			}
+
+			@Override
+			public boolean isEmpty() {
+
+				return TreeGraph.this.isEmpty();
+				
+			}
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public boolean contains( Object o ) {
+				
+				if ( o instanceof Entry ) {
+					Entry<K,V> entry = (Entry<K,V>) o;
+					V mapped = TreeGraph.this.get( entry.getPath() );
+					// Return null means no entry for the path.
+					return mapped == null ? false : mapped.equals( entry.getValue() );
+				} else {
+					return false;
+				}
+						
+			}
+
+			@Override
+			public Iterator<Entry<K,V>> iterator() {
+				
+				Set<Entry<K,V>> entries = getEntries();
+				final Iterator<Entry<K,V>> backing = entries.iterator();
+				return new Iterator<Entry<K,V>>() {
+					
+					private Entry<K,V> last = null;
+
+					@Override
+					public boolean hasNext() {
+
+						return backing.hasNext();
+						
+					}
+
+					@Override
+					public Entry<K,V> next() {
+
+						Entry<K,V> next = backing.next();
+						last = next;
+						return next;
+						
+					}
+					
+					@Override
+					public void remove() {
+						
+						backing.remove(); // Delegate validity checks.
+						TreeGraph.this.remove( last.getPath() );
+						
+					}
+					
+				};
+				
+			}
+
+			@Override
+			public Object[] toArray() {
+
+				return toArray( new Object[0] );
+				
+			}
+
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> T[] toArray( T[] a ) throws ArrayStoreException {
+				
+				Set<Entry<K,V>> entries = getEntries();
+		        
+		        if ( a.length < entries.size() ) { // Check if need to resize.
+		        	a = (T[]) Array.newInstance( a.getClass().getComponentType(), entries.size() );
+		        }
+		        
+		        int i = 0;
+		        for ( Entry<K,V> entry : entries ) {
+		        	
+		        	try {
+		        	a[i] = (T) entry; // Fill each entry in array.
+		        	} catch ( ClassCastException e ) {
+		        		throw new ArrayStoreException( "Cannot store in given array type." );
+		        	}
+		        	
+		        }
+		        if ( i < a.length ) {
+		        	
+		        	a[i] = null; // Fill next space with null, if necessary.
+		        	
+		        }
+		        
+		        return a;
+		        
+			}
+
+			@Override
+			public boolean add( Entry<K,V> e ) {
+
+				throw new UnsupportedOperationException( "Set view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean remove( Object o ) {
+
+				if ( contains( o ) ) {
+					@SuppressWarnings("unchecked")
+					Entry<K,V> entry = (Entry<K,V>) o; // Being in graph implies right type.
+					TreeGraph.this.remove( entry.getPath() );
+					return true; // Removed entry.
+				} else {
+					return false; // Not contained in graph.
+				}
+				
+			}
+
+			@Override
+			public boolean containsAll( Collection<?> c ) {
+				
+				for ( Object o : c ) {
+					
+					if ( !contains( o ) ) {
+						return false; // Found element that is not contained.
+					}
+					
+				}
+				return true; // All contained.
+				
+			}
+
+			@Override
+			public boolean addAll( Collection<? extends Entry<K, V>> c ) {
+				
+				throw new UnsupportedOperationException( "Set view does not support adding." );
+				
+			}
+
+			@Override
+			public boolean retainAll( Collection<?> c ) {
+				
+				List<Entry<K,V>> toRemove = new LinkedList<>();
+				for ( Entry<K,V> entry : this ) {
+					
+					if ( !c.contains( entry ) ) { // Not in given collection.
+						toRemove.add( entry ); // Mark for deletion.
+					}
+					
+				}
+				
+				for ( Entry<K,V> entry : toRemove ) {
+					
+					remove( entry ); // Remove each marked entry.
+					
+				}
+				
+				return !toRemove.isEmpty();
+				
+			}
+
+			@Override
+			public boolean removeAll( Collection<?> c ) {
+				
+				boolean changed = false;
+				for ( Object o : c ) {
+					
+					if ( remove( o ) ) { // Try to remove element.
+						changed = true;
+					}
+					
+				}
+				return changed;
+
+			}
+
+			@Override
+			public void clear() {
+
+				TreeGraph.this.clear();
+				
+			}
+			
+			@Override
+			public boolean equals( Object o ) {
+				
+				if ( !( o instanceof Set ) ) {
+					return false;
+				}
+				
+				Set<?> other = (Set<?>) o;
+				
+				if ( other.size() != this.size() ) {
+					return false; // Must be of the same size.
+				}
+				
+				for ( Object elem : other ) {
+					
+					if ( !contains( elem ) ) {
+						return false; // One element not in this set.
+					}
+					
+				}
+				
+				return true;
+				
+			}
+			
+			@Override
+			public int hashCode() {
+				
+				int sum = 0;
+				for ( Entry<K,V> elem : this ) {
+					
+					sum += elem.hashCode();
+					
+				}
+				return sum;
+				
+			}
+			
+			@Override
+			public String toString() {
+				
+				StringBuilder builder = new StringBuilder();
+				
+				builder.append( '[' );
+				for ( Entry<K,V> elem : this ) {
+					
+					builder.append( elem.toString() );
+					builder.append( ", " );
+					
+				}
+				builder.delete( builder.length() - 2, builder.length() );
+				builder.append( ']' );
+				
+				return builder.toString();
+				
+			}
+        	
+        };
+        
+    }
+    
+    /**
+     * Retrieves the mapping set only for the given level of the graph.
+     * <p>
+     * If the Graph being implemented does not have a concept of "level",
+     * returns the same as {@link #entrySet()}.
+     * 
+     * @param level The level to get mappings for. The root is level 0.
+     * @return A Set view of the given level of the Graph.
+     */
     public Set<Entry<K,V>> entrySet( int level ) {
         
-        Collection<Entry<K,V>> entries = new ArrayList<>( size() );
+        Set<Entry<K,V>> entries = new HashSet<>( size() );
         root.getEntries( entries, new Stack<>(), level ); // Get entries.
-        return new HashSet<>( entries ); // Store in a set and return.
+        return entries; // Store in a set and return.
         
     }
     
@@ -667,13 +1430,13 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
         /**
          * Retrieves the path-value mapping entries for this node and its children,
-         * placing them into the given entry collection.
+         * placing them into the given entry set.
          *
-         * @param entries The collection to place the entries in.
+         * @param entries The set to place the entries in.
          * @param path The path that maps to this node, where the bottom of the stack is
          *             the beginning of the path.
          */
-        public void getEntries( Collection<Entry<K,V>> entries, Stack<K> path ) {
+        public void getEntries( Set<Entry<K,V>> entries, Stack<K> path ) {
             
             if ( getKey() != null ) {
                 path.push( getKey() ); // Add this node's path.
@@ -698,14 +1461,14 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
         /**
          * Retrieves the path-value mapping entries for the nodes in the given level of,
-         * the subtree represented by this node, placing them into the given entry collection.
+         * the subtree represented by this node, placing them into the given entry set.
          *
-         * @param entries The collection to place the entries in.
+         * @param entries The set to place the entries in.
          * @param path The path that maps to this node, where the bottom of the stack is
          *             the beginning of the path.
          * @param level The level of this subtree to get entries for. 0 is root (this node).
          */
-        public void getEntries( Collection<Entry<K,V>> entries, Stack<K> path, int level ) {
+        public void getEntries( Set<Entry<K,V>> entries, Stack<K> path, int level ) {
             
             if ( getKey() != null ) {
                 path.push( getKey() ); // Add this node's path.
@@ -731,6 +1494,49 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             if ( getKey() != null ) {
                 path.pop(); // Remove this node's path.
             }
+            
+        }
+        
+        /**
+         * Attempts to find a value in the subtree rooted by this node, returning the
+         * total path to the node that contains that value.
+         * 
+         * @param value The value to find.
+         * @param path The path to this node's parent (should be empty if this is the 
+         *             root of the full tree).
+         * @return The path to the node that contains the given value, or <tt>null</tt>
+         *         if there is no node in this subtree with that value.
+         * @throws NullPointerException if value is <tt>null</tt>.
+         */
+        public List<K> findValue( V value, Stack<K> path ) throws NullPointerException {
+        	
+        	if ( value == null ) {
+        		throw new NullPointerException( "Value to find cannot be null." );
+        	}
+        	
+        	if ( getKey() != null ) {
+                path.push( getKey() ); // Add this node's path.
+            }
+            
+            if ( value.equals( getValue() ) ) { // This node has the value.
+                return new ArrayList<>( path ); // Return current path.
+            }
+            
+            /* Recursively search each child */
+            for ( SELF child : getChildren() ) {
+                
+                List<K> result = child.findValue( value, path );
+                if ( result != null ) {
+                	return result; // Found in a subtree.
+                }
+                
+            }
+            
+            if ( getKey() != null ) {
+                path.pop(); // Remove this node's path.
+            }
+            
+            return null; // Not found.
             
         }
         

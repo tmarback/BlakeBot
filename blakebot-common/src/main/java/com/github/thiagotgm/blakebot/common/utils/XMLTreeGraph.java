@@ -171,6 +171,7 @@ public class XMLTreeGraph<K,V> extends TreeGraph<K,V> implements XMLGraph<K,V> {
         }
         
         boolean hasRoot = false;
+        nMappings = 0; // All previous mappings are deleted.
         while ( in.hasNext() ) { // Read each part of the graph.
             
             switch ( in.next() ) {
@@ -440,6 +441,7 @@ public class XMLTreeGraph<K,V> extends TreeGraph<K,V> implements XMLGraph<K,V> {
                                     throw new XMLStreamException(
                                             "Reached end of value element without a value." );
                                 }
+                                nMappings++; // Read a value, so one mapping found.
                                 reading = false;
                                 break;
                             
