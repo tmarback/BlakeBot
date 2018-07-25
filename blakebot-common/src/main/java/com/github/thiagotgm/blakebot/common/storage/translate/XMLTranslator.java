@@ -98,5 +98,16 @@ public class XMLTranslator<T> implements Translator<T> {
 		}
 		
 	}
+	
+	/**
+	 * Retrieves the backing translator being used to convert objects to XML.
+	 * 
+	 * @return The backing translator.
+	 */
+	public com.github.thiagotgm.blakebot.common.utils.XMLTranslator<T> getXMLTranslator() {
+		
+		return translator;
+		
+	}
 
 }
