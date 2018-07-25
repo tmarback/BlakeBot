@@ -18,21 +18,23 @@
 package com.github.thiagotgm.blakebot.common.storage;
 
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
+import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Graph;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 
 /**
  * Database that provides persistent data storage in the form of tree-graphs and maps.
+ * <p>
+ * All maps and trees that were obtained from a database are closed when the database
+ * itself is closed (the {@link #close()} method is called). Any calls made to this
+ * database or derived maps or trees (other than {@link #close()} itself) after that
+ * will fail with an {@link IllegalStateException}.
  * 
  * @version 1.0
  * @author ThiagoTGM
- * @since 2017-07-16
+ * @since 2018-07-16
  */
 public abstract class Database implements Closeable {
 	
@@ -43,7 +45,11 @@ public abstract class Database implements Closeable {
 	 * @return The tree.
 	 * @throws NullPointerException If the tree name is null.
 	 */
-	public abstract Tree<String,String> getDataTree( String treeName ) throws NullPointerException;
+	public Tree<String,String> getDataTree( String treeName ) throws NullPointerException {
+		
+		return getTranslatedDataTree( treeName, new StringTranslator(), new StringTranslator() );
+		
+	}
 	
 	/**
 	 * Obtains a data tree backed by this database that maps object paths to strings.
@@ -54,8 +60,12 @@ public abstract class Database implements Closeable {
 	 * @throws NullPointerException If the tree name or the translator is null.
 	 * @param <K> The type of the keys that define connections on the tree.
 	 */
-	public abstract <K> Tree<K,String> getKeyTranslatedDataTree( String treeName,
-			Translator<K> keyTranslator ) throws NullPointerException;
+	public <K> Tree<K,String> getKeyTranslatedDataTree( String treeName,
+			Translator<K> keyTranslator ) throws NullPointerException {
+		
+		return getTranslatedDataTree( treeName, keyTranslator, new StringTranslator() );
+		
+	}
 	
 	/**
 	 * Obtains a data tree backed by this database that maps string paths to objects.
@@ -66,8 +76,12 @@ public abstract class Database implements Closeable {
 	 * @throws NullPointerException If the tree name or the translator is null.
 	 * @param <V> The type of the values stored in the tree.
 	 */
-	public abstract <V> Tree<String,V> getValueTranslatedDataTree( String treeName,
-			Translator<V> valueTranslator ) throws NullPointerException;
+	public <V> Tree<String,V> getValueTranslatedDataTree( String treeName,
+			Translator<V> valueTranslator ) throws NullPointerException {
+		
+		return getTranslatedDataTree( treeName, new StringTranslator(), valueTranslator );
+		
+	}
 	
 	/**
 	 * Obtains a data tree backed by this database that maps object paths to objects.
@@ -92,7 +106,7 @@ public abstract class Database implements Closeable {
 	 */
 	public Map<String,String> getDataMap( String mapName ) throws NullPointerException {
 		
-		return new TreeMap<>( getDataTree( mapName ) );
+		return getTranslatedDataMap( mapName, new StringTranslator(), new StringTranslator() );
 		
 	}
 	
@@ -108,7 +122,7 @@ public abstract class Database implements Closeable {
 	public <K> Map<K,String> getKeyTranslatedDataMap( String mapName,
 			Translator<K> keyTranslator ) throws NullPointerException {
 		
-		return new TreeMap<>( getKeyTranslatedDataTree( mapName, keyTranslator ) );
+		return getTranslatedDataMap( mapName, keyTranslator, new StringTranslator() );
 		
 	}
 	
@@ -124,7 +138,7 @@ public abstract class Database implements Closeable {
 	public <V> Map<String,V> getValueTranslatedDataMap( String mapName,
 			Translator<V> valueTranslator ) throws NullPointerException {
 		
-		return new TreeMap<>( getValueTranslatedDataTree( mapName, valueTranslator ) );
+		return getTranslatedDataMap( mapName, new StringTranslator(), valueTranslator );
 		
 	}
 	
@@ -139,12 +153,8 @@ public abstract class Database implements Closeable {
 	 * @param <K> The type of the keys that define connections on the map.
 	 * @param <V> The type of the values stored in the map.
 	 */
-	public <K,V> Map<K,V> getTranslatedDataMap( String mapName,
-			Translator<K> keyTranslator, Translator<V> valueTranslator ) throws NullPointerException {
-		
-		return new TreeMap<>( getTranslatedDataTree( mapName, keyTranslator, valueTranslator ) );
-		
-	}
+	public abstract <K,V> Map<K,V> getTranslatedDataMap( String mapName,
+			Translator<K> keyTranslator, Translator<V> valueTranslator ) throws NullPointerException;
 	
 	/**
 	 * Retrieves all the data trees in this database.
@@ -152,6 +162,25 @@ public abstract class Database implements Closeable {
 	 * @return The data trees of this database, keyed by their names.
 	 */
 	protected abstract Map<String,Tree<String,String>> getDataTrees();
+	
+	/**
+	 * Retrieves the names of the parameters required for {@link #load(List)}.
+	 * 
+	 * @return The load parameters.
+	 */
+	protected abstract List<String> getLoadParams();
+	
+	/**
+	 * Loads/connects the database using the given parameters.
+	 * 
+	 * @param params The parameters to load the database with. Each argument in the list must
+	 *               correspond to an argument named in the return of {@link #getLoadParams()}.
+	 *               This implies that it is necessary that
+	 *               <tt>params.size() == getLoadParams().size()</tt>.
+	 * @return <tt>true</tt> if the database was successfully loaded.
+	 *         <tt>false</tt> if an error occurred.
+	 */
+	protected abstract boolean load( List<String> params );
 	
 	/**
 	 * Loads in this database all the data present in the given database.
@@ -162,7 +191,7 @@ public abstract class Database implements Closeable {
 	 * 
 	 * @param db The database to load into this one.
 	 */
-	private void load( Database db ) {
+	void load( Database db ) {
 		
 		for ( Map.Entry<String,Tree<String,String>> tree : db.getDataTrees().entrySet() ) {
 			
@@ -172,178 +201,6 @@ public abstract class Database implements Closeable {
 				newTree.add( mapping.getValue(), mapping.getPathArray() );
 				
 			}
-			
-		}
-		
-	}
-	
-	/* Adapter class for a map. */
-	
-	/**
-	 * Adapts a Tree to the Map interface. The backing Tree can still be used
-	 * as a Tree, but the Map view is limited only to the mappings in the level
-	 * 1 of the tree (a single key in the path).
-	 * 
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-07-16
-	 *
-	 * @param <K> The type of the keys that define connections on the map.
-	 * @param <V> The type of the values to be stored.
-	 */
-	private static class TreeMap<K,V> implements Map<K,V> {
-		
-		private Tree<K,V> tree;
-		
-		/**
-		 * Creates a new TreeMap backed by the given tree.
-		 * 
-		 * @param backingTree The tree that backs the new map.
-		 */
-		public TreeMap( Tree<K,V> backingTree ) {
-			
-			this.tree = backingTree;
-			
-		}
-
-		@Override
-		public int size() {
-			
-			return tree.size( 1 ); // Map is level 1 of the tree.
-			
-		}
-
-		@Override
-		public boolean isEmpty() {
-			
-			return tree.isEmpty( 1 ); // Map is level 1 of the tree.
-			
-		}
-
-		@Override
-		public boolean containsKey( Object key ) {
-			
-			return tree.get( key ) != null;
-					
-		}
-
-		@Override
-		public boolean containsValue( Object value ) {
-
-			
-			for ( Map.Entry<K,V> entry : this.entrySet() ) {
-				
-				if ( entry.getValue().equals( value ) ) {
-					return true;
-				}
-				
-			};
-			return false;
-			
-		}
-
-		@Override
-		public V get( Object key ) {
-			
-			return tree.get( key );
-			
-		}
-
-		@Override
-		@SuppressWarnings("unchecked")
-		public V put( K key, V value ) {
-			
-			return tree.set( value, key );
-			
-		}
-
-		@Override
-		public V remove( Object key ) {
-			
-			return tree.remove( key );
-			
-		}
-
-		@Override
-		public void putAll( Map<? extends K, ? extends V> m ) {
-
-			for ( Map.Entry<? extends K, ? extends V> entry : m.entrySet() ) {
-				
-				this.put( entry.getKey(), entry.getValue() );
-				
-			}
-			
-		}
-
-		@Override
-		public void clear() {
-			
-			tree.clear();
-			
-		}
-
-		@Override
-		public Set<K> keySet() {
-
-			Set<K> keys = new HashSet<>();
-			this.entrySet().stream().forEach( ( entry ) -> {
-				
-				keys.add( entry.getKey() );
-				
-			});
-			return keys;
-			
-		}
-
-		@Override
-		public Collection<V> values() {
-			
-			Collection<V> values = new ArrayList<>( this.size() );
-			this.entrySet().stream().forEach( ( entry ) -> {
-				
-				values.add( entry.getValue() );
-				
-			});
-			return values;
-			
-		}
-
-		@Override
-		public Set<Entry<K,V>> entrySet() {
-
-			Set<Entry<K,V>> entries = new HashSet<>();
-			tree.entrySet( 1 ).stream().forEach( ( entry ) -> {
-				
-				entries.add( new Entry<K,V>() {
-
-					Graph.Entry<K,V> backing = entry;
-					
-					@Override
-					public K getKey() {
-						
-						return backing.getPath().get( 0 );
-						
-					}
-
-					@Override
-					public V getValue() {
-						
-						return backing.getValue();
-						
-					}
-
-					@Override
-					public V setValue( V value ) {
-						
-						return backing.setValue( value );
-						
-					}
-					
-				});
-				
-			}); // Map is level 1 of the tree.
-			
-			return entries;
 			
 		}
 		
