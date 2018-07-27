@@ -20,6 +20,8 @@ package com.github.thiagotgm.blakebot.common.storage;
 import java.io.Closeable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Graph;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
@@ -40,16 +42,20 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * However, all state is reset between program executions, so it is possible to
  * swap between maps and trees and/or translator types.
  * <p>
- * All maps and trees that were obtained from a database are closed when the database
- * itself is closed (the {@link #close()} method is called). Any calls made to this
- * database or derived maps or trees (other than {@link #close()} itself) after that
- * will fail with an {@link IllegalStateException}.
+ * The database can only be used after it is successfully loaded using the
+ * {@link #load(List)} method (must return <tt>true</tt>). Any calls to methods other
+ * than {@link #getLoadParams()} or {@link #load(List)} before this will fail with
+ * an {@link IllegalStateException}.
+ * In addition, all maps and trees that were obtained from a database are closed when
+ * the database itself is closed (the {@link #close()} method is called). Any calls
+ * made to this database or derived maps or trees (other than {@link #close()} itself)
+ * after that will fail with an {@link IllegalStateException}.
  * 
  * @version 1.0
  * @author ThiagoTGM
  * @since 2018-07-16
  */
-public abstract class Database implements Closeable {
+public interface Database extends Closeable {
 	
 	/**
 	 * Obtains a data tree backed by this database that maps string paths to strings.
@@ -57,12 +63,13 @@ public abstract class Database implements Closeable {
 	 * @param treeName The name of the tree.
 	 * @return The tree.
 	 * @throws NullPointerException if the tree name is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 */
-	public Tree<String,String> getDataTree( String treeName )
+	default Tree<String,String> getDataTree( String treeName )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataTree( treeName, new StringTranslator(), new StringTranslator() );
@@ -76,13 +83,14 @@ public abstract class Database implements Closeable {
 	 * @param keyTranslator The translator to use to convert keys into strings.
 	 * @return The tree.
 	 * @throws NullPointerException if the tree name or the translator is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <K> The type of the keys that define connections on the tree.
 	 */
-	public <K> Tree<K,String> getKeyTranslatedDataTree( String treeName, Translator<K> keyTranslator )
+	default <K> Tree<K,String> getKeyTranslatedDataTree( String treeName, Translator<K> keyTranslator )
 					throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataTree( treeName, keyTranslator, new StringTranslator() );
@@ -96,13 +104,14 @@ public abstract class Database implements Closeable {
 	 * @param valueTranslator The translator to use to convert values into strings.
 	 * @return The tree.
 	 * @throws NullPointerException if the tree name or the translator is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <V> The type of the values stored in the tree.
 	 */
-	public <V> Tree<String,V> getValueTranslatedDataTree( String treeName, Translator<V> valueTranslator )
+	default <V> Tree<String,V> getValueTranslatedDataTree( String treeName, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataTree( treeName, new StringTranslator(), valueTranslator );
@@ -117,14 +126,15 @@ public abstract class Database implements Closeable {
 	 * @param valueTranslator The translator to use to convert values into strings.
 	 * @return The tree.
 	 * @throws NullPointerException if the tree name or either of the translators is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <K> The type of the keys that define connections on the tree.
 	 * @param <V> The type of the values stored in the tree.
 	 */
-	public abstract <K,V> Tree<K,V> getTranslatedDataTree( String treeName,
+	<K,V> Tree<K,V> getTranslatedDataTree( String treeName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException;
 	
@@ -134,12 +144,13 @@ public abstract class Database implements Closeable {
 	 * @param mapName The name of the map.
 	 * @return The map.
 	 * @throws NullPointerException if the map name is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 */
-	public Map<String,String> getDataMap( String mapName )
+	default Map<String,String> getDataMap( String mapName )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataMap( mapName, new StringTranslator(), new StringTranslator() );
@@ -153,13 +164,14 @@ public abstract class Database implements Closeable {
 	 * @param keyTranslator The translator to use to convert keys into strings.
 	 * @return The map.
 	 * @throws NullPointerException if the map name or the translator is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <K> The type of the keys that define connections on the map.
 	 */
-	public <K> Map<K,String> getKeyTranslatedDataMap( String mapName, Translator<K> keyTranslator )
+	default <K> Map<K,String> getKeyTranslatedDataMap( String mapName, Translator<K> keyTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataMap( mapName, keyTranslator, new StringTranslator() );
@@ -173,13 +185,14 @@ public abstract class Database implements Closeable {
 	 * @param valueTranslator The translator to use to convert values into strings.
 	 * @return The map.
 	 * @throws NullPointerException If the map name or the translator is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <V> The type of the values stored in the map.
 	 */
-	public <V> Map<String,V> getValueTranslatedDataMap( String mapName, Translator<V> valueTranslator )
+	default <V> Map<String,V> getValueTranslatedDataMap( String mapName, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException {
 		
 		return getTranslatedDataMap( mapName, new StringTranslator(), valueTranslator );
@@ -194,14 +207,15 @@ public abstract class Database implements Closeable {
 	 * @param valueTranslator The translator to use to convert values into strings.
 	 * @return The map.
 	 * @throws NullPointerException If the map name or either of the translators is null.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
 	 * @param <K> The type of the keys that define connections on the map.
 	 * @param <V> The type of the values stored in the map.
 	 */
-	public abstract <K,V> Map<K,V> getTranslatedDataMap( String mapName,
+	<K,V> Map<K,V> getTranslatedDataMap( String mapName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException;
 	
@@ -211,36 +225,60 @@ public abstract class Database implements Closeable {
 	 * <p>
 	 * OBS: The value returned by this does not necessarily reflect the number of trees and
 	 * maps stored in the storage system that backs this instance, but rather the amount
-	 * of trees and maps that were created due to calls to get# methods and so are currently
-	 * being managed by this instance. It is possible that the backing storage contains more
-	 * trees or maps that haven't been requested yet.
+	 * of trees and maps that were created due to calls to <tt>get*()</tt> methods and so are
+	 * currently being managed by this instance. It is possible that the backing storage 
+	 * contains more trees or maps that haven't been requested yet.
 	 * 
 	 * @return The number of trees and maps in use.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 */
-	protected abstract int size();
+	int size() throws IllegalStateException;
 	
 	/**
-	 * Retrieves all the data trees in this database.
+	 * Retrieves all the trees currently managed by this database, along with their names and
+	 * translators.
+	 * <p>
+	 * Note that this only returns the data from trees currently managed by the database
+	 * (that were checked out using a get*DataTree method), and so any other data that may be
+	 * present in the backing storage system but is not represented by an active tree will not
+	 * be included.
+	 * <p>
+	 * The returned set is backed by the database, so changes to the database (a new tree being
+	 * created) are reflected in the set. However, the set is not editable, and any attempts to
+	 * do so will throw an exception.
 	 * 
-	 * @return The data trees of this database, keyed by their names.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @return The data trees of this database.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 */
-	protected abstract Map<String,Tree<String,String>> getDataTrees() throws IllegalStateException;
+	Set<TreeEntry<?,?>> getDataTrees() throws IllegalStateException;
 	
 	/**
-	 * Retrieves all the data maps in this database.
+	 * Retrieves all the maps currently managed by this database, along with their names and
+	 * translators.
+	 * <p>
+	 * Note that this only returns the data from maps currently managed by the database
+	 * (that were checked out using a get*DataMap method), and so any other data that may be
+	 * present in the backing storage system but is not represented by an active map will not
+	 * be included.
+	 * <p>
+	 * The returned set is backed by the database, so changes to the database (a new tree being
+	 * created) are reflected in the set. However, the set is not editable, and any attempts to
+	 * do so will throw an exception.
 	 * 
-	 * @return The data maps of this database, keyed by their names.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @return The data maps of this database.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
+	 * 								 was already closed.
 	 */
-	protected abstract Map<String,Map<String,String>> getDataMaps() throws IllegalStateException;
+	Set<MapEntry<?,?>> getDataMaps() throws IllegalStateException;
 	
 	/**
 	 * Retrieves the names of the parameters required for {@link #load(List)}.
 	 * 
 	 * @return The load parameters.
 	 */
-	protected abstract List<String> getLoadParams();
+	List<String> getLoadParams();
 	
 	/**
 	 * Loads/connects the database using the given parameters.
@@ -251,9 +289,28 @@ public abstract class Database implements Closeable {
 	 *               <tt>params.size() == getLoadParams().size()</tt>.
 	 * @return <tt>true</tt> if the database was successfully loaded.
 	 *         <tt>false</tt> if an error occurred.
-	 * @throws IllegalStateException if the database is already closed.
+	 * @throws IllegalStateException if the database was already loaded.
 	 */
-	protected abstract boolean load( List<String> params ) throws IllegalStateException;
+	boolean load( List<String> params ) throws IllegalStateException;
+	
+	/**
+	 * Stops the database, preventing any further accesses or changes.
+	 * <p>
+	 * Any cached changes are flushed, and the connection to the backing storage
+	 * system is terminated, releasing any associated resources.
+	 * <p>
+	 * After this method returns, any call made to this database, or a tree or map
+	 * obtained from it will fail with an {@link IllegalStateException}. The exception
+	 * would be calling this method again, which has no effect, or calling
+	 * {@link #getLoadParams()}.
+	 * <p>
+	 * This method can only be called after the database is successfully loaded, that
+	 * is, after a call to {@link #load(List)} returns true.
+	 * 
+	 * @throws IllegalStateException if the database hasn't been loaded yet.
+	 */
+	@Override
+	void close() throws IllegalStateException;
 	
 	/**
 	 * Loads in this database all the data present in the given database.
@@ -270,31 +327,126 @@ public abstract class Database implements Closeable {
 	 * database by closing this instance and creating+loading a new one using the same set of parameters.
 	 * 
 	 * @param db The database to load into this one.
-	 * @throws IllegalStateException if either this or the given database is already closed, or if
-	 *                               this database has already created data trees or maps for
-	 *                               external use.
+	 * @throws IllegalStateException if the database hasn't been successfully loaded yet, was already
+	 *                               closed, or has already created data trees or maps for external use.
 	 */
-	void copyData( Database db ) throws IllegalStateException {
+	default void copyData( Database db ) throws IllegalStateException {
 		
 		if ( size() != 0 ) {
 			throw new IllegalStateException( "This database already has trees or maps checked out." );
 		}
 		
-		Map<String,Tree<String,String>> trees;
+		Set<TreeEntry<?,?>> trees;
 		try {
 			trees = db.getDataTrees();
 		} catch ( IllegalStateException e ) {
 			throw new IllegalStateException( "Could not obtain data trees.", e );
 		}
 		
-		for ( Map.Entry<String,Tree<String,String>> tree : trees.entrySet() ) {
+		for ( TreeEntry<?,?> tree : trees ) {
 			
-			Tree<String,String> newTree = getDataTree( tree.getKey() );
-			for ( Graph.Entry<String,String> mapping : tree.getValue().entrySet() ) {
+			@SuppressWarnings("unchecked")
+			Tree<Object,Object> newTree = (Tree<Object,Object>) getTranslatedDataTree(
+					tree.getName(), tree.getKeyTranslator(), tree.getValueTranslator() );
+			for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
 				
-				newTree.add( mapping.getValue(), mapping.getPathArray() );
+				newTree.add( mapping.getValue(), mapping.getPath() );
 				
 			}
+			
+		}
+		
+	}
+	
+	/**
+	 * A unit of storage managed by this database.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-26
+	 * @param <K> The type of key used by the storage.
+	 * @param <V> The type of value used by the storage.
+	 * @param <T> The type of the storage unit.
+	 */
+	interface DatabaseEntry<K,V,T> {
+		
+		/**
+		 * Retrieves the name that the storage unit is registered under.
+		 * 
+		 * @return The name of the storage unit.
+		 */
+		String getName();
+		
+		/**
+		 * Retrieves the storage unit itself.
+		 * 
+		 * @return The storage unit.
+		 */
+		T getStorage();
+		
+		/**
+		 * Retrieves the translator used by the storage unit to convert keys
+		 * to strings.
+		 * 
+		 * @return The key translator.
+		 */
+		Translator<K> getKeyTranslator();
+		
+		/**
+		 * Retrieves the translator used by the storage unit to convert values
+		 * to strings.
+		 * 
+		 * @return The value translator.
+		 */
+		Translator<V> getValueTranslator();
+		
+	}
+	
+	/**
+	 * A data tree managed by this database.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-26
+	 * @param <K> The type of key used by the tree.
+	 * @param <V> The type of value used by the tree.
+	 */
+	interface TreeEntry<K,V> extends DatabaseEntry<K,V,Tree<K,V>> {
+		
+		/**
+		 * Retrieves the tree itself.
+		 * 
+		 * @return The tree.
+		 * @see #getStorage()
+		 */
+		default Tree<K,V> getTree() {
+			
+			return getStorage();
+			
+		}
+		
+	}
+	
+	/**
+	 * A data map managed by this database.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-26
+	 * @param <K> The type of key used by the map.
+	 * @param <V> The type of value used by the map.
+	 */
+	interface MapEntry<K,V> extends DatabaseEntry<K,V,Map<K,V>> {
+		
+		/**
+		 * Retrieves the map itself.
+		 * 
+		 * @return The map.
+		 * @see #getStorage()
+		 */
+		default Map<K,V> getMap() {
+			
+			return getStorage();
 			
 		}
 		
