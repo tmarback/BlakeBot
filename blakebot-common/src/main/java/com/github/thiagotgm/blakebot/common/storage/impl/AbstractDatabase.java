@@ -17,7 +17,12 @@
 
 package com.github.thiagotgm.blakebot.common.storage.impl;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.thiagotgm.blakebot.common.storage.Database;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
@@ -31,8 +36,51 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * @since 2018-07-26
  */
 public abstract class AbstractDatabase implements Database {
+	
+	private final Map<String,TreeEntry<?,?>> trees;
+	private final Map<String,MapEntry<?,?>> maps;
+	
+	protected boolean loaded;
+	protected boolean closed;
+	
+	/**
+	 * Initializes the database.
+	 */
+	public AbstractDatabase() {
+		
+		trees = new HashMap<>();
+		maps = new HashMap<>();
+		
+		loaded = false;
+		closed = false;
+		
+	}
+	
+	/**
+	 * Creates a new data tree backed by the storage system.
+	 * 
+	 * @param dataName The name that identifies the data set.
+	 * @param keyTranslator The translator to use to convert keys in the path to Strings.
+	 * @param valueTranslator The translator to use to convert values to Strings.
+	 * @return The data tree.
+	 * @throws NullPointerException if the name or either of the translators is null.
+	 */
+	protected abstract <K,V> Tree<K,V> newTree( String dataName, Translator<K> keyTranslator,
+			Translator<V> valueTranslator ) throws NullPointerException;
+	
+	/**
+	 * Creates a new data map backed by the storage system.
+	 * 
+	 * @param dataName The name that identifies the data set.
+	 * @param keyTranslator The translator to use to convert keys to Strings.
+	 * @param valueTranslator The translator to use to convert values to Strings.
+	 * @return The data map.
+	 * @throws NullPointerException if the name or either of the translators is null.
+	 */
+	protected abstract <K,V> Map<K,V> newMap( String dataName, Translator<K> keyTranslator,
+			Translator<V> valueTranslator ) throws NullPointerException;
 
-	/* Entry classes */
+	/* Entry implementations */
 	
 	/**
 	 * Implementation of a database entry.
@@ -42,7 +90,7 @@ public abstract class AbstractDatabase implements Database {
 	 * @param <V> The type of value used by the storage.
 	 * @param <T> The type of the storage unit.
 	 */
-	private abstract class DatabaseEntryImpl<K,V,T> implements DatabaseEntry<K,V,T> {
+	protected abstract class DatabaseEntryImpl<K,V,T> implements DatabaseEntry<K,V,T> {
 		
 		private final String name;
 		private final T storage;
@@ -155,6 +203,705 @@ public abstract class AbstractDatabase implements Database {
 				Translator<V> valueTranslator ) throws NullPointerException {
 			
 			super( name, map, keyTranslator, valueTranslator );
+			
+		}
+		
+	}
+	
+	/* Pass-through wrappers that check for the database being closed */
+	
+	/**
+	 * Iterator that iterates over data in the database. 
+	 * <p>
+	 * When a call is made to the iterator, it checks if the database is already closed. If
+	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
+	 * through to the backing iterator.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-27
+	 * @param <E> The type of object that the iterator retrieves.
+	 */
+	private class DatabaseIterator<E> implements Iterator<E> {
+		
+		private final Iterator<E> backing;
+		
+		/**
+		 * Instantiates an iterator backed by the given database iterator.
+		 * 
+		 * @param backing The iterator that backs this.
+		 */
+		public DatabaseIterator( Iterator<E> backing ) {
+			
+			this.backing = backing;
+			
+		}
+
+		@Override
+		public boolean hasNext() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.hasNext();
+			
+		}
+
+		@Override
+		public E next() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.next();
+			
+		}
+		
+		@Override
+		public void remove() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			backing.remove();
+			
+		}
+		
+		@Override
+		public boolean equals( Object o ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.equals( o );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.hashCode();
+			
+		}
+		
+	}
+	
+	/**
+	 * Collection that represents data in the database. 
+	 * <p>
+	 * When a call is made to the collection, it checks if the database is already closed. If
+	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
+	 * through to the backing collection.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-27
+	 * @param <E> The type of object in the collection.
+	 */
+	private class DatabaseCollection<E> implements Collection<E> {
+		
+		private final Collection<E> backing;
+		
+		/**
+		 * Instantiates a collection backed by the given database collection.
+		 * 
+		 * @param backing The collection that backs this.
+		 */
+		public DatabaseCollection( Collection<E> backing ) {
+			
+			this.backing = backing;
+			
+		}
+
+		@Override
+		public int size() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.size();
+			
+		}
+
+		@Override
+		public boolean isEmpty() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.isEmpty();
+			
+		}
+
+		@Override
+		public boolean contains( Object o ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.contains( o );
+			
+		}
+
+		@Override
+		public Iterator<E> iterator() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseIterator<>( backing.iterator() );
+			
+		}
+
+		@Override
+		public Object[] toArray() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.toArray();
+			
+		}
+
+		@Override
+		public <T> T[] toArray( T[] a ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.toArray( a );
+			
+		}
+
+		@Override
+		public boolean add( E e ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.add( e );
+			
+		}
+
+		@Override
+		public boolean remove( Object o ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.remove( o );
+			
+		}
+
+		@Override
+		public boolean containsAll( Collection<?> c ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.containsAll( c );
+			
+		}
+
+		@Override
+		public boolean addAll( Collection<? extends E> c ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.addAll( c );
+			
+		}
+
+		@Override
+		public boolean removeAll( Collection<?> c ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.removeAll( c );
+			
+		}
+
+		@Override
+		public boolean retainAll( Collection<?> c ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.retainAll( c );
+			
+		}
+
+		@Override
+		public void clear() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			backing.clear();
+			
+		}
+		
+		@Override
+		public boolean equals( Object o ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.equals( o );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.hashCode();
+			
+		}
+		
+	}
+	
+	/**
+	 * Set that represents data in the database. 
+	 * <p>
+	 * When a call is made to the set, it checks if the database is already closed. If
+	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
+	 * through to the backing set.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-27
+	 * @param <E> The type of object in the set.
+	 */
+	private class DatabaseSet<E> extends DatabaseCollection<E> implements Set<E> {
+		
+		/**
+		 * Instantiates a set backed by the given database set.
+		 * 
+		 * @param backing The set that backs this.
+		 */
+		public DatabaseSet( Set<E> backing ) {
+			
+			super( backing );
+			
+		}
+		
+	}
+	
+	/* 
+	 * Wrappers for trees and maps that provides common functionality, such as checking if
+	 * the database is open and caching data.
+	 * 
+	 * TODO: Caching data.
+	 */
+	
+	/**
+	 * Tree that represents data in the database. 
+	 * <p>
+	 * When a call is made to the tree, it checks if the database is already closed. If
+	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
+	 * through to the backing tree.
+	 * 
+	 * TODO: Buffering
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-27
+	 * @param <K> The type of key in the paths used by the tree.
+	 * @param <V> The type of values stored in the tree.
+	 */
+	private class DatabaseTree<K,V> implements Tree<K,V> {
+		
+		private final Tree<K,V> backing;
+		
+		/**
+		 * Instantiates a tree backed by the given database tree.
+		 * 
+		 * @param backing The tree that backs this.
+		 */
+		public DatabaseTree( Tree<K,V> backing ) {
+			
+			this.backing = backing;
+			
+		}
+		
+		@Override
+		public boolean containsPath( List<K> path ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.containsPath( path );
+			
+		}
+
+		@Override
+		public boolean containsValue( V value ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.containsValue( value );
+			
+		}
+
+		@Override
+		public V get( List<K> path ) throws IllegalArgumentException {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.get( path );
+			
+		}
+
+		@Override
+		public List<V> getAll(List<K> path) throws IllegalArgumentException {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.getAll( path );
+			
+		}
+
+		@Override
+		public V set( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.set( value, path );
+			
+		}
+
+		@Override
+		public boolean add( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.add( value, path );
+			
+		}
+
+		@Override
+		public V remove( List<K> path ) throws UnsupportedOperationException, IllegalArgumentException {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.remove( path );
+			
+		}
+
+		@Override
+		public Set<List<K>> pathSet() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseSet<>( backing.pathSet() );
+			
+		}
+
+		@Override
+		public Collection<V> values() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseCollection<>( backing.values() );
+			
+		}
+
+		@Override
+		public Set<Entry<K,V>> entrySet() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseSet<>( backing.entrySet() );
+			
+		}
+
+		@Override
+		public int size() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.size();
+			
+		}
+		
+		@Override
+		public boolean isEmpty() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.isEmpty();
+			
+		}
+
+		@Override
+		public void clear() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			backing.clear();
+			
+		}
+		
+		@Override
+		public boolean equals( Object obj ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.equals( obj );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.hashCode();
+			
+		}
+		
+	}
+
+	/**
+	 * Map that represents data in the database. 
+	 * <p>
+	 * When a call is made to the map, it checks if the database is already closed. If
+	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
+	 * through to the backing map.
+	 * 
+	 * TODO: Buffering
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-07-27
+	 * @param <K> The type of keys used by the map.
+	 * @param <V> The type of values stored in the map.
+	 */
+	private class DatabaseMap<K,V> implements Map<K,V> {
+		
+		private final Map<K,V> backing;
+		
+		/**
+		 * Instantiates a map backed by the given database map.
+		 * 
+		 * @param backing The map that backs this.
+		 */
+		public DatabaseMap( Map<K,V> backing ) {
+			
+			this.backing = backing;
+			
+		}
+
+		@Override
+		public int size() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.size();
+			
+		}
+
+		@Override
+		public boolean isEmpty() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.isEmpty();
+			
+		}
+
+		@Override
+		public boolean containsKey( Object key ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.containsKey( key );
+			
+		}
+
+		@Override
+		public boolean containsValue( Object value ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.containsValue( value );
+			
+		}
+
+		@Override
+		public V get( Object key ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.get( key );
+			
+		}
+
+		@Override
+		public V put( K key, V value ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.put( key, value );
+			
+		}
+
+		@Override
+		public V remove( Object key ) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.remove( key );
+			
+		}
+
+		@Override
+		public void putAll(Map<? extends K, ? extends V> m) {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			backing.putAll( m );
+			
+		}
+
+		@Override
+		public void clear() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			backing.clear();
+			
+		}
+
+		@Override
+		public Set<K> keySet() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseSet<>( backing.keySet() );
+			
+		}
+
+		@Override
+		public Collection<V> values() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseCollection<>( backing.values() );
+			
+		}
+
+		@Override
+		public Set<Entry<K,V>> entrySet() {
+
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return new DatabaseSet<>( backing.entrySet() );
+			
+		}
+		
+		@Override
+		public boolean equals( Object o ) {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.equals( o );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			if ( closed ) {
+				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			return backing.hashCode();
 			
 		}
 		
