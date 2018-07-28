@@ -18,6 +18,7 @@
 package com.github.thiagotgm.blakebot.common.storage.impl;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,7 +30,19 @@ import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 
 /**
- * Common implementations for all database types.
+ * Provides implementation of behavior that is common to all Database
+ * implementations.
+ * <p>
+ * Subclasses are expected to set {@link #loaded} to <tt>true</tt> upon
+ * a successful execution of {@link #load(List)}, and to set
+ * {@link #closed} to <tt>true</tt> when {@link #close()} is called.<br>
+ * All methods implemented here will check the value of those variables
+ * to ensure proper database state, and trees and maps received from
+ * {@link #newMap(String, Translator, Translator)} and
+ * {@link #newTree(String, Translator, Translator)} will be wrapped 
+ * so that they will automatically stop working after {@link #closed}
+ * is set to <tt>true</tt> (all operations will then throw an
+ * {@link IllegalStateException}).
  * 
  * @version 1.0
  * @author ThiagoTGM
@@ -37,11 +50,23 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  */
 public abstract class AbstractDatabase implements Database {
 	
+	/**
+	 * Trees currently managed by the database.
+	 */
 	private final Map<String,TreeEntry<?,?>> trees;
+	/**
+	 * Maps currently managed by the database.
+	 */
 	private final Map<String,MapEntry<?,?>> maps;
 	
-	protected boolean loaded;
-	protected boolean closed;
+	/**
+	 * Whether the database is currently loaded.
+	 */
+	protected volatile boolean loaded;
+	/**
+	 * Whether the database is currently closed.
+	 */
+	protected volatile boolean closed;
 	
 	/**
 	 * Initializes the database.
@@ -57,6 +82,24 @@ public abstract class AbstractDatabase implements Database {
 	}
 	
 	/**
+	 * Checks that the database is already loaded and not closed yet, throwing an exception
+	 * otherwise.
+	 * 
+	 * @throws IllegalStateException if the database is not loaded yet or already closed.
+	 */
+	private void checkState() throws IllegalStateException {
+		
+		if ( !loaded ) {
+			throw new IllegalStateException( "Database not loaded yet." );
+		}
+		
+		if ( closed ) {
+			throw new IllegalStateException( "Database already closed." );
+		}
+		
+	}
+	
+	/**
 	 * Creates a new data tree backed by the storage system.
 	 * 
 	 * @param dataName The name that identifies the data set.
@@ -67,6 +110,47 @@ public abstract class AbstractDatabase implements Database {
 	 */
 	protected abstract <K,V> Tree<K,V> newTree( String dataName, Translator<K> keyTranslator,
 			Translator<V> valueTranslator ) throws NullPointerException;
+	
+	@Override
+	public synchronized <K,V> Tree<K,V> getTranslatedDataTree( String treeName,
+			Translator<K> keyTranslator, Translator<V> valueTranslator )
+			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+		
+		checkState();
+		
+		if ( ( treeName == null ) || ( keyTranslator == null ) || ( valueTranslator == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		Tree<K,V> tree;
+		TreeEntry<?,?> entry = trees.get( treeName ); // Check if there is already an entry.
+		if ( entry == null ) { // No entry.
+			if ( maps.containsKey( treeName ) ) { // Check if map name.
+				throw new IllegalArgumentException( "Given name is assigned to a map." );
+			}
+			
+			// Create and record new tree, within a wrapper.
+			tree = new DatabaseTree<>( newTree( treeName, keyTranslator, valueTranslator ) );
+			trees.put( treeName, new TreeEntryImpl<>( treeName, tree, keyTranslator, valueTranslator ) );
+		} else { // Found entry.
+			if ( keyTranslator.getClass() != entry.getKeyTranslator().getClass() ) {
+				throw new IllegalArgumentException( "Given key translator is of a different class "
+						+ "than the existing key translator." );
+			} // Check that translators match.
+			
+			if ( valueTranslator.getClass() != entry.getValueTranslator().getClass() ) {
+				throw new IllegalArgumentException( "Given value translator is of a different class "
+						+ "than the existing value translator." );
+			}
+			
+			@SuppressWarnings("unchecked")
+			Tree<K,V> t = (Tree<K,V>) entry.getTree(); // Translators match - tree is the correct type.
+			tree = t;
+		}
+		
+		return tree;
+		
+	}
 	
 	/**
 	 * Creates a new data map backed by the storage system.
@@ -79,6 +163,74 @@ public abstract class AbstractDatabase implements Database {
 	 */
 	protected abstract <K,V> Map<K,V> newMap( String dataName, Translator<K> keyTranslator,
 			Translator<V> valueTranslator ) throws NullPointerException;
+	
+	@Override
+	public synchronized <K,V> Map<K,V> getTranslatedDataMap( String mapName,
+			Translator<K> keyTranslator, Translator<V> valueTranslator )
+			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+		
+		checkState();
+		
+		if ( ( mapName == null ) || ( keyTranslator == null ) || ( valueTranslator == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		Map<K,V> map;
+		MapEntry<?,?> entry = maps.get( mapName ); // Check if there is already an entry.
+		if ( entry == null ) { // No entry.
+			if ( trees.containsKey( mapName ) ) { // Check if tree name.
+				throw new IllegalArgumentException( "Given name is assigned to a tree." );
+			}
+			
+			// Create and record new map, within a wrapper.
+			map = new DatabaseMap<>( newMap( mapName, keyTranslator, valueTranslator ) );
+			maps.put( mapName, new MapEntryImpl<>( mapName, map, keyTranslator, valueTranslator ) );
+		} else { // Found entry.
+			if ( keyTranslator.getClass() != entry.getKeyTranslator().getClass() ) {
+				throw new IllegalArgumentException( "Given key translator is of a different class "
+						+ "than the existing key translator." );
+			} // Check that translators match.
+			
+			if ( valueTranslator.getClass() != entry.getValueTranslator().getClass() ) {
+				throw new IllegalArgumentException( "Given value translator is of a different class "
+						+ "than the existing value translator." );
+			}
+			
+			@SuppressWarnings("unchecked")
+			Map<K,V> m = (Map<K,V>) entry.getMap(); // Translators match - map is the correct type.
+			map = m;
+		}
+		
+		return map;
+		
+	}
+	
+	@Override
+	public int size() throws IllegalStateException {
+		
+		checkState();
+		
+		return trees.size() + maps.size();
+		
+	}
+	
+	@Override
+	public Collection<TreeEntry<?,?>> getDataTrees() throws IllegalStateException {
+		
+		checkState();
+		
+		return Collections.unmodifiableCollection( trees.values() );
+		
+	}
+	
+	@Override
+	public Collection<MapEntry<?,?>> getDataMaps() throws IllegalStateException {
+		
+		checkState();
+		
+		return Collections.unmodifiableCollection( maps.values() );
+		
+	}
 
 	/* Entry implementations */
 	

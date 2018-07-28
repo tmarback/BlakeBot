@@ -287,10 +287,13 @@ public interface Database extends Closeable {
 	 *               This implies that it is necessary that
 	 *               <tt>params.size() == getLoadParams().size()</tt>.
 	 * @return <tt>true</tt> if the database was successfully loaded.
-	 *         <tt>false</tt> if an error occurred.
+	 *         <tt>false</tt> if an error occurred (but all parameters were valid).
 	 * @throws IllegalStateException if the database was already loaded.
+	 * @throws IllegalArgumentException if the parameter list given has a different size than the
+	 *                                  list returned by {@link #getLoadParams()}, or if one or more
+	 *                                  of the parameters given is invalid (e.g. wrong format, etc).
 	 */
-	boolean load( List<String> params ) throws IllegalStateException;
+	boolean load( List<String> params ) throws IllegalStateException, IllegalArgumentException;
 	
 	/**
 	 * Stops the database, preventing any further accesses or changes.
