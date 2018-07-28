@@ -336,6 +336,8 @@ public interface Database extends Closeable {
 			throw new IllegalStateException( "This database already has trees or maps checked out." );
 		}
 		
+		/* Copy trees */
+		
 		Set<TreeEntry<?,?>> trees;
 		try {
 			trees = db.getDataTrees();
@@ -351,6 +353,28 @@ public interface Database extends Closeable {
 			for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
 				
 				newTree.add( mapping.getValue(), mapping.getPath() );
+				
+			}
+			
+		}
+		
+		/* Copy maps */
+		
+		Set<MapEntry<?,?>> maps;
+		try {
+			maps = db.getDataMaps();
+		} catch ( IllegalStateException e ) {
+			throw new IllegalStateException( "Could not obtain data maps.", e );
+		}
+		
+		for ( MapEntry<?,?> map : maps ) {
+			
+			@SuppressWarnings("unchecked")
+			Map<Object,Object> newMap = (Map<Object,Object>) getTranslatedDataMap(
+					map.getName(), map.getKeyTranslator(), map.getValueTranslator() );
+			for ( Map.Entry<?,?> mapping : map.getMap().entrySet() ) {
+				
+				newMap.put( mapping.getKey(), mapping.getValue() );
 				
 			}
 			
