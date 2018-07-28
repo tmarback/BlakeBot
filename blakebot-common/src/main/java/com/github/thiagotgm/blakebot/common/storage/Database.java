@@ -18,10 +18,9 @@
 package com.github.thiagotgm.blakebot.common.storage;
 
 import java.io.Closeable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Graph;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
@@ -252,7 +251,7 @@ public interface Database extends Closeable {
 	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
 	 * 								 was already closed.
 	 */
-	Set<TreeEntry<?,?>> getDataTrees() throws IllegalStateException;
+	Collection<TreeEntry<?,?>> getDataTrees() throws IllegalStateException;
 	
 	/**
 	 * Retrieves all the maps currently managed by this database, along with their names and
@@ -271,7 +270,7 @@ public interface Database extends Closeable {
 	 * @throws IllegalStateException if the database hasn't been successfully loaded yet or
 	 * 								 was already closed.
 	 */
-	Set<MapEntry<?,?>> getDataMaps() throws IllegalStateException;
+	Collection<MapEntry<?,?>> getDataMaps() throws IllegalStateException;
 	
 	/**
 	 * Retrieves the names of the parameters required for {@link #load(List)}.
@@ -305,7 +304,7 @@ public interface Database extends Closeable {
 	 * {@link #getLoadParams()}.
 	 * <p>
 	 * This method can only be called after the database is successfully loaded, that
-	 * is, after a call to {@link #load(List)} returns true.
+	 * is, after a call to {@link #load(List)} returns <tt>true</tt>.
 	 * 
 	 * @throws IllegalStateException if the database hasn't been loaded yet.
 	 */
@@ -327,8 +326,9 @@ public interface Database extends Closeable {
 	 * database by closing this instance and creating+loading a new one using the same set of parameters.
 	 * 
 	 * @param db The database to load into this one.
-	 * @throws IllegalStateException if the database hasn't been successfully loaded yet, was already
-	 *                               closed, or has already created data trees or maps for external use.
+	 * @throws IllegalStateException if either database hasn't been successfully loaded yet, was already
+	 *                               closed, or if this database has already created data trees or maps
+	 *                               for external use.
 	 */
 	default void copyData( Database db ) throws IllegalStateException {
 		
@@ -338,7 +338,7 @@ public interface Database extends Closeable {
 		
 		/* Copy trees */
 		
-		Set<TreeEntry<?,?>> trees;
+		Collection<TreeEntry<?,?>> trees;
 		try {
 			trees = db.getDataTrees();
 		} catch ( IllegalStateException e ) {
@@ -360,7 +360,7 @@ public interface Database extends Closeable {
 		
 		/* Copy maps */
 		
-		Set<MapEntry<?,?>> maps;
+		Collection<MapEntry<?,?>> maps;
 		try {
 			maps = db.getDataMaps();
 		} catch ( IllegalStateException e ) {
