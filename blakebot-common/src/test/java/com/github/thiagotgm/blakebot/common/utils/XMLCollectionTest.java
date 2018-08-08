@@ -27,6 +27,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLCollection;
@@ -41,18 +42,18 @@ import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
  */
 public class XMLCollectionTest {
     
-    private static final Collection<String> EXPECTED;
+    private static final Collection<String> EXPECTED = new ArrayList<>( 5 );
     
-    static {
-        
-        EXPECTED = new ArrayList<>( 5 );
-        EXPECTED.add( "hi" );
+    @BeforeClass
+	public static void setUpExpected() throws Exception {
+    	
+    	EXPECTED.add( "hi" );
         EXPECTED.add( "potato salad" );
         EXPECTED.add( "spaceship" );
         EXPECTED.add( "lul" );
         EXPECTED.add( "Best Girl (TM)" );
         
-    }
+	}
 
     @Test
     public void testRead() throws XMLStreamException {
