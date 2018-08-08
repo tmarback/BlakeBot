@@ -37,6 +37,10 @@ public interface XMLTranslator<T> extends Serializable {
 	
 	/**
 	 * Reads (decodes) an instance from an XML stream.
+	 * <p>
+     * The position of the stream cursor when the method starts should be the opening tag
+     * of the element to read, and after the method ends its position is the closing tag of
+     * the element to read.
 	 * 
 	 * @param in The stream to read from.
 	 * @return The read instance.
