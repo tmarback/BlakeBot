@@ -19,14 +19,17 @@ package com.github.thiagotgm.blakebot.common.utils.xml;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
 
 /**
@@ -60,9 +63,15 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
      * @param mapClass The class of map to instantiate.
      * @param keyTranslator The translator to use for the map keys.
      * @param valueTranslator The translator to use for the map values.
+     * @throws IllegalArgumentException if the given class does not have an accessible no-arg constructor.
+     * @throws NullPointerException if any of the arguments is <tt>null</tt>.
      */
 	public XMLMap( Class<? extends Map<K,V>> mapClass, XMLTranslator<K> keyTranslator,
-			XMLTranslator<V> valueTranslator ) throws IllegalArgumentException {
+			XMLTranslator<V> valueTranslator ) throws IllegalArgumentException, NullPointerException {
+		
+		if ( ( mapClass == null ) || ( keyTranslator == null ) || ( valueTranslator == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
 		
 		try { // Get collection ctor.
 			mapCtor = mapClass.getConstructor();
@@ -81,23 +90,20 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
 		entryTranslator = new XMLMapEntry( keyTranslator, valueTranslator );
 		
 	}
-
-	@Override
-	public Map<K,V> read( XMLStreamReader in ) throws XMLStreamException {
+	
+	/**
+	 * Reads a map from an XML stream, placing read mappings into the given map instance.
+	 * 
+	 * @param in The stream to read from.
+	 * @param map The instance to place mappings into.
+	 * @throws XMLStreamException if an error occurred.
+	 */
+	private void read( XMLStreamReader in, Map<K,V> map ) throws XMLStreamException {
 		
 		if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
 	              !in.getLocalName().equals( TAG ) ) {
 			throw new XMLStreamException( "Did not find element start." );
 	    }
-		
-		Map<K,V> map; // Make map instance.
-		try {
-			map = mapCtor.newInstance();
-		} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException
-				| InvocationTargetException e ) {
-			throw new XMLStreamException( "Could not create new map instance.", e );
-		}
-		
 		while ( in.hasNext() ) { // Read each mapping.
             
             switch ( in.next() ) {
@@ -113,7 +119,7 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
                     
                 case XMLStreamConstants.END_ELEMENT:
                 	if ( in.getLocalName().equals( TAG ) ) {
-                		return map; // Finished reading.
+                		return; // Finished reading.
                 	} else {
                 		throw new XMLStreamException( "Unexpected end element." );
                 	}
@@ -122,6 +128,23 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
             
         }
         throw new XMLStreamException( "Unexpected end of document." );
+		
+	}
+
+	@Override
+	public Map<K,V> read( XMLStreamReader in ) throws XMLStreamException {
+		
+		Map<K,V> map; // Make map instance.
+		try {
+			map = mapCtor.newInstance();
+		} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException
+				| InvocationTargetException e ) {
+			throw new XMLStreamException( "Could not create new map instance.", e );
+		}
+		
+		read( in, map ); // Read map.
+		
+		return map;
 
 	}
 
@@ -338,4 +361,151 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
 		
 	}
 
+	/* Wrapper for maps */
+	
+	/**
+	 * Wrapper that allows the use of any Map class as an XMLElement, using a backing
+	 * instance of the desired class and an {@link XMLMap} translator.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-08-08
+	 * @param <K> The type of keys in the map.
+	 * @param <V> The type of the values in the map.
+	 */
+	public static class WrappedMap<K,V> implements XMLElement, Map<K,V> {
+		
+		/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -6400842899888638846L;
+		
+		private final Map<K,V> backing;
+		private final XMLMap<K,V> translator;
+		
+		/**
+		 * Instantiates a wrapper using an instance of the given class as backing map.
+		 * <p>
+		 * The given class must have a no-args constructor available for instancing.
+		 * 
+		 * @param mapClass The class to use for the backing map.
+		 * @param keyTranslator The translator to use for keys.
+		 * @param valueTranslator The translator to use for values.
+		 * @throws IllegalArgumentException if the given class does not have an accessible no-arg constructor.
+		 * @throws NullPointerException if any of the arguments is <tt>null</tt>.
+		 */
+		public WrappedMap( Class<? extends Map<K,V>> mapClass, XMLTranslator<K> keyTranslator,
+				XMLTranslator<V> valueTranslator ) throws IllegalArgumentException, NullPointerException {
+			
+			this.translator = new XMLMap<>( mapClass, keyTranslator, valueTranslator );
+			
+			try { // Make backing instance.
+				this.backing = translator.mapCtor.newInstance();
+			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException e ) {
+				throw new IllegalArgumentException( "Could not create backing map instance.", e );
+			}
+			
+		}
+
+		@Override
+		public int size() {
+
+			return backing.size();
+			
+		}
+
+		@Override
+		public boolean isEmpty() {
+
+			return backing.isEmpty();
+			
+		}
+
+		@Override
+		public boolean containsKey( Object key ) {
+
+			return backing.containsKey( key );
+			
+		}
+
+		@Override
+		public boolean containsValue( Object value ) {
+
+			return backing.containsValue( value );
+			
+		}
+
+		@Override
+		public V get( Object key ) {
+
+			return backing.get( key );
+			
+		}
+
+		@Override
+		public V put( K key, V value ) {
+
+			return backing.put( key, value );
+			
+		}
+
+		@Override
+		public V remove(Object key) {
+			
+			return backing.remove( key );
+			
+		}
+
+		@Override
+		public void putAll( Map<? extends K, ? extends V> m ) {
+
+			backing.putAll( m );
+			
+		}
+
+		@Override
+		public void clear() {
+
+			backing.clear();
+			
+		}
+
+		@Override
+		public Set<K> keySet() {
+
+			return backing.keySet();
+			
+		}
+
+		@Override
+		public Collection<V> values() {
+
+			return backing.values();
+			
+		}
+
+		@Override
+		public Set<Entry<K, V>> entrySet() {
+			
+			return backing.entrySet();
+			
+		}
+
+		@Override
+		public void read( XMLStreamReader in ) throws XMLStreamException {
+
+			translator.read( in, backing );
+			
+		}
+
+		@Override
+		public void write(XMLStreamWriter out) throws XMLStreamException {
+
+			translator.write( out, backing );
+			
+		}
+		
+	}
+	
 }
