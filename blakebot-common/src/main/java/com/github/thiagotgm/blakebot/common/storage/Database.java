@@ -49,6 +49,10 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * the database itself is closed (the {@link #close()} method is called). Any calls
  * made to this database or derived maps or trees (other than {@link #close()} itself)
  * after that will fail with an {@link IllegalStateException}.
+ * <p>
+ * If a method in the returned trees or maps is called, but some internal error in the
+ * database prevents it from being executed properly, a {@link DatabaseException} is
+ * thrown.
  * 
  * @version 1.0
  * @author ThiagoTGM
@@ -67,9 +71,11 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the tree.
 	 */
 	default Tree<String,String> getDataTree( String treeName )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		return getTranslatedDataTree( treeName, new StringTranslator(), new StringTranslator() );
 		
@@ -87,10 +93,12 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the tree.
 	 * @param <K> The type of the keys that define connections on the tree.
 	 */
 	default <K> Tree<K,String> getKeyTranslatedDataTree( String treeName, Translator<K> keyTranslator )
-					throws NullPointerException, IllegalStateException, IllegalArgumentException {
+					throws NullPointerException, IllegalStateException, IllegalArgumentException,
+					DatabaseException {
 		
 		return getTranslatedDataTree( treeName, keyTranslator, new StringTranslator() );
 		
@@ -108,10 +116,11 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the tree.
 	 * @param <V> The type of the values stored in the tree.
 	 */
 	default <V> Tree<String,V> getValueTranslatedDataTree( String treeName, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException, DatabaseException {
 		
 		return getTranslatedDataTree( treeName, new StringTranslator(), valueTranslator );
 		
@@ -130,12 +139,14 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a map with the given name already exists, or if
 	 *                                  a tree with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the tree.
 	 * @param <K> The type of the keys that define connections on the tree.
 	 * @param <V> The type of the values stored in the tree.
 	 */
 	<K,V> Tree<K,V> getTranslatedDataTree( String treeName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException;
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException;
 	
 	/**
 	 * Obtains a data map backed by this database that maps strings to strings.
@@ -148,9 +159,11 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the map.
 	 */
 	default Map<String,String> getDataMap( String mapName )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		return getTranslatedDataMap( mapName, new StringTranslator(), new StringTranslator() );
 		
@@ -168,10 +181,12 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the map.
 	 * @param <K> The type of the keys that define connections on the map.
 	 */
 	default <K> Map<K,String> getKeyTranslatedDataMap( String mapName, Translator<K> keyTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		return getTranslatedDataMap( mapName, keyTranslator, new StringTranslator() );
 		
@@ -189,10 +204,12 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the map.
 	 * @param <V> The type of the values stored in the map.
 	 */
 	default <V> Map<String,V> getValueTranslatedDataMap( String mapName, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		return getTranslatedDataMap( mapName, new StringTranslator(), valueTranslator );
 		
@@ -211,12 +228,14 @@ public interface Database extends Closeable {
 	 * @throws IllegalArgumentException if a tree with the given name already exists, or if
 	 *                                  a map with the given name already exists and it
 	 *                                  uses incompatible translator types.
+	 * @throws DatabaseException if an error occurred while obtaining the map.
 	 * @param <K> The type of the keys that define connections on the map.
 	 * @param <V> The type of the values stored in the map.
 	 */
 	<K,V> Map<K,V> getTranslatedDataMap( String mapName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException;
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException;
 	
 	/**
 	 * Retrieves the number of trees and maps contained by this database.<br>
@@ -476,6 +495,74 @@ public interface Database extends Closeable {
 			return getStorage();
 			
 		}
+		
+	}
+	
+	/* Exception for database errors */
+	
+	/**
+	 * Exception that indicates that an error occurred during normal functionality
+	 * of the database.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-08-07
+	 */
+	public class DatabaseException extends RuntimeException {
+
+		/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -7808033071268361758L;
+
+		/**
+		 * Constructs a new database exception with no cause.
+		 * 
+		 * @see RuntimeException#RuntimeException()
+	     */
+		public DatabaseException() {
+			
+			super();
+
+		}
+
+		/**
+		 * Constructs a new database exception with the given detail message and cause.
+		 * 
+		 * @param message The detail message.
+		 * @param cause The cause of this exception.
+		 * @see RuntimeException#RuntimeException(String, Throwable)
+		 */
+		public DatabaseException( String message, Throwable cause ) {
+			
+			super( message, cause );
+			
+		}
+
+		/**
+		 * Constructs a new database exception with the given detail message and no cause.
+		 * 
+		 * @param message The detail message.
+		 * @see RuntimeException#RuntimeException(String)
+		 */
+		public DatabaseException( String message ) {
+			
+			super( message );
+
+		}
+
+		/**
+		 * Constructs a new database exception with the given cause.
+		 * 
+		 * @param cause The cause of this exception.
+		 * @see RuntimeException#RuntimeException(Throwable)
+		 */
+		public DatabaseException( Throwable cause ) {
+			
+			super( cause );
+
+		}
+		
 		
 	}
 	

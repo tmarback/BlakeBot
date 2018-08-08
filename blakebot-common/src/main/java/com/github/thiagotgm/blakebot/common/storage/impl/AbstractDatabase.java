@@ -101,20 +101,25 @@ public abstract class AbstractDatabase implements Database {
 	
 	/**
 	 * Creates a new data tree backed by the storage system.
+	 * <p>
+	 * The arguments are guaranteed to not be <tt>null</tt>.
 	 * 
 	 * @param dataName The name that identifies the data set.
 	 * @param keyTranslator The translator to use to convert keys in the path to Strings.
 	 * @param valueTranslator The translator to use to convert values to Strings.
+	 * @param <K> The type of keys in the tree paths.
+	 * @param <V> The type of values to be stored in the tree.
 	 * @return The data tree.
-	 * @throws NullPointerException if the name or either of the translators is null.
+	 * @throws DatabaseException if an error occurred while obtaining the tree.
 	 */
 	protected abstract <K,V> Tree<K,V> newTree( String dataName, Translator<K> keyTranslator,
-			Translator<V> valueTranslator ) throws NullPointerException;
+			Translator<V> valueTranslator ) throws DatabaseException;
 	
 	@Override
 	public synchronized <K,V> Tree<K,V> getTranslatedDataTree( String treeName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		checkState();
 		
@@ -154,20 +159,25 @@ public abstract class AbstractDatabase implements Database {
 	
 	/**
 	 * Creates a new data map backed by the storage system.
+	 * <p>
+	 * The arguments are guaranteed to not be <tt>null</tt>.
 	 * 
 	 * @param dataName The name that identifies the data set.
 	 * @param keyTranslator The translator to use to convert keys to Strings.
 	 * @param valueTranslator The translator to use to convert values to Strings.
+	 * @param <K> The type of keys in the map.
+	 * @param <V> The type of values to be stored in the map.
 	 * @return The data map.
-	 * @throws NullPointerException if the name or either of the translators is null.
+	 * @throws DatabaseException if an error occurred while obtaining the map.
 	 */
 	protected abstract <K,V> Map<K,V> newMap( String dataName, Translator<K> keyTranslator,
-			Translator<V> valueTranslator ) throws NullPointerException;
+			Translator<V> valueTranslator ) throws DatabaseException;
 	
 	@Override
 	public synchronized <K,V> Map<K,V> getTranslatedDataMap( String mapName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
-			throws NullPointerException, IllegalStateException, IllegalArgumentException {
+			throws NullPointerException, IllegalStateException, IllegalArgumentException,
+			DatabaseException {
 		
 		checkState();
 		
