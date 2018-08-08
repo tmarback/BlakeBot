@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 
 /**
@@ -102,6 +103,8 @@ public class ExitManager {
             return;
         }
         LOG.debug( "Exit queue finished." );
+        
+        DatabaseManager.shutdown(); // Stop database.
         
         System.exit( 0 ); // Close program.
         

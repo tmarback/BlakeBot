@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.console.ConsoleGUI;
 
 /**
@@ -41,6 +42,7 @@ public class Starter {
     private static final File LOG_DIR = new File( "logs" );
     private static final String LOG_SUBDIR_NAME = "BlakeBot-%d";
     private static final int LOG_FILE_ERROR = 5;
+    private static final int DATABASE_LOAD_ERROR = 404;
     
     /**
      * On program startup, creates and starts a new instance of the bot, and a
@@ -117,6 +119,10 @@ public class Starter {
             } while ( key.length() == 0 );
             log.debug( "Received key." );
             Settings.setSetting( Bot.LOGIN_TOKEN_SETTING, key );
+        }
+        
+        if ( !DatabaseManager.startup() ) { // Start up database.
+        	System.exit( DATABASE_LOAD_ERROR );
         }
 
         ConsoleGUI.getInstance().setVisible( true ); // Start and show console.
