@@ -36,8 +36,8 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.translate.XMLTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLIIDLinkedObject;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
 import sx.blah.discord.api.IDiscordClient;
@@ -69,7 +69,7 @@ public class Blacklist {
         
     }
     
-    private final Tree<IIDLinkedObject,Set<Restriction>> blacklist;
+    private final Tree<String,Set<Restriction>> blacklist;
     
     /**
      * Creates a new instance.
@@ -80,8 +80,7 @@ public class Blacklist {
 	protected Blacklist( IDiscordClient client ) {
         
     	LOG.info( "Starting blacklist." );
-        this.blacklist = DatabaseManager.getDatabase().getTranslatedDataTree( "Blacklist",
-        		new XMLTranslator<>( new XMLIIDLinkedObject( client ) ),
+        this.blacklist = DatabaseManager.getDatabase().getValueTranslatedDataTree( "Blacklist",
         		new XMLTranslator<>( new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
         				(XMLElement.Translator<Restriction>) () -> {
         					
@@ -121,7 +120,7 @@ public class Blacklist {
      */
     protected Set<Restriction> get( IIDLinkedObject... path ) {
         
-    	Set<Restriction> restrictions = blacklist.get( path );
+    	Set<Restriction> restrictions = blacklist.get( Utils.idString( path ) );
     	if ( restrictions == null ) {
     		return new HashSet<>();
     	} else {
@@ -250,10 +249,11 @@ public class Blacklist {
      */
     protected synchronized boolean add( Restriction restriction, IIDLinkedObject... path ) {
         
-        Set<Restriction> restrictions = blacklist.get( path );
+    	String[] strPath = Utils.idString( path );
+        Set<Restriction> restrictions = blacklist.get( strPath );
         if ( restrictions == null ) {
             restrictions = new HashSet<>();
-            blacklist.add( restrictions, path );
+            blacklist.add( restrictions, strPath );
         }
         return restrictions.add( restriction );
         
@@ -359,7 +359,7 @@ public class Blacklist {
      */
     protected synchronized boolean remove( Restriction restriction, IIDLinkedObject... path ) {
         
-        Set<Restriction> restrictions = blacklist.get( path );
+        Set<Restriction> restrictions = blacklist.get( Utils.idString( path ) );
         return ( ( restrictions != null ) && restrictions.remove( restriction ) );
         
     }
