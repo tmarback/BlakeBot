@@ -239,9 +239,13 @@ public class Blacklist {
         Set<Restriction> restrictions = blacklist.get( strPath );
         if ( restrictions == null ) {
             restrictions = new HashSet<>();
-            blacklist.add( restrictions, strPath );
         }
-        return restrictions.add( restriction );
+        if ( restrictions.add( restriction ) ) {
+        	blacklist.set( restrictions, strPath );
+        	return true;
+        } else {
+        	return false;
+        }
         
     }
     
@@ -345,8 +349,14 @@ public class Blacklist {
      */
     protected synchronized boolean remove( Restriction restriction, IIDLinkedObject... path ) {
         
-        Set<Restriction> restrictions = blacklist.get( Utils.idString( path ) );
-        return ( ( restrictions != null ) && restrictions.remove( restriction ) );
+    	String[] thePath = Utils.idString( path );
+        Set<Restriction> restrictions = blacklist.get( thePath );
+        if ( ( restrictions != null ) && restrictions.remove( restriction ) ) {
+        	blacklist.set( restrictions, thePath );
+        	return true;
+        } else {
+        	return false;
+        }
         
     }
     
