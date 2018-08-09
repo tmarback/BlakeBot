@@ -67,7 +67,7 @@ public class Cache<K,V> {
 	 * @return The cached value, or <tt>null</tt> if there is no
 	 *         value currently cached to the given key.
 	 */
-	public synchronized V get( K key ) {
+	public synchronized V get( Object key ) {
 		
 		CacheList.Node node = keyMap.get( key ); // Look for node.
 		if ( node != null ) { // Node found.
@@ -110,7 +110,7 @@ public class Cache<K,V> {
 	 * @return The value that was cached to the given key, or <tt>null</tt>
 	 *         if there wasn't one.     
 	 */
-	public synchronized V remove( K key ) {
+	public synchronized V remove( Object key ) {
 		
 		CacheList.Node node = keyMap.remove( key ); // Remove node.
 		if ( node != null ) { // A node was removed.
