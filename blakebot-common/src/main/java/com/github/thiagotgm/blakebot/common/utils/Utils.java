@@ -146,6 +146,17 @@ public abstract class Utils {
      */
     public static final String DEFAULT_ENCODING = "UTF-8";
     
+    /**
+     * Writes an XML document to a stream, where the content of the document is the given object,
+     * translated using the given XML translator.
+     *
+     * @param out The stream to write to.
+     * @param content The content of the document to be written.
+     * @param translator The translator to use to encode the content.
+     * @param encoding The character encoding to use.
+     * @param <T> The type of object to be encoded.
+     * @throws XMLStreamException if an error is encountered while writing.
+     */
     public static <T> void writeXMLDocument( OutputStream out, T content, XMLTranslator<T> translator,
     		String encoding ) throws XMLStreamException {
     	
@@ -156,6 +167,20 @@ public abstract class Utils {
     	
     }
     
+    /**
+     * Writes an XML document to a stream, where the content of the document is the given object,
+     * translated using the given XML translator. Uses the
+     * {@link #DEFAULT_ENCODING default character encoding}.
+     * <p>
+     * Same as calling {@link #writeXMLDocument(OutputStream, T, XMLTranslator, String)} with
+     * fourth parameter {@value #DEFAULT_ENCODING}.
+     *
+     * @param out The stream to write to.
+     * @param content The content of the document to be written.
+     * @param translator The translator to use to encode the content.
+     * @param <T> The type of object to be encoded.
+     * @throws XMLStreamException if an error is encountered while writing.
+     */
     public static <T> void writeXMLDocument( OutputStream out, T content, XMLTranslator<T> translator )
     		throws XMLStreamException {
     	
@@ -200,6 +225,19 @@ public abstract class Utils {
         
     }
     
+    /**
+     * Reads an XML document from a stream, using the given translator the decode the content.
+     * <p>
+     * If there is any content after what is read by the translator, that extra content
+     * is ignored. This means that the stream will always be read until the end of the document
+     * is found.
+     *
+     * @param in The stream to read to.
+     * @param translator The translator that will decode the document's content.
+     * @param encoding The character encoding of the stream.
+     * @param <T> The type of element that will be read.
+     * @throws XMLStreamException if an error is encountered while reading.
+     */
     public static <T> T readXMLDocument( InputStream in, XMLTranslator<T> translator, String encoding )
             throws XMLStreamException {
         
@@ -212,6 +250,23 @@ public abstract class Utils {
         
     }
     
+    /**
+     * Reads an XML document from a stream, using the given translator the decode the content. 
+     * Uses the {@link #DEFAULT_ENCODING default character encoding}.
+     * <p>
+     * Same as calling {@link #readXMLDocument(InputStream, XMLTranslator, String)} with third parameter
+     * {@value #DEFAULT_ENCODING}.
+     * <p>
+     * If there is any content after what is read by the translator, that extra content
+     * is ignored. This means that the stream will always be read until the end of the document
+     * is found.
+     *
+     * @param in The stream to read to.
+     * @param translator The translator that will decode the document's content.
+     * @param encoding The character encoding of the stream.
+     * @param <T> The type of element that will be read.
+     * @throws XMLStreamException if an error is encountered while reading.
+     */
     public static <T> T readXMLDocument( InputStream in, XMLTranslator<T> translator )
             throws XMLStreamException {
     	
@@ -219,6 +274,21 @@ public abstract class Utils {
     	
     }
     
+    /**
+     * Reads an XML document from a stream, using the given translator the decode the content.
+     * <p>
+     * If there is any content after what is read by the translator, that extra content
+     * is ignored. This means that the stream will always be read until the end of the document
+     * is found.
+     * <p>
+     * Convenience method to allow the use of lambdas for the translator of an XML element.
+     *
+     * @param in The stream to read to.
+     * @param translator The translator that will decode the document's content.
+     * @param encoding The character encoding of the stream.
+     * @param <T> The type of XML element that will be read.
+     * @throws XMLStreamException if an error is encountered while reading.
+     */
     public static <T extends XMLElement> T readXMLDocument( InputStream in, XMLElement.Translator<T> translator,
     		String encoding ) throws XMLStreamException {
     	
@@ -226,6 +296,25 @@ public abstract class Utils {
     	
     }
     
+    /**
+     * Reads an XML document from a stream, using the given translator the decode the content. 
+     * Uses the {@link #DEFAULT_ENCODING default character encoding}.
+     * <p>
+     * Same as calling {@link #readXMLDocument(InputStream, XMLTranslator, String)} with third parameter
+     * {@value #DEFAULT_ENCODING}.
+     * <p>
+     * If there is any content after what is read by the translator, that extra content
+     * is ignored. This means that the stream will always be read until the end of the document
+     * is found.
+     * <p>
+     * Convenience method to allow the use of lambdas for the translator of an XML element.
+     *
+     * @param in The stream to read to.
+     * @param translator The translator that will decode the document's content.
+     * @param encoding The character encoding of the stream.
+     * @param <T> The type of XML element that will be read.
+     * @throws XMLStreamException if an error is encountered while reading.
+     */
     public static <T extends XMLElement> T readXMLDocument( InputStream in, XMLElement.Translator<T> translator )
             throws XMLStreamException {
     	
@@ -244,6 +333,7 @@ public abstract class Utils {
      * @param in The stream to read to.
      * @param content The element that will read the document's content.
      * @param encoding The character encoding of the stream.
+     * @param <T> The type of the XML element.
      * @throws XMLStreamException if an error is encountered while reading.
      */
     public static <T extends XMLElement> T readXMLDocument( InputStream in, T content, String encoding )
@@ -270,6 +360,7 @@ public abstract class Utils {
      *
      * @param in The stream to read to.
      * @param content The element that will read the document's content.
+     * @param <T> The type of the XML element.
      * @throws XMLStreamException if an error is encountered while reading.
      */
     public static <T extends XMLElement> T readXMLDocument( InputStream in, T content )
