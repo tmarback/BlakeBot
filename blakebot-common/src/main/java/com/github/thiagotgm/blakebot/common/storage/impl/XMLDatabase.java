@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -97,6 +98,22 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 		LOG.info( "Loading database." );
 		
 		path = Paths.get( params.get( 0 ) );
+		
+		LOG.debug( "Requested path: {}", path );
+		
+		if ( path.toFile().exists() ) { // Path already exists.
+            if ( !path.toFile().isDirectory() ) { // Check if path is directory.
+                LOG.error( "Database path is not a directory." );
+                return false;
+            }
+        } else { // Create path.
+            try {
+                Files.createDirectories( path );
+            } catch ( IOException e ) {
+                LOG.error( "Could not create database directory.", e );
+                return false;
+            }
+        }
 		
 		LOG.info( "Database path: {}", path );
 		

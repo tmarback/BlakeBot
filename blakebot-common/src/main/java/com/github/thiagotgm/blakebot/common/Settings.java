@@ -22,10 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -46,11 +42,6 @@ public class Settings implements SaveManager.Saveable {
     private static final String DEFAULTS_FILE = "defaultProperties.xml";
     private static final String SETTINGS_FILE = "properties.xml";
     private static final String SETTINGS_COMMENT = "Bot settings.";
-    
-    /**
-     * Path to which data files should be saved.
-     */
-    public static final Path DATA_PATH;
     
     private static final Properties settings;
 
@@ -83,28 +74,6 @@ public class Settings implements SaveManager.Saveable {
             LOG.error( "Error reading properties file.", e );
             System.exit( FILE_ERROR );
         }
-        
-        /* Read data path */
-        String[] dataPath = settings.getProperty( "Data path" ).split( "/" );
-        if ( dataPath.length < 1 ) {
-            LOG.error( "Empty data path. Falling back to default." );
-            dataPath = defaults.getProperty( "Data path" ).split( "/" );
-        }
-        DATA_PATH = Paths.get( dataPath[0], Arrays.copyOfRange( dataPath, 1, dataPath.length ) );
-        if ( DATA_PATH.toFile().exists() ) { // Path already exists.
-            if ( !DATA_PATH.toFile().isDirectory() ) { // Check if path is directory.
-                LOG.error( "Data path is not a directory." );
-                System.exit( FILE_ERROR );
-            }
-        } else { // Create path.
-            try {
-                Files.createDirectories( DATA_PATH );
-            } catch ( IOException e ) {
-                LOG.error( "Could not create data directory.", e );
-                System.exit( FILE_ERROR );
-            }
-        }
-        LOG.info( "Using data path \"{}\".", DATA_PATH );
         
     }
     
