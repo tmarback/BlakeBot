@@ -77,7 +77,10 @@ public class AutoRoleCommand {
     @SubCommand(
             name = SET,
             aliases = "set",
-            description = "Sets the role that new users should be assigned.",
+            description = "Sets the role that new users should be assigned. The role "
+            		+ "argument can be either a mention to the target role or its name, "
+            		+ "but in the latter case, if the name of the role is not unique (there "
+            		+ "are other roles with the same name), the command will fail.",
             usage = "{}autorole|ar set <role>",
             successHandler = SUCCESS_HANDLER,
             failureHandler = FAILURE_HANDLER,
@@ -90,16 +93,33 @@ public class AutoRoleCommand {
             context.setHelper( "Please specify a role." );
             return false;
         }
-        if ( args.get( 0 ).getType() != Argument.Type.ROLE_MENTION ) {
-            context.setHelper( "Argument is not a role." );
-            return false;
+        
+        IRole role;
+        switch ( args.get( 0 ).getType() ) {
+        
+        	case ROLE_MENTION: // Argument is already role.
+        		role = (IRole) args.get( 0 ).getArgument();
+        		break;
+        	
+     		default: // Check if argument is role name.
+     			List<IRole> roles = context.getGuild().getRolesByName( args.get( 0 ).getText() );
+     			if ( roles.size() == 1 ) {
+     				role = roles.get( 0 );
+     			} else {
+     				if ( roles.size() == 0 ) {
+     					context.setHelper( "Argument is not a role or role name." );
+     				} else {
+     					context.setHelper( "Argument is ambiguous: multiple roles with that name." );
+     				}
+         			return false;
+     			}
+     			
         }
-        IRole role = (IRole) args.get( 0 ).getArgument();
         
         // Register role for server.
         manager.set( context.getGuild(), role );
-        context.setHelper( String.format( "New users will be set to the role %s.",
-                role.mention() ) );
+        context.setHelper( String.format( "New users will be set to the role **%s**.",
+                role.getName() ) );
         return true;
         
     }
@@ -117,8 +137,8 @@ public class AutoRoleCommand {
 
         IRole targetRole = manager.get( context.getGuild() );
         if ( targetRole != null ) {    
-            context.setHelper( String.format( "New users are being assigned the role %s.",
-                    targetRole.mention() ) );
+            context.setHelper( String.format( "New users are being assigned the role **%s**.",
+                    targetRole.getName() ) );
         } else {
             context.setHelper( "No role set for new users." );
         }
