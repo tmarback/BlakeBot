@@ -56,8 +56,6 @@ public class AdminModule implements IModule {
         CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
         client = null; // Remove client.
         
-        SaveManager.unregisterListener( blacklist );
-        blacklist.save(); // Disables and saves blacklist.
         SaveManager.unregisterListener( autoRole );
         autoRole.save(); // Disables and saves autorole.
 
@@ -69,7 +67,6 @@ public class AdminModule implements IModule {
         client = arg0; // Store client.
         
         blacklist = Blacklist.getInstance( arg0 ); // Get blacklist.
-        SaveManager.registerListener( blacklist );
         autoRole = AutoRoleManager.getInstance(); // Get autorole manager.
         SaveManager.registerListener( autoRole );
         

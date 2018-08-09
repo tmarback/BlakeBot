@@ -17,13 +17,6 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,17 +33,14 @@ import javax.xml.stream.XMLStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.SaveManager;
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.utils.Utils;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.translate.XMLTranslator;
+import com.github.thiagotgm.blakebot.common.utils.Tree;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-import com.github.thiagotgm.blakebot.common.utils.XMLTreeGraph;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLIIDLinkedObject;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
 import sx.blah.discord.api.IDiscordClient;
-import sx.blah.discord.api.events.IListener;
-import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -67,11 +57,10 @@ import sx.blah.discord.handle.obj.IUser;
  * @author ThiagoTGM
  * @since 2017-02-07
  */
-public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
+public class Blacklist {
     
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
-    private static final Path DEFAULT_PATH = Settings.DATA_PATH.resolve( "Blacklist.xml" );
     private static Map<IDiscordClient, Blacklist> instances;
     
     static {
@@ -80,29 +69,25 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
         
     }
     
-    private final Path filePath;
-    private final XMLTreeGraph<IIDLinkedObject,Set<Restriction>> blacklist;
+    private final Tree<IIDLinkedObject,Set<Restriction>> blacklist;
     
     /**
-     * Creates a new instance using data loaded from the blacklist file.<br>
-     * If the file doesn't exist, starts a new document.
+     * Creates a new instance.
      * 
      * @param client The client to be used to obtain ID-linked objects from their IDs.
-     * @param filePath The path of the file to load the blacklist from and save
-     *                 it in. If it does not exist, a new file and empty blacklist
-     *                 are created.
      */
     @SuppressWarnings("unchecked")
-	protected Blacklist( IDiscordClient client, Path filePath ) {
+	protected Blacklist( IDiscordClient client ) {
         
-        this.blacklist = new XMLTreeGraph<>( new XMLIIDLinkedObject( client ),
-        		new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
+    	LOG.info( "Starting blacklist." );
+        this.blacklist = DatabaseManager.getDatabase().getTranslatedDataTree( "Blacklist",
+        		new XMLTranslator<>( new XMLIIDLinkedObject( client ) ),
+        		new XMLTranslator<>( new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
         				(XMLElement.Translator<Restriction>) () -> {
         					
         					return new Restriction();
         					
-        				}));
-        this.filePath = filePath;
+        				}) ) );
         client.getDispatcher().registerTemporaryListener( this );
         
     }
@@ -117,73 +102,10 @@ public class Blacklist implements SaveManager.Saveable, IListener<ReadyEvent> {
         
         Blacklist instance = instances.get( client );
         if ( instance == null ) {
-            instance = new Blacklist( client, DEFAULT_PATH );
+            instance = new Blacklist( client );
             instances.put( client, instance );
         }
         return instance;
-        
-    }
-    
-    /**
-     * Once the bot is connected, loads the blacklist from file.
-     *
-     * @param event
-     */
-    public void handle( ReadyEvent event ) {
-        
-        load();
-        
-    }
-    
-    /**
-     * Loads an existing blacklist.
-     */
-    private synchronized void load() {
-        
-        File inputFile = filePath.toFile();
-        if ( inputFile.isFile() ) {
-            LOG.info( "Loading Blacklist." );
-            try {
-                Utils.readXMLDocument( new FileInputStream( inputFile ), blacklist );
-                LOG.debug( "Loaded Blacklist." );
-            } catch ( FileNotFoundException e ) {
-                LOG.error( "Could not open blacklist file.", e );
-            } catch ( XMLStreamException e ) {
-                LOG.error( "Failed to load blacklist.", e );
-            }
-        }
-        
-    }
-    
-    /**
-     * Writes blacklist to file.
-     */
-    @Override
-    public synchronized void save() {
-        
-        LOG.info( "Saving Blacklist..." );
-        
-        Path folders = filePath.getParent();
-        if ( folders != null ) { // Ensure folders exist.
-            try {
-                Files.createDirectories( folders );
-            } catch ( IOException e ) {
-                LOG.error( "Failed to create blacklist file directories.", e );
-                return;
-            }
-        }
-            
-        try {
-            Utils.writeXMLDocument( new FileOutputStream( filePath.toFile() ), blacklist );
-        } catch ( FileNotFoundException e ) {
-            LOG.error( "Could not create or open blacklist file.", e );
-            return;
-        } catch ( XMLStreamException e ) {
-            LOG.error( "Failed to save blacklist.", e );
-            return;
-        }
-        
-        LOG.debug( "Blacklist saved." );
         
     }
     
