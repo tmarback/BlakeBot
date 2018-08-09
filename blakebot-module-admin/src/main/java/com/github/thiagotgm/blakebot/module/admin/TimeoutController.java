@@ -40,6 +40,7 @@ import sx.blah.discord.api.events.IListener;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.PermissionOverride;
 import sx.blah.discord.handle.obj.Permissions;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.MissingPermissionsException;
@@ -151,7 +152,7 @@ public class TimeoutController implements IListener<LogoutRequestedEvent> {
         
         LOG.trace( "Requested timeout set {} for {} in channel {} of guild {}.", timeout, user.getName(),
                 channel.getName(), channel.getGuild().getName() );
-        IChannel.PermissionOverride overrides = channel.getUserOverridesLong().get( user.getLongID() );
+        PermissionOverride overrides = channel.getUserOverrides().get( user.getLongID() );
         EnumSet<Permissions> allowed = 
                 ( overrides != null ) ? overrides.allow() : EnumSet.noneOf( Permissions.class );
         EnumSet<Permissions> denied = 

@@ -31,6 +31,8 @@ import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.shard.DisconnectedEvent;
 import sx.blah.discord.handle.impl.events.ReadyEvent;
 import sx.blah.discord.handle.impl.events.shard.ResumedEvent;
+import sx.blah.discord.handle.obj.ActivityType;
+import sx.blah.discord.handle.obj.StatusType;
 import sx.blah.discord.util.DiscordException;
 import sx.blah.discord.util.Image;
 import sx.blah.discord.util.RateLimitException;
@@ -244,7 +246,7 @@ public class Bot {
      */
     public String getStatus() {
         
-        return client.getOurUser().getPresence().getPlayingText().orElse( "" );
+        return client.getOurUser().getPresence().getText().orElse( "" );
         
     }
     
@@ -271,7 +273,7 @@ public class Bot {
      */
     public void setPlayingText( String newText ) {
         
-        client.changePlayingText( newText );
+        client.changePresence( StatusType.ONLINE, ActivityType.PLAYING, newText );
         LOG.info( "Changed bot playing text to " + newText );
         
     }
@@ -281,7 +283,7 @@ public class Bot {
      */
     public void setIdle() {
         
-        client.idle();
+        client.changePresence( StatusType.IDLE );
         LOG.info( "Changed bot presence to idle." );
         
     }
@@ -291,7 +293,7 @@ public class Bot {
      */
     public void setOnline() {
         
-        client.online();
+    	client.changePresence( StatusType.ONLINE );
         LOG.info( "Changed bot presence to online." );
         
     }
@@ -305,7 +307,7 @@ public class Bot {
      */
     public void setStreaming( String playingText, String url ) {
         
-        client.streaming( playingText, url );
+        client.changeStreamingPresence( StatusType.ONLINE, playingText, url );
         LOG.info( "Changed bot presence to streaming {} @ {}.", playingText, url );
         
     }
