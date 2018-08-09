@@ -17,21 +17,11 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.InvalidPropertiesFormatException;
-import java.util.Properties;
-
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.SaveManager.Saveable;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
@@ -44,12 +34,11 @@ import sx.blah.discord.handle.obj.IRole;
  * @author ThiagoTGM
  * @since 2017-09-13
  */
-public class AutoRoleManager implements Saveable {
+public class AutoRoleManager {
     
-    private static final Path PATH = Settings.DATA_PATH.resolve( "AutoRole.xml" );
     private static final Logger LOG = LoggerFactory.getLogger( AutoRoleManager.class );
     
-    private final Properties roles;
+    private final Map<String,String> roles;
     
     private static AutoRoleManager instance;
     
@@ -59,30 +48,8 @@ public class AutoRoleManager implements Saveable {
      */
     private AutoRoleManager() {
         
-        roles = new Properties();
-        
-        /* Open autorole file */
-        File file = PATH.toFile();
-        if ( !file.exists() ) {
-            LOG.info( "Autorole file not found. New one will be created." );
-            return;
-        }
-        
-        LOG.info( "Loading autorole data." );
-        
-        /* Load autorole file */
-        try {
-            FileInputStream input = new FileInputStream( PATH.toFile() );
-            roles.loadFromXML( input );
-            input.close();
-            LOG.debug( "Loaded autorole data." );
-        } catch ( FileNotFoundException e ) {
-            LOG.error( "Could not open autorole file.", e );
-        } catch ( InvalidPropertiesFormatException e ) {
-            LOG.error( "Autorole file has wrong format.", e );
-        } catch ( IOException e ) {
-            LOG.error( "Error reading autorole file.", e );
-        }
+    	LOG.info( "Initializing auto-role manager." );
+        roles = DatabaseManager.getDatabase().getDataMap( "AutoRole" );
         
     }
     
@@ -101,42 +68,6 @@ public class AutoRoleManager implements Saveable {
     }
     
     /**
-     * Saves the server/role pairs to the autorole file.
-     */
-    @Override
-    public synchronized void save() {
-        
-        LOG.info( "Saving Auto-role data..." );
-        
-        Path folders = PATH.getParent();
-        if ( folders != null ) { // Ensure folders exist.
-            try {
-                Files.createDirectories( folders );
-            } catch ( IOException e ) {
-                LOG.error( "Failed to create blacklist file directories.", e );
-                return;
-            }
-        }
-        
-        /* Save to file */
-        try {
-            FileOutputStream output = new FileOutputStream( PATH.toFile() );
-            roles.storeToXML( output, "Pairs of servers and the roles set for new users," +
-                    " by their IDs. key = server ID, value = role ID." );
-            output.close();
-        } catch ( FileNotFoundException e ) {
-            LOG.error( "Could not open autorole file for writing.", e );
-            return;
-        } catch ( IOException e ) {
-            LOG.error( "Error writing to autorole file.", e );
-            return;
-        }
-        
-        LOG.debug( "Saved." );
-        
-    }
-    
-    /**
      * Sets a role to autoset in a guild.
      *
      * @param guild Guild where the autorole should be set.
@@ -144,7 +75,8 @@ public class AutoRoleManager implements Saveable {
      */
     public void set( IGuild guild, IRole role ) {
         
-        roles.setProperty( guild.getStringID(), role.getStringID() );
+    	LOG.debug( "Set auto-role in guild '{}' to '{}'.", guild.getName(), role.getName() );
+        roles.put( guild.getStringID(), role.getStringID() );
         
     }
     
@@ -157,7 +89,7 @@ public class AutoRoleManager implements Saveable {
      */
     public IRole get( IGuild guild ) {
         
-        String roleID = roles.getProperty( guild.getStringID() );
+        String roleID = roles.get( guild.getStringID() );
         return ( roleID != null ) ? guild.getRoleByID( Long.valueOf( roleID ) ) : null;
         
     }
@@ -171,6 +103,7 @@ public class AutoRoleManager implements Saveable {
      */
     public boolean remove( IGuild guild ) {
         
+    	LOG.debug( "Removed auto-role in guild '{}'.", guild.getName() );
         return roles.remove( guild.getStringID() ) != null;
         
     }

@@ -18,7 +18,6 @@
 package com.github.thiagotgm.blakebot.module.admin;
 
 import com.github.thiagotgm.blakebot.common.LogoutManager;
-import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;
@@ -38,7 +37,6 @@ public class AdminModule implements IModule {
     IDiscordClient client;
     private Blacklist blacklist;
     private BlacklistEnforcer enforcer;
-    private AutoRoleManager autoRole;
     private AutoRoleHandler roleHandler;
     
     
@@ -55,9 +53,6 @@ public class AdminModule implements IModule {
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
         client = null; // Remove client.
-        
-        SaveManager.unregisterListener( autoRole );
-        autoRole.save(); // Disables and saves autorole.
 
     }
 
@@ -67,8 +62,7 @@ public class AdminModule implements IModule {
         client = arg0; // Store client.
         
         blacklist = Blacklist.getInstance( arg0 ); // Get blacklist.
-        autoRole = AutoRoleManager.getInstance(); // Get autorole manager.
-        SaveManager.registerListener( autoRole );
+        AutoRoleManager.getInstance(); // Start autorole manager.
         
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry ); // Register commands.
