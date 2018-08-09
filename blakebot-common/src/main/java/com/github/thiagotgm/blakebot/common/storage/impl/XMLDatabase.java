@@ -113,11 +113,11 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 		
 		LOG.info( "Closing database." );
 		
-		closed = true;
-		
 		SaveManager.unregisterListener( this ); // Unregister for autosave events.
 
 		save(); // Save state.
+		
+		closed = true;
 		
 	}
 	
@@ -142,7 +142,9 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 	 */
 	private XMLEntry load( String dataName, XMLElement element ) throws DatabaseException {
 		
-		File file = path.resolve( dataName + ".xml" ).toFile();
+		String filename = dataName + ".xml";
+		LOG.debug( "Loading file {}.", filename );
+		File file = path.resolve( filename ).toFile();
 		if ( file.exists() ) {
 			FileInputStream in;
 			try {
@@ -200,9 +202,13 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 			return; // Already closed, abort.
 		}
 		
+		LOG.info( "Saving database files." );
+		
 		for ( XMLEntry data : storage ) { // Save each storage element.
 			
-			File file = path.resolve( data.getName() + ".xml" ).toFile();
+			String filename = data.getName() + ".xml";
+			LOG.debug( "Saving file {}.", filename );
+			File file = path.resolve( filename ).toFile();
 			try {
 				FileOutputStream out = new FileOutputStream( file );
 				Utils.writeXMLDocument( out, data.getElement() );
