@@ -25,7 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.blakebot.common.storage.Cache;
 import com.github.thiagotgm.blakebot.common.storage.Database;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseStats;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 
@@ -43,12 +46,22 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * so that they will automatically stop working after {@link #closed}
  * is set to <tt>true</tt> (all operations will then throw an
  * {@link IllegalStateException}).
+ * <p>
+ * The tree and map wrappers also automatically provide buffering for the
+ * get() operation, using the cache size specified by the settings at
+ * start time (if the size is changed, it will not take effect until the
+ * next time the program is started). No other operations are buffered,
+ * although subclasses are free to use their own internal caches for
+ * other operations.
  * 
  * @version 1.0
  * @author ThiagoTGM
  * @since 2018-07-26
+ * @see Cache
  */
 public abstract class AbstractDatabase implements Database {
+	
+	private static final int CACHE_SIZE = Settings.getIntSetting( "Cache size" );
 	
 	/**
 	 * Trees currently managed by the database.
@@ -680,8 +693,6 @@ public abstract class AbstractDatabase implements Database {
 	/* 
 	 * Wrappers for trees and maps that provides common functionality, such as checking if
 	 * the database is open and caching data.
-	 * 
-	 * TODO: Caching data.
 	 */
 	
 	/**
@@ -690,8 +701,6 @@ public abstract class AbstractDatabase implements Database {
 	 * When a call is made to the tree, it checks if the database is already closed. If
 	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
 	 * through to the backing tree.
-	 * 
-	 * TODO: Buffering
 	 * 
 	 * @version 1.0
 	 * @author ThiagoTGM
@@ -702,6 +711,7 @@ public abstract class AbstractDatabase implements Database {
 	private class DatabaseTree<K,V> implements Tree<K,V> {
 		
 		private final Tree<K,V> backing;
+		private final Cache<List<K>,V> cache;
 		
 		/**
 		 * Instantiates a tree backed by the given database tree.
@@ -711,6 +721,7 @@ public abstract class AbstractDatabase implements Database {
 		public DatabaseTree( Tree<K,V> backing ) {
 			
 			this.backing = backing;
+			this.cache = new Cache<>( CACHE_SIZE );
 			
 		}
 		
@@ -743,12 +754,31 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return backing.get( path );
+			V value = cache.get( path ); // Look in cache.
+			
+			if ( value == null ) { // Not in cache.
+				DatabaseStats.addCacheMiss();
+				
+				long start = System.currentTimeMillis();
+				value = backing.get( path ); // Look in database.
+				long elapsed = System.currentTimeMillis() - start;
+				
+				if ( value == null ) { // Not in database (fetch fail).
+					DatabaseStats.addDbFetchFailure( elapsed );
+				} else { // In database (fetch success).
+					DatabaseStats.addDbFetchSuccess( elapsed );
+					cache.put( path, value ); // Cache found value.
+				}
+			} else { // Found in cache.
+				DatabaseStats.addCacheHit();
+			}
+			
+			return value;
 			
 		}
 
 		@Override
-		public List<V> getAll(List<K> path) throws IllegalArgumentException {
+		public List<V> getAll( List<K> path ) throws IllegalArgumentException {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
@@ -765,6 +795,8 @@ public abstract class AbstractDatabase implements Database {
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
+			
+			cache.remove( path ); // Remove previously cached value, if any.
 			
 			return backing.set( value, path );
 			
@@ -788,6 +820,8 @@ public abstract class AbstractDatabase implements Database {
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
+			
+			cache.remove( path ); // Remove previously cached value, if any.
 			
 			return backing.remove( path );
 			
@@ -890,8 +924,6 @@ public abstract class AbstractDatabase implements Database {
 	 * it is, the call fails with a {@link IllegalStateException}. Else, the call is passed
 	 * through to the backing map.
 	 * 
-	 * TODO: Buffering
-	 * 
 	 * @version 1.0
 	 * @author ThiagoTGM
 	 * @since 2018-07-27
@@ -901,6 +933,7 @@ public abstract class AbstractDatabase implements Database {
 	private class DatabaseMap<K,V> implements Map<K,V> {
 		
 		private final Map<K,V> backing;
+		private final Cache<K,V> cache;
 		
 		/**
 		 * Instantiates a map backed by the given database map.
@@ -910,6 +943,7 @@ public abstract class AbstractDatabase implements Database {
 		public DatabaseMap( Map<K,V> backing ) {
 			
 			this.backing = backing;
+			this.cache = new Cache<>( CACHE_SIZE );
 			
 		}
 
@@ -964,7 +998,28 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return backing.get( key );
+			V value = cache.get( key ); // Look in cache.
+			
+			if ( value == null ) { // Not in cache.
+				DatabaseStats.addCacheMiss();
+				
+				long start = System.currentTimeMillis();
+				value = backing.get( key ); // Look in database.
+				long elapsed = System.currentTimeMillis() - start;
+				
+				if ( value == null ) { // Not in database (fetch fail).
+					DatabaseStats.addDbFetchFailure( elapsed );
+				} else { // In database (fetch success).
+					DatabaseStats.addDbFetchSuccess( elapsed );
+					@SuppressWarnings("unchecked")
+					K theKey = (K) key;
+					cache.put( theKey, value ); // Cache found value.
+				}
+			} else { // Found in cache.
+				DatabaseStats.addCacheHit();
+			}
+			
+			return value;
 			
 		}
 
@@ -974,6 +1029,8 @@ public abstract class AbstractDatabase implements Database {
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
+			
+			cache.remove( key ); // Remove previously cached value, if any.
 			
 			return backing.put( key, value );
 			
@@ -986,12 +1043,14 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
+			cache.remove( key ); // Remove previously cached value, if any.
+			
 			return backing.remove( key );
 			
 		}
 
 		@Override
-		public void putAll(Map<? extends K, ? extends V> m) {
+		public void putAll( Map<? extends K, ? extends V> m ) {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );

@@ -10,4 +10,5 @@
 <entry key="Log downtimes">false</entry> <!-- Whether to log downtimes -->
 <entry key="Log connection events">false</entry> <!-- Whether to connection events -->
 <entry key="Prefix">b$</entry> <!-- Default prefix for all commands -->
+<entry key="Cache size">100</entry> <!-- Size of the database caches -->
 </properties>

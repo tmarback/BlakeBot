@@ -25,6 +25,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * Note: A "successful" database fetch is when a value mapped to the desired key
  * is found, while a "failed" fetch is when a value is not found (but the fetch was
  * still executed successfully). Does not include cache operations.
+ * <p>
+ * Does not count operations other than a "get" (so operations like containsKey
+ * would not be counted).
  * 
  * @version 1.0
  * @author ThiagoTGM
