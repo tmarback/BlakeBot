@@ -38,6 +38,19 @@ import javax.xml.stream.XMLStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sx.blah.discord.handle.obj.ICategory;
+import sx.blah.discord.handle.obj.IChannel;
+import sx.blah.discord.handle.obj.IEmoji;
+import sx.blah.discord.handle.obj.IGuild;
+import sx.blah.discord.handle.obj.IIDLinkedObject;
+import sx.blah.discord.handle.obj.IMessage;
+import sx.blah.discord.handle.obj.IPrivateChannel;
+import sx.blah.discord.handle.obj.IRole;
+import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.handle.obj.IVoiceChannel;
+import sx.blah.discord.handle.obj.IVoiceState;
+import sx.blah.discord.handle.obj.IWebhook;
+
 /**
  * General purpose utilities.
  *
@@ -368,6 +381,76 @@ public abstract class Utils {
         
         return readXMLDocument( in, content, DEFAULT_ENCODING );
         
+    }
+    
+    /* General purpose stuff */
+    
+    /**
+     * Creates a string that represents the given object, using the type
+     * of the object (user, guild, channel, etc) and its ID.
+     * 
+     * @param obj The object to get an ID string for.
+     * @return The ID string.
+     */
+    public static String idString( IIDLinkedObject obj ) {
+    	
+    	StringBuilder builder = new StringBuilder();
+    	
+    	// Add identifier for object type.
+    	if ( obj instanceof ICategory ) {
+    		builder.append( "category" );
+    	} else if ( obj instanceof IPrivateChannel ) {
+    		builder.append( "privateChannel" );
+    	} else if ( obj instanceof IVoiceChannel ) {
+    		builder.append( "voiceChannel" );
+    	} else if ( obj instanceof IChannel ) {
+    		builder.append( "channel" );
+    	} else if ( obj instanceof IEmoji ) {
+    		builder.append( "emoji" );
+    	} else if ( obj instanceof IGuild ) {
+    		builder.append( "guild" );
+    	} else if ( obj instanceof IMessage ) {
+    		builder.append( "message" );
+    	} else if ( obj instanceof IRole ) {
+    		builder.append( "role" );
+    	} else if ( obj instanceof IUser ) {
+    		builder.append( "user" );
+    	} else if ( obj instanceof IVoiceState ) {
+    		builder.append( "voiceState" );
+    	} else if ( obj instanceof IWebhook ) {
+    		builder.append( "webhook" );
+    	} else {
+    		builder.append( '?' );
+    	}
+    	
+    	builder.append( '#' ); // Add separator.
+    	
+    	builder.append( obj.getStringID() ); // Add ID.
+    	
+    	return builder.toString();
+    	
+    }
+    
+    /**
+     * Creates ID strings for an array of objects.
+     * 
+     * @param arr The array of objects to get ID strings for.
+     * @param <T> The type of the objects in the array.
+     * @return The array with the ID strings for each object.
+     * @see #idString(IIDLinkedObject)
+     */
+    public static <T extends IIDLinkedObject> String[] idString( T[] arr ) {
+    	
+    	String[] newArr = new String[arr.length];
+    	
+    	for ( int i = 0; i < arr.length; i++ ) {
+    		
+    		newArr[i] = idString( arr[i] ); // Get id string for each element.
+    		
+    	}
+    	
+    	return newArr;
+    	
     }
 
 }
