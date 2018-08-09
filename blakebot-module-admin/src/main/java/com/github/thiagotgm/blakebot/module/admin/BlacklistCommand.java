@@ -37,6 +37,7 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SuccessHandler;
 
+import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
@@ -168,7 +169,7 @@ public class BlacklistCommand {
                 entryType = Restriction.Type.CONTENT;
             
         }
-        return new Arguments( context.getArguments(), entryType );
+        return new Arguments( context.getGuild(), context.getArguments(), entryType );
         
     }
     
@@ -213,9 +214,9 @@ public class BlacklistCommand {
         for ( IUser user : users ) {
             // Apply to users.
             if ( userOperation.test( user, entry ) ) {
-                successes.add( user.mention() );
+                successes.add( String.format( "**%s** (user)", user.getName() ) );
             } else {
-                failures.add( user.mention() );
+                failures.add( String.format( "**%s** (user)", user.getName() ) );
             }
             
         }
@@ -223,9 +224,9 @@ public class BlacklistCommand {
         for ( IRole role : roles ) {
             // Apply to roles.
             if ( roleOperation.test( role, entry ) ) {
-                successes.add( role.mention() );
+                successes.add( String.format( "**%s** (role)", role.getName() ) );
             } else {
-                failures.add( role.mention() );
+                failures.add( String.format( "**%s** (role)", role.getName() ) );
             }
             
         }
@@ -265,8 +266,14 @@ public class BlacklistCommand {
                     + "content anywhere in each message. Modifiers can be used to make the "
                     + "entries be treated as words/expressions (must be surrounded by spaces) "
                     + "or a regex expression. With exception of when the regex modifier is used, "
-                    + "entries are case insensitive.",
-            usage = "{}blacklist|bl [server] add [modifier] [user/role]... <entry> [entry]...",
+                    + "entries are case insensitive.\n\nUsers and roles may be specified either "
+                    + "through a mention or through their name (nicknames count). If there are "
+                    + "multiple users and/or roles with a given name, they will all be included."
+                    + "\n\nThe first argument that is not a role or user (either mentioned or named) "
+                    + "is assumed to be the first entry. However, if the '--' argument it used, all "
+                    + "arguments following it are treated as entries, even if the first few ones can "
+                    + "also be interpreted as users or roles ('--' itself is not included as an entry).",
+            usage = "{}blacklist|bl [server] add [modifier] [user/role]... [--] <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
@@ -353,8 +360,14 @@ public class BlacklistCommand {
             name = REMOVE_NAME,
             aliases = { "remove", "rm" },
             description = "Removes a blacklist entry.\nThe modifier must match the modifier used "
-                    + "to add the entry, if any.",
-            usage = "{}blacklist|bl [server] remove|rm [modifier] [user/role]... <entry> [entry]...",
+                    + "to add the entry, if any.\n\nUsers and roles may be specified either through "
+                    + "a mention or through their name (nicknames count). If there are multiple users "
+                    + "and/or roles with a given name, they will all be included.\n\nThe first argument "
+                    + "that is not a role or user (either mentioned or named) is assumed to be the first "
+                    + "entry. However, if the '--' argument it used, all arguments following it are treated "
+                    + "as entries, even if the first few ones can also be interpreted as users or roles ('--' "
+                    + "itself is not included as an entry).",
+            usage = "{}blacklist|bl [server] remove|rm [modifier] [user/role]... [--] <entry> [entry]...",
             ignorePrivate = true,
             executeParent = true,
             successHandler = SUCCESS_HANDLER,
@@ -456,7 +469,9 @@ public class BlacklistCommand {
     @SubCommand(
             name = LIST_NAME,
             aliases = "list",
-            description = "Lists blacklist entries.",
+            description = "Lists blacklist entries.\n\nUsers and roles may be specified either "
+            		+ "through a mention or through their name (nicknames count). If there are "
+            		+ "multiple users and/or roles with a given name, they will all be included.",
             usage = "{}blacklist|bl [server] list [user/role]...",
             ignorePrivate = true,
             executeParent = true,
@@ -467,8 +482,8 @@ public class BlacklistCommand {
         Scope scope = (Scope) context.getHelper().get();
         EmbedBuilder builder = new EmbedBuilder();
         
-        List<Argument> args = context.getArguments();
-        if ( args.isEmpty() ) { // Scope-wide.
+        Arguments args = parseArgs( context );
+        if ( args.getUsers().isEmpty() && args.getRoles().isEmpty() ) { // Scope-wide.
             String text = null;
             Set<Restriction> restrictions = null;
             switch ( scope ) {
@@ -523,29 +538,19 @@ public class BlacklistCommand {
             }
             builder.withDescription( String.format( "In this %s:", text ) );
             
-            for ( Argument arg : args ) { // Shows restrictions for each mention.
+            for ( IUser user : args.getUsers() ) { // Shows restrictions for each user.
                 
-                String name;
-                Set<Restriction> restrictions;
-                switch ( arg.getType() ) {
-                    
-                    case USER_MENTION:
-                        IUser user = (IUser) arg.getArgument();
-                        name = user.getDisplayName( context.getGuild() );
-                        restrictions = userGetter.apply( user );
-                        break;
-                        
-                    case ROLE_MENTION:
-                        IRole role = (IRole) arg.getArgument();
-                        name = role.getName();
-                        restrictions = roleGetter.apply( role );
-                        break;
-                        
-                    default: // Ignore non-mentions.
-                        continue;
-                    
-                }
-                builder.appendField( "Blacklist for " + name,
+                String name = user.getDisplayName( context.getGuild() );
+                Set<Restriction> restrictions = userGetter.apply( user );
+                builder.appendField( "Blacklist for user **" + name + "**",
+                        formatRestrictions( restrictions ), false );
+                
+            }
+            for ( IRole role : args.getRoles() ) { // Shows restrictions for each role.
+                
+                String name = role.getName();
+                Set<Restriction> restrictions = roleGetter.apply( role );
+                builder.appendField( "Blacklist for role **" + name + "**",
                         formatRestrictions( restrictions ), false );
                 
             }
@@ -605,10 +610,11 @@ public class BlacklistCommand {
          * Parses the arguments given to the command, splitting into
          * mentioned users and roles and all text that came after.
          *
+         * @param guild The guild were the command was executed.
          * @param args The arguments received by the command.
          * @param restrictionType The type of restrictions being used.
          */
-        public Arguments( List<Argument> args, Restriction.Type restrictionType ) {
+        public Arguments( IGuild guild, List<Argument> args, Restriction.Type restrictionType ) {
             
             /* Parse the target users and roles */
             List<IUser> users = new LinkedList<>();
@@ -617,6 +623,10 @@ public class BlacklistCommand {
             mentionParser: while ( curr < args.size() ) {
                 
                 Argument argument = args.get( curr );
+                if ( argument.getText().equals( "--" ) ) {
+                	curr++; // Skip break argument.
+                	break; // End role/user reading.
+                }
                 switch ( argument.getType() ) {
                     
                     case USER_MENTION:
@@ -627,8 +637,14 @@ public class BlacklistCommand {
                         roles.add( (IRole) argument.getArgument() );
                         break;
                         
-                    default: // Found first non-mention arg.
-                        break mentionParser;
+                    default:
+                    	List<IUser> namedUsers = guild.getUsersByName( argument.getText() );
+                    	users.addAll( namedUsers );
+                    	List<IRole> namedRoles = guild.getRolesByName( argument.getText() );
+                    	roles.addAll( namedRoles );
+                    	if ( namedUsers.isEmpty() && namedRoles.isEmpty() ) {
+                    		break mentionParser; // Found first arg that is not user or role.
+                    	}
                     
                 }
                 curr++;
