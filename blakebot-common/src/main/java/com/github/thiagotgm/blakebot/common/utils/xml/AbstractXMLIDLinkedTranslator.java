@@ -30,6 +30,8 @@ import sx.blah.discord.handle.obj.IIDLinkedObject;
 
 /**
  * Shared implementation for translators for objects with a Discord ID.
+ * <p>
+ * Note: Translators based on this can only be used when the client is connected.
  *
  * @version 1.0
  * @author ThiagoTGM

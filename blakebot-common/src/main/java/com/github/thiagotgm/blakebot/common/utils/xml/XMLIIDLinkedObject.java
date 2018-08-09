@@ -37,6 +37,8 @@ import sx.blah.discord.handle.obj.IIDLinkedObject;
  * XML translator for <tt>IIDLinkedObject</tt>s. The actual reading and writing is
  * delegated to a translator of the IIDLinkedObject subtype, so the supported
  * IIDLinkedObjects are the ones that have their own XML wrappers.
+ * <p>
+ * Note: Can only be used when the client is connected.
  *
  * @version 2.0
  * @author ThiagoTGM
