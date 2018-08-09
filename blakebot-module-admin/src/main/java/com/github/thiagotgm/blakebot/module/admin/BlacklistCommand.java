@@ -71,12 +71,10 @@ public class BlacklistCommand {
     
     /**
      * Constructs a new instance of the command.
-     * 
-     * @param blacklist The blacklist to manage.
      */
-    public BlacklistCommand( Blacklist blacklist ) {
+    public BlacklistCommand() {
         
-        this.blacklist = blacklist;
+        this.blacklist = Blacklist.getInstance();
         
     }
     

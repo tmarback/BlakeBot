@@ -57,12 +57,10 @@ public class BlacklistEnforcer {
     
     /**
      * Constructs a new enforcer.
-     * 
-     * @param blacklist The blacklist to be enforced.
      */
-    public BlacklistEnforcer( Blacklist blacklist ) {
+    public BlacklistEnforcer() {
         
-        this.blacklist = blacklist;
+        this.blacklist = Blacklist.getInstance();
         
     }
     

@@ -35,7 +35,6 @@ public class AdminModule implements IModule {
     private static final String MODULE_NAME = "Admin";
     
     IDiscordClient client;
-    private Blacklist blacklist;
     private BlacklistEnforcer enforcer;
     private AutoRoleHandler roleHandler;
     
@@ -61,14 +60,11 @@ public class AdminModule implements IModule {
 
         client = arg0; // Store client.
         
-        blacklist = Blacklist.getInstance( arg0 ); // Get blacklist.
-        AutoRoleManager.getInstance(); // Start autorole manager.
-        
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry ); // Register commands.
         
         EventDispatcher dispatcher = client.getDispatcher();
-        enforcer = new BlacklistEnforcer( blacklist ); // Make blacklist enforcer.
+        enforcer = new BlacklistEnforcer(); // Make blacklist enforcer.
         dispatcher.registerListener( enforcer );
         roleHandler = new AutoRoleHandler(); // Make autorole handler.
         dispatcher.registerListener( roleHandler );
@@ -87,7 +83,7 @@ public class AdminModule implements IModule {
      */
     private void registerCommands( CommandRegistry registry ) {
         
-        registry.registerAnnotatedCommands( new BlacklistCommand( blacklist ) );
+        registry.registerAnnotatedCommands( new BlacklistCommand() );
         registry.registerAnnotatedCommands( new TimeoutCommand() );
         registry.registerAnnotatedCommands( new AutoRoleCommand() );
         

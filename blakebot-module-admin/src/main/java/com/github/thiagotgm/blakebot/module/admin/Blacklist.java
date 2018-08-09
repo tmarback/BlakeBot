@@ -17,11 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -40,7 +37,6 @@ import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.common.utils.XMLElement;
 import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
-import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IIDLinkedObject;
@@ -61,13 +57,7 @@ public class Blacklist {
     
     private static final Logger LOG = LoggerFactory.getLogger( Blacklist.class );
     
-    private static Map<IDiscordClient, Blacklist> instances;
-    
-    static {
-
-        instances = Collections.synchronizedMap( new HashMap<>() );
-        
-    }
+    private static Blacklist instance;
     
     private final Tree<String,Set<Restriction>> blacklist;
     
@@ -77,7 +67,7 @@ public class Blacklist {
      * @param client The client to be used to obtain ID-linked objects from their IDs.
      */
     @SuppressWarnings("unchecked")
-	protected Blacklist( IDiscordClient client ) {
+	protected Blacklist() {
         
     	LOG.info( "Starting blacklist." );
         this.blacklist = DatabaseManager.getDatabase().getValueTranslatedDataTree( "Blacklist",
@@ -87,22 +77,18 @@ public class Blacklist {
         					return new Restriction();
         					
         				}) ) );
-        client.getDispatcher().registerTemporaryListener( this );
         
     }
     
     /**
-     * Returns the instance for a given client. If there isn't one, creates it.
+     * Returns the running instance. If there isn't one, creates it.
      *
-     * @param client The client to get the instance for.
-     * @return The Blacklist instance.
+     * @return The currently running instance.
      */
-    public static Blacklist getInstance( IDiscordClient client ) {
+    public static Blacklist getInstance() {
         
-        Blacklist instance = instances.get( client );
         if ( instance == null ) {
-            instance = new Blacklist( client );
-            instances.put( client, instance );
+            instance = new Blacklist();
         }
         return instance;
         
