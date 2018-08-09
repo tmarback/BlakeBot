@@ -53,6 +53,15 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * If a method in the returned trees or maps is called, but some internal error in the
  * database prevents it from being executed properly, a {@link DatabaseException} is
  * thrown.
+ * <p>
+ * <b>NOTE:</b> For the trees and maps obtained from this database, whenever an operation is called
+ * that changes a value (such as {@link Map#put(Object,V)}, {@link Tree#add(V,List)}, etc),
+ * it is only guaranteed that the <i>current</i> state of the value will be stored. If the
+ * value is an object and it is later modified, the value in the database may or may not
+ * change to reflect it. As such, it is recommended to set/put the value in the database again
+ * every time it changes, and to store a copy if the stored value is not supposed to change with
+ * it.<br>
+ * This includes operations in the Set and Collection views.
  * 
  * @version 1.0
  * @author ThiagoTGM
