@@ -25,8 +25,10 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
 import org.junit.Test;
 
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLInteger;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTreeGraph;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLInteger;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
 
 /**
  * Unit tests for {@link XMLTreeGraph}.

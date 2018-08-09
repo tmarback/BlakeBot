@@ -44,13 +44,13 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.blakebot.common.SaveManager.Saveable;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTreeGraph;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLMap;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-import com.github.thiagotgm.blakebot.common.utils.XMLTranslator;
-import com.github.thiagotgm.blakebot.common.utils.XMLTreeGraph;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLMap;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
 
 /**
  * Database that saves data in local XML files.

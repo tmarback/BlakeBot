@@ -30,8 +30,8 @@ import javax.xml.stream.XMLStreamException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLCollection;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLCollection;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
 
 /**
  * Unit tests for {@link XMLCollection}.

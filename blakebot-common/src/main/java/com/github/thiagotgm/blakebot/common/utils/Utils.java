@@ -38,6 +38,9 @@ import javax.xml.stream.XMLStreamWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
+
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IEmoji;

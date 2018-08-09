@@ -19,15 +19,15 @@ package com.github.thiagotgm.blakebot.common.utils;
 
 import org.junit.Test;
 
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLBoolean;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLByte;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLDouble;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLFloat;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLInteger;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLLong;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLShort;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLString;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLTextData;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLBoolean;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLByte;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLDouble;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLFloat;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLInteger;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLLong;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLShort;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLTextData;
 
 import static org.junit.Assert.*;
 

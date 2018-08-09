@@ -32,10 +32,10 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.translate.XMLTranslator;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLSet;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
-import com.github.thiagotgm.blakebot.common.utils.XMLElement;
-import com.github.thiagotgm.blakebot.common.utils.xml.XMLSet;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;

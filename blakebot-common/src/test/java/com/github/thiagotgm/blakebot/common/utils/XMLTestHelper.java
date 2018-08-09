@@ -25,6 +25,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
+
 import javax.xml.stream.XMLStreamReader;
 
 /**

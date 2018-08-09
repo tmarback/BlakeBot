@@ -43,7 +43,7 @@ public class XMLTranslator<T> implements Translator<T> {
      */
     public static final String DEFAULT_ENCODING = "UTF-8";
 	
-	private final com.github.thiagotgm.blakebot.common.utils.XMLTranslator<T> translator;
+	private final com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator<T> translator;
 	private final String encoding;
 
 	/**
@@ -52,7 +52,7 @@ public class XMLTranslator<T> implements Translator<T> {
 	 * @param translator The translator to convert from object to XML.
 	 * @param encoding The charset to use.
 	 */
-	public XMLTranslator( com.github.thiagotgm.blakebot.common.utils.XMLTranslator<T> translator,
+	public XMLTranslator( com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator<T> translator,
 			String encoding ) {
 		
 		this.translator = translator;
@@ -66,7 +66,7 @@ public class XMLTranslator<T> implements Translator<T> {
 	 * 
 	 * @param translator The translator to convert from object to XML.
 	 */
-	public XMLTranslator( com.github.thiagotgm.blakebot.common.utils.XMLTranslator<T> translator ) {
+	public XMLTranslator( com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator<T> translator ) {
 		
 		this( translator, DEFAULT_ENCODING );
 		
@@ -104,7 +104,7 @@ public class XMLTranslator<T> implements Translator<T> {
 	 * 
 	 * @return The backing translator.
 	 */
-	public com.github.thiagotgm.blakebot.common.utils.XMLTranslator<T> getXMLTranslator() {
+	public com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator<T> getXMLTranslator() {
 		
 		return translator;
 		
