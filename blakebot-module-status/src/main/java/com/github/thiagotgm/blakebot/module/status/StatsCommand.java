@@ -20,9 +20,11 @@ package com.github.thiagotgm.blakebot.module.status;
 import java.awt.Color;
 import java.util.concurrent.TimeUnit;
 
+import com.github.thiagotgm.blakebot.common.storage.DatabaseStats;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.CommandStats;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
+import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.util.EmbedBuilder;
@@ -37,14 +39,16 @@ import sx.blah.discord.util.EmbedBuilder;
 public class StatsCommand {
     
     private static final String NAME = "Bot Statistics";
+    private static final String DATABASE_NAME = "Database Statistics";
     
     @MainCommand(
             name = NAME,
             aliases = "stats",
             description = "Retrieves bot statistics.",
-            usage = "{}stats"
+            usage = "{}stats",
+            subCommands = DATABASE_NAME
     )
-    public void statusCommand( CommandContext context ) {
+    public void statsCommand( CommandContext context ) {
         
         /* Configure builder */
         EmbedBuilder embedBuilder = new EmbedBuilder();
@@ -80,6 +84,42 @@ public class StatsCommand {
         /* Sends status message */ 
         context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
         
+    }
+    
+    @SubCommand(
+            name = DATABASE_NAME,
+            aliases = { "database", "db" },
+            description = "Retrieves statistics about the bot's database.",
+            usage = "{}stats database|db"
+    )
+    public void advancedStatsCommand( CommandContext context ) {
+    	
+    	/* Configure builder */
+        EmbedBuilder embedBuilder = new EmbedBuilder();
+        embedBuilder.withColor( Color.RED );
+        
+        /* Cache stats */
+        long hits = DatabaseStats.getCacheHits();
+        long misses = DatabaseStats.getCacheMisses();
+        String hitRate;
+        if ( hits + misses > 0 ) {
+        	hitRate = String.format( "%.4f%%", ( 100.0 * hits ) / ( hits + misses ) );
+        } else {
+        	hitRate = "-";
+        }
+        embedBuilder.appendField( "Cache Hit Rate", hitRate, true );
+        
+        /* Fetch stats */
+        long avgSuccess = DatabaseStats.getAverageFetchSuccessTime();
+        embedBuilder.appendField( "Average Successful Fetch Time", ( avgSuccess == -1 ) ? 
+        		"-" : avgSuccess + "ms", true );
+        long avgFail = DatabaseStats.getAverageFetchFailTime();
+        embedBuilder.appendField( "Average Failed Fetch Time", ( avgFail == -1 ) ?
+        		"-" : avgFail + "ms", true );
+        
+        /* Sends status message */ 
+        context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
+    	
     }
 
 }
