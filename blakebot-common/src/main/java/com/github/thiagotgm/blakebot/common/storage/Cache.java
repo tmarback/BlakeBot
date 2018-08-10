@@ -72,8 +72,10 @@ public class Cache<K,V> {
 		CacheList.Node node = keyMap.get( key ); // Look for node.
 		if ( node != null ) { // Node found.
 			data.moveToFront( node ); // Move node to front.
+			return node.getValue();
+		} else { // Not found.
+			return null;
 		}
-		return node.getValue();
 		
 	}
 	
