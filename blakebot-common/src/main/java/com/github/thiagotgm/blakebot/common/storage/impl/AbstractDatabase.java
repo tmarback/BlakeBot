@@ -38,7 +38,9 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * <p>
  * Subclasses are expected to set {@link #loaded} to <tt>true</tt> upon
  * a successful execution of {@link #load(List)}, and to set
- * {@link #closed} to <tt>true</tt> when {@link #close()} is called.<br>
+ * {@link #closed} to <tt>true</tt> when {@link #close()} is called
+ * ({@link #loaded} should <b>not</b> be set back to <tt>false</tt> after
+ * {@link #close()} is called).<br>
  * All methods implemented here will check the value of those variables
  * to ensure proper database state, and trees and maps received from
  * {@link #newMap(String, Translator, Translator)} and

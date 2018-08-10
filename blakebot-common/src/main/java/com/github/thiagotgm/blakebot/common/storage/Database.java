@@ -21,6 +21,7 @@ import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Graph;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
@@ -360,55 +361,62 @@ public interface Database extends Closeable {
 	 * @throws IllegalStateException if either database hasn't been successfully loaded yet, was already
 	 *                               closed, or if this database has already created data trees or maps
 	 *                               for external use.
+	 * @throws DatabaseException if there was an error while copying the data. If this occurs, there is
+	 *                           no guarantee that this database will remain in a state where this method
+	 *                           can be attempted again.
 	 */
-	default void copyData( Database db ) throws IllegalStateException {
+	default void copyData( Database db ) throws IllegalStateException, DatabaseException {
 		
 		if ( size() != 0 ) {
 			throw new IllegalStateException( "This database already has trees or maps checked out." );
 		}
 		
-		/* Copy trees */
-		
-		Collection<TreeEntry<?,?>> trees;
 		try {
-			trees = db.getDataTrees();
-		} catch ( IllegalStateException e ) {
-			throw new IllegalStateException( "Could not obtain data trees.", e );
-		}
-		
-		for ( TreeEntry<?,?> tree : trees ) {
+			/* Copy trees */
 			
-			@SuppressWarnings("unchecked")
-			Tree<Object,Object> newTree = (Tree<Object,Object>) getTranslatedDataTree(
-					tree.getName(), tree.getKeyTranslator(), tree.getValueTranslator() );
-			for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
+			Collection<TreeEntry<?,?>> trees;
+			try {
+				trees = db.getDataTrees();
+			} catch ( IllegalStateException e ) {
+				throw new IllegalStateException( "Could not obtain data trees.", e );
+			}
+			
+			for ( TreeEntry<?,?> tree : trees ) {
 				
-				newTree.add( mapping.getValue(), mapping.getPath() );
+				@SuppressWarnings("unchecked")
+				Tree<Object,Object> newTree = (Tree<Object,Object>) getTranslatedDataTree(
+						tree.getName(), tree.getKeyTranslator(), tree.getValueTranslator() );
+				for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
+					
+					newTree.add( mapping.getValue(), mapping.getPath() );
+					
+				}
 				
 			}
 			
-		}
-		
-		/* Copy maps */
-		
-		Collection<MapEntry<?,?>> maps;
-		try {
-			maps = db.getDataMaps();
-		} catch ( IllegalStateException e ) {
-			throw new IllegalStateException( "Could not obtain data maps.", e );
-		}
-		
-		for ( MapEntry<?,?> map : maps ) {
+			/* Copy maps */
 			
-			@SuppressWarnings("unchecked")
-			Map<Object,Object> newMap = (Map<Object,Object>) getTranslatedDataMap(
-					map.getName(), map.getKeyTranslator(), map.getValueTranslator() );
-			for ( Map.Entry<?,?> mapping : map.getMap().entrySet() ) {
-				
-				newMap.put( mapping.getKey(), mapping.getValue() );
-				
+			Collection<MapEntry<?,?>> maps;
+			try {
+				maps = db.getDataMaps();
+			} catch ( IllegalStateException e ) {
+				throw new IllegalStateException( "Could not obtain data maps.", e );
 			}
 			
+			for ( MapEntry<?,?> map : maps ) {
+				
+				@SuppressWarnings("unchecked")
+				Map<Object,Object> newMap = (Map<Object,Object>) getTranslatedDataMap(
+						map.getName(), map.getKeyTranslator(), map.getValueTranslator() );
+				for ( Map.Entry<?,?> mapping : map.getMap().entrySet() ) {
+					
+					newMap.put( mapping.getKey(), mapping.getValue() );
+					
+				}
+				
+			}
+		} catch ( RuntimeException e ) {
+			throw new DatabaseException( "Could not copy database data.", e );
 		}
 		
 	}
