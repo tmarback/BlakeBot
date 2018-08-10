@@ -63,7 +63,8 @@ public class DatabaseStats {
 	/**
 	 * Records a successful fetch to the database.
 	 * 
-	 * @param time The time elapsed to perform the fetch operation.
+	 * @param time The time elapsed to perform the fetch operation,
+	 *             in milliseconds.
 	 */
 	public static synchronized void addDbFetchSuccess( long time ) {
 		
@@ -75,7 +76,8 @@ public class DatabaseStats {
 	/**
 	 * Records a failed fetch to the database.
 	 * 
-	 * @param time The time elapsed to perform the fetch operation.
+	 * @param time The time elapsed to perform the fetch operation,
+	 *             in milliseconds.
 	 */
 	public static synchronized void addDbFetchFailure( long time ) {
 		
@@ -109,22 +111,32 @@ public class DatabaseStats {
 	/**
 	 * Retrieves the average time of a successful database fetch so far.
 	 * 
-	 * @return The average time of a successful database fetch.
+	 * @return The average time of a successful database fetch, in milliseconds,
+	 *         or -1 if there have not been any successful fetches yet.
 	 */
 	public static synchronized long getAverageFetchSuccessTime() {
 		
-		return dbFetchSuccessTimeTotal.get() / dbFetchSuccesses.get();
+		if ( dbFetchSuccesses.get() > 0 ) { // At least one success.
+			return dbFetchSuccessTimeTotal.get() / dbFetchSuccesses.get();
+		} else {
+			return -1;
+		}
 		
 	}
 	
 	/**
 	 * Retrieves the average time of a failed database fetch so far.
 	 * 
-	 * @return The average time of a failed database fetch.
+	 * @return The average time of a failed database fetch, in milliseconds,
+	 *         or -1 if there have not been any failed fetches yet.
 	 */
 	public static synchronized long getAverageFetchFailTime() {
 		
-		return dbFetchFailTimeTotal.get() / dbFetchFailures.get();
+		if ( dbFetchFailures.get() > 0 ) { // At least one failure.
+			return dbFetchFailTimeTotal.get() / dbFetchFailures.get();
+		} else {
+			return -1;
+		}
 		
 	}
 
