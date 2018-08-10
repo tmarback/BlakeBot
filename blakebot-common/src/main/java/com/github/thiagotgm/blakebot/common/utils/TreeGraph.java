@@ -74,11 +74,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     protected int nMappings;
     
     /**
-     * How many mappings are stored in each level of this graph.
-     */
-    protected List<Integer> levelMappings;
-    
-    /**
      * Constructs a TreeGraph with an empty root (the root node exists, but is empty).<br>
      * Same as calling {@link #TreeGraph(Object) TreeGraph(V)} with argument <b>null</b>.
      */
@@ -86,7 +81,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
         this.root = new TreeNode();
         this.nMappings = 0;
-        levelMappings = new ArrayList<>();
         
     }
     
@@ -296,7 +290,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         V old = getOrCreateDescendant( path ).setValue( value );
         if ( old == null ) { // There wasn't a mapping to this path yet,
             nMappings++;     // so a new mapping was added.
-            levelMappings.set( path.size(), levelMappings.get( path.size() ) + 1 );
         }
         return old;
         
@@ -315,10 +308,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         node.setValue( value );
         nMappings++; // A mapping was added.
-        while ( levelMappings.size() <= path.size() ) {
-        	levelMappings.add( 0 ); // Ensure an element for every level.
-        }
-        levelMappings.set( path.size(), levelMappings.get( path.size() ) + 1 );
         return true;
         
     }
@@ -357,7 +346,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         }
         
         nMappings--; // A mapping was removed.
-        levelMappings.set( path.size(), levelMappings.get( path.size() ) - 1 );
         return value; // Retrieve deleted value.
         
     }
@@ -1148,44 +1136,11 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         
     }
     
-    /**
-     * Retrieves the amount of path-value mappings that are stored in the
-     * given level of this graph.
-     * <p>
-     * If the Graph being implemented does not have a concept of "level",
-     * returns the same value as {@link #size()}.
-     *
-     * @param level The level to get mappings for. The root is level 0.
-     * @return The amount of mappings in this graph.
-     */
-    public int size( int level ) {
-        
-        return levelMappings.size() > level ? levelMappings.get( level ) : 0;
-        
-    }
-    
-    /**
-     * Determines whether the given level in the graph is empty.
-     * <p>
-     * If the Graph being implemented does not have a concept of "level",
-     * returns the same value as {@link #isEmpty()}.
-     *
-     * @param level The level to check. The root is level 0.
-     * @return <tt>true</tt> if this map contains no path-value mappings.
-     *         <tt>false</tt> otherwise.
-     */
-    public boolean isEmpty( int level ) {
-        
-        return size( level ) == 0;
-        
-    }
-    
     @Override
     public void clear() {
         
         this.root = root.newInstance(); // Delete all nodes.
         this.nMappings = 0; // Reset counters.
-        this.levelMappings.clear();
         
     }
     
