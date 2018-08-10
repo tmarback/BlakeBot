@@ -311,10 +311,10 @@ public interface Database extends Closeable {
 	/**
 	 * Loads/connects the database using the given parameters.
 	 * 
-	 * @param params The parameters to load the database with. Each argument in the list must
-	 *               correspond to an argument named in the return of {@link #getLoadParams()}.
-	 *               This implies that it is necessary that
-	 *               <tt>params.size() == getLoadParams().size()</tt>.
+	 * @param args The arguments to load the database with. Each argument in the list must
+	 *             correspond to a parameter named in the return of {@link #getLoadParams()}.
+	 *             This implies that it is necessary that
+	 *             <tt>args.size() == getLoadParams().size()</tt>.
 	 * @return <tt>true</tt> if the database was successfully loaded.
 	 *         <tt>false</tt> if an error occurred (but all parameters were valid).
 	 * @throws IllegalStateException if the database was already loaded.
@@ -322,7 +322,7 @@ public interface Database extends Closeable {
 	 *                                  list returned by {@link #getLoadParams()}, or if one or more
 	 *                                  of the parameters given is invalid (e.g. wrong format, etc).
 	 */
-	boolean load( List<String> params ) throws IllegalStateException, IllegalArgumentException;
+	boolean load( List<String> args ) throws IllegalStateException, IllegalArgumentException;
 	
 	/**
 	 * Stops the database, preventing any further accesses or changes.

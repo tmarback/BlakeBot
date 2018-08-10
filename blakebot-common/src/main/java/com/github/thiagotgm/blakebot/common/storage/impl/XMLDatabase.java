@@ -85,19 +85,19 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 	}
 
 	@Override
-	public synchronized boolean load( List<String> params ) throws IllegalStateException, IllegalArgumentException {
+	public synchronized boolean load( List<String> args ) throws IllegalStateException, IllegalArgumentException {
 
 		if ( loaded ) {
 			throw new IllegalStateException( "Database is already loaded." );
 		}
 		
-		if ( params.size() != loadParams.size() ) {
+		if ( args.size() != loadParams.size() ) {
 			throw new IllegalStateException( "Parameter list size does not match expectation." );
 		}
 		
 		LOG.info( "Loading database." );
 		
-		path = Paths.get( params.get( 0 ) );
+		path = Paths.get( args.get( 0 ) );
 		
 		LOG.debug( "Requested path: {}", path );
 		
