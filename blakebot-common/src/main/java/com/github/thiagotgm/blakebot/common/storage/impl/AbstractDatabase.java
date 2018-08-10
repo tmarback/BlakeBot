@@ -756,9 +756,7 @@ public abstract class AbstractDatabase implements Database {
 			
 			V value = cache.get( path ); // Look in cache.
 			
-			if ( value == null ) { // Not in cache.
-				DatabaseStats.addCacheMiss();
-				
+			if ( value == null ) { // Not in cache.				
 				long start = System.currentTimeMillis();
 				value = backing.get( path ); // Look in database.
 				long elapsed = System.currentTimeMillis() - start;
@@ -767,6 +765,7 @@ public abstract class AbstractDatabase implements Database {
 					DatabaseStats.addDbFetchFailure( elapsed );
 				} else { // In database (fetch success).
 					DatabaseStats.addDbFetchSuccess( elapsed );
+					DatabaseStats.addCacheMiss(); // Value exists, just wasn't in cache.
 					cache.put( path, value ); // Cache found value.
 				}
 			} else { // Found in cache.
@@ -1000,9 +999,7 @@ public abstract class AbstractDatabase implements Database {
 			
 			V value = cache.get( key ); // Look in cache.
 			
-			if ( value == null ) { // Not in cache.
-				DatabaseStats.addCacheMiss();
-				
+			if ( value == null ) { // Not in cache.				
 				long start = System.currentTimeMillis();
 				value = backing.get( key ); // Look in database.
 				long elapsed = System.currentTimeMillis() - start;
@@ -1011,6 +1008,7 @@ public abstract class AbstractDatabase implements Database {
 					DatabaseStats.addDbFetchFailure( elapsed );
 				} else { // In database (fetch success).
 					DatabaseStats.addDbFetchSuccess( elapsed );
+					DatabaseStats.addCacheMiss(); // Value exists, just wasn't in cache.
 					@SuppressWarnings("unchecked")
 					K theKey = (K) key;
 					cache.put( theKey, value ); // Cache found value.
