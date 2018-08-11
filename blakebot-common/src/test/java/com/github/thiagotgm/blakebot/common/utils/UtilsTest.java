@@ -21,7 +21,9 @@ import static org.junit.Assert.*;
 
 import java.io.NotSerializableException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -126,6 +128,39 @@ public class UtilsTest {
         T decoded = Utils.decode( encoded );
         assertEquals( "Deserialized object not equal to original.", obj, decoded );
         
+    }
+    
+    @Test
+    public void testListEncode() {
+    	
+    	testListEncode( "This", "is", "a", "list" );
+    	testListEncode( "", "This", null, "has special", "", "strings", "" );
+    	testListEncode( "Some &", "special ; characters", "&amp&scln", "here", "&null" );
+    	
+    }
+    
+    /**
+     * Varargs version of {@link #testListEncode(List)}.
+     * 
+     * @param strings The strings to encode (as a list).
+     */
+    private void testListEncode( String... strings ) {
+    	
+    	testListEncode( Arrays.asList( strings ) );
+    	
+    }
+    
+    /**
+     * Attempts to encode then decode a list to a string, failing if the
+     * decoded list is not equal to the original.
+     *
+     * @param list The list to en/decode.
+     */
+    private void testListEncode( List<String> list ) {
+    	
+    	String encoded = Utils.encodeList( list );
+    	assertEquals( "Decoded list does not match.", list, Utils.decodeList( encoded ) );
+    	
     }
 
 }

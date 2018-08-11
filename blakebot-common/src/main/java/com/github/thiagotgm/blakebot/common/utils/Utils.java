@@ -26,7 +26,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -40,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
-
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IEmoji;
@@ -453,6 +455,67 @@ public abstract class Utils {
     	}
     	
     	return newArr;
+    	
+    }    
+    
+    private static final String SPECIAL_CHARACTER = "&";
+    private static final String SPECIAL_CHARACTER_MARKER = "&amp";
+    private static final String SEPARATOR = ";";
+    private static final String SEPARATOR_MARKER = "&scln";
+    private static final String EMPTY_MARKER = "&empty";
+    private static final String NULL_MARKER = "&null";
+    
+    /**
+     * Encodes a list of strings into a single string, that can later be decoded using
+     * {@link #decode(String)}.
+     * 
+     * @param list The list to be encoded.
+     * @return The encoded version of the list.
+     */
+    public static String encodeList( List<String> list ) {
+    	
+    	List<String> sanitized = new ArrayList<>( list.size() );
+    	for ( String elem : list ) { // Sanitize each element of the list.
+    		
+    		if ( elem == null ) { // Null element.
+    			sanitized.add( NULL_MARKER );
+    		} else if ( elem.isEmpty() ) { // Empty string.
+    			sanitized.add( EMPTY_MARKER );
+    		} else { // Regular string.
+	    		sanitized.add( elem
+	    				.replace( SPECIAL_CHARACTER, SPECIAL_CHARACTER_MARKER ) // Replace special char.
+	    				.replace( SEPARATOR, SEPARATOR_MARKER ) ); // Replace separator.
+    		}
+    		
+    	}
+    	return String.join( SEPARATOR, sanitized ); // Join sanitized strings.
+    	
+    }
+    
+    /**
+     * Decodes a string that represents a list, as encoded by {@link #encodeList(List)}.
+     * 
+     * @param str The encoded version of the list.
+     * @return The decoded list.
+     */
+    public static List<String> decodeList( String str ) {
+    	
+    	List<String> sanitized = Arrays.asList( str.split( SEPARATOR ) ); // Split sanitized strings.
+    	List<String> list = new ArrayList<>( sanitized.size() );
+    	for ( String elem : sanitized ) { // Un-sanitize each element.
+    		
+    		if ( elem.equals( NULL_MARKER ) ) { // Null element.
+    			list.add( null );
+    		} else if ( elem.equals( EMPTY_MARKER ) ) { // Empty string.
+    			list.add( "" );
+    		} else { // Regular string.
+    			list.add( elem
+    					.replace( SEPARATOR_MARKER, SEPARATOR ) // Restore separator.
+    					.replace( SPECIAL_CHARACTER_MARKER, SPECIAL_CHARACTER ) ); // Restore special char.
+    		}
+    		
+    	}
+    	return list;
     	
     }
 
