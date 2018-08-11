@@ -11,4 +11,6 @@
 <entry key="Log connection events">false</entry> <!-- Whether to connection events -->
 <entry key="Prefix">b$</entry> <!-- Default prefix for all commands -->
 <entry key="Cache size">100</entry> <!-- Size of the database caches -->
+<entry key="Database Service">XML</entry> <!-- Database provider to use -->
+<entry key="Database Args">data</entry> <!-- Arguments to initialize the database with -->
 </properties>
