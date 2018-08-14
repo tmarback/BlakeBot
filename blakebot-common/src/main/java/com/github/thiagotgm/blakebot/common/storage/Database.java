@@ -63,6 +63,10 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * every time it changes, and to store a copy if the stored value is not supposed to change with
  * it.<br>
  * This includes operations in the Set and Collection views.
+ * <p>
+ * <b>NOTE 2:</b> Due to the nature of some database types, using the Set and/or Collection
+ * views of trees and maps backed by a database, and in particular iterating over them, may
+ * cause massive performance penalties, and so should generally be avoided.
  * 
  * @version 1.0
  * @author ThiagoTGM

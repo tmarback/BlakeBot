@@ -150,6 +150,18 @@ public class Cache<K,V> {
 	}
 	
 	/**
+	 * Removes all mappings from the cache.
+	 * <p>
+	 * The cache will be empty after this.
+	 */
+	public synchronized void clear() {
+		
+		keyMap.clear();
+		data.clear();
+		
+	}
+	
+	/**
 	 * Customized version of a linked list that provides (limited) references to its internal nodes,
 	 * allowing access, removal and moving elements to the front in <tt>O(1)</tt> time when the node
 	 * is already known.
@@ -234,6 +246,15 @@ public class Cache<K,V> {
 			@SuppressWarnings("unchecked")
 			ListNode theNode = (ListNode) node;
 			theNode.move( head, head.getNext() ); // Move to front.
+			
+		}
+		
+		/**
+		 * Removes all nodes from the list.
+		 */
+		public synchronized void clear() {
+			
+			tail.place( head, null );
 			
 		}
 		

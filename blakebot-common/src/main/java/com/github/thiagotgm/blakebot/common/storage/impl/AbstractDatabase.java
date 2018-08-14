@@ -54,7 +54,10 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * start time (if the size is changed, it will not take effect until the
  * next time the program is started). No other operations are buffered,
  * although subclasses are free to use their own internal caches for
- * other operations.
+ * other operations.<br>
+ * OBS: Using operations in the Set views of wrapped maps and trees that
+ * change the associated map/tree will immediately invalidate the entire
+ * cache for that map/tree.
  * 
  * @version 1.0
  * @author ThiagoTGM
@@ -402,15 +405,22 @@ public abstract class AbstractDatabase implements Database {
 	private class DatabaseIterator<E> implements Iterator<E> {
 		
 		private final Iterator<E> backing;
+		private final Object changeMonitor;
+		private final Cache<?,?> cache;
 		
 		/**
 		 * Instantiates an iterator backed by the given database iterator.
 		 * 
 		 * @param backing The iterator that backs this.
+		 * @param changeMonitor The monitor to be synchronized under when performing
+		 *                      a change to the database.
+		 * @param cache The cache being used by the data.
 		 */
-		public DatabaseIterator( Iterator<E> backing ) {
+		public DatabaseIterator( Iterator<E> backing, Object changeMonitor, Cache<?,?> cache ) {
 			
 			this.backing = backing;
+			this.changeMonitor = changeMonitor;
+			this.cache = cache;
 			
 		}
 
@@ -443,7 +453,12 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			backing.remove();
+			synchronized ( changeMonitor ) {
+				
+				backing.remove();
+				cache.clear(); // Invalidate cache.
+				
+			}
 			
 		}
 		
@@ -486,15 +501,22 @@ public abstract class AbstractDatabase implements Database {
 	private class DatabaseCollection<E> implements Collection<E> {
 		
 		private final Collection<E> backing;
+		private final Object changeMonitor;
+		private final Cache<?,?> cache;
 		
 		/**
 		 * Instantiates a collection backed by the given database collection.
 		 * 
 		 * @param backing The collection that backs this.
+		 * @param changeMonitor The monitor to be synchronized under when performing
+		 *                      a change to the database.
+		 * @param cache The cache being used by the data.
 		 */
-		public DatabaseCollection( Collection<E> backing ) {
+		public DatabaseCollection( Collection<E> backing, Object changeMonitor, Cache<?,?> cache ) {
 			
 			this.backing = backing;
+			this.changeMonitor = changeMonitor;
+			this.cache = cache;
 			
 		}
 
@@ -538,7 +560,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseIterator<>( backing.iterator() );
+			return new DatabaseIterator<>( backing.iterator(), changeMonitor, cache );
 			
 		}
 
@@ -570,7 +592,7 @@ public abstract class AbstractDatabase implements Database {
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
-			
+		
 			return backing.add( e );
 			
 		}
@@ -582,7 +604,12 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return backing.remove( o );
+			synchronized ( changeMonitor ) {
+				
+				cache.clear(); // Invalidate cache.
+				return backing.remove( o );
+			
+			}
 			
 		}
 
@@ -615,7 +642,12 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return backing.removeAll( c );
+			synchronized ( changeMonitor ) {
+				
+				cache.clear(); // Invalidate cache.
+				return backing.removeAll( c );
+				
+			}
 			
 		}
 
@@ -626,7 +658,12 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return backing.retainAll( c );
+			synchronized ( changeMonitor ) {
+				
+				cache.clear(); // Invalidate cache.
+				return backing.retainAll( c );
+			
+			}
 			
 		}
 
@@ -637,7 +674,12 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			backing.clear();
+			synchronized ( changeMonitor ) {
+			
+				cache.clear(); // Invalidate cache.
+				backing.clear();
+			
+			}
 			
 		}
 		
@@ -683,10 +725,13 @@ public abstract class AbstractDatabase implements Database {
 		 * Instantiates a set backed by the given database set.
 		 * 
 		 * @param backing The set that backs this.
+		 * @param changeMonitor The monitor to be synchronized under when performing
+		 *                      a change to the database.
+		 * @param cache The cache being used by the data.
 		 */
-		public DatabaseSet( Set<E> backing ) {
+		public DatabaseSet( Set<E> backing, Object changeMonitor, Cache<?,?> cache ) {
 			
-			super( backing );
+			super( backing, changeMonitor, cache );
 			
 		}
 		
@@ -835,7 +880,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseSet<>( backing.pathSet() );
+			return new DatabaseSet<>( backing.pathSet(), this, cache );
 			
 		}
 
@@ -846,7 +891,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseCollection<>( backing.values() );
+			return new DatabaseCollection<>( backing.values(), this, cache );
 			
 		}
 
@@ -857,7 +902,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseSet<>( backing.entrySet() );
+			return new DatabaseSet<>( backing.entrySet(), this, cache );
 			
 		}
 
@@ -884,12 +929,13 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public void clear() {
+		public synchronized void clear() {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
+			cache.clear();
 			backing.clear();
 			
 		}
@@ -1050,10 +1096,17 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public void putAll( Map<? extends K, ? extends V> m ) {
+		public synchronized void putAll( Map<? extends K,? extends V> m ) {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
+			}
+			
+			for ( Map.Entry<? extends K,? extends V> entry : m.entrySet() ) {
+				
+				// Update previously cached value, if any.
+				cache.update( entry.getKey(), entry.getValue() );
+				
 			}
 			
 			backing.putAll( m );
@@ -1061,12 +1114,13 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public void clear() {
+		public synchronized void clear() {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
+			cache.clear();
 			backing.clear();
 			
 		}
@@ -1078,7 +1132,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseSet<>( backing.keySet() );
+			return new DatabaseSet<>( backing.keySet(), this, cache );
 			
 		}
 
@@ -1089,7 +1143,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseCollection<>( backing.values() );
+			return new DatabaseCollection<>( backing.values(), this, cache );
 			
 		}
 
@@ -1100,7 +1154,7 @@ public abstract class AbstractDatabase implements Database {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			return new DatabaseSet<>( backing.entrySet() );
+			return new DatabaseSet<>( backing.entrySet(), this, cache );
 			
 		}
 		
