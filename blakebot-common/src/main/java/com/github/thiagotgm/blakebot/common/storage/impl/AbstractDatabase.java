@@ -750,7 +750,7 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public V get( List<K> path ) throws IllegalArgumentException {
+		public synchronized V get( List<K> path ) throws IllegalArgumentException {
 			
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
@@ -790,14 +790,14 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public V set( V value, List<K> path )
+		public synchronized V set( V value, List<K> path )
 				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			cache.remove( path ); // Remove previously cached value, if any.
+			cache.update( path, value ); // Updates previously cached value, if any.
 			
 			return backing.set( value, path );
 			
@@ -816,7 +816,7 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public V remove( List<K> path ) throws UnsupportedOperationException, IllegalArgumentException {
+		public synchronized V remove( List<K> path ) throws UnsupportedOperationException, IllegalArgumentException {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
@@ -993,7 +993,7 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public V get( Object key ) {
+		public synchronized V get( Object key ) {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
@@ -1024,20 +1024,20 @@ public abstract class AbstractDatabase implements Database {
 		}
 
 		@Override
-		public V put( K key, V value ) {
+		public synchronized V put( K key, V value ) {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );
 			}
 			
-			cache.remove( key ); // Remove previously cached value, if any.
+			cache.update( key, value ); // Update previously cached value, if any.
 			
 			return backing.put( key, value );
 			
 		}
 
 		@Override
-		public V remove( Object key ) {
+		public synchronized V remove( Object key ) {
 
 			if ( closed ) {
 				throw new IllegalStateException( "The backing database is already closed." );

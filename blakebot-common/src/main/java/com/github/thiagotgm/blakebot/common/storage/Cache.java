@@ -106,6 +106,31 @@ public class Cache<K,V> {
 	}
 	
 	/**
+	 * Updates the value mapped to the given key. If there are no
+	 * values mapped to the key, does nothing.
+	 * <p>
+	 * This method does not change the LRU list, so the updated
+	 * mapping will be in the same position in the delete queue
+	 * as the previous mapping of the given key.
+	 * 
+	 * @param key The key of the mapping.
+	 * @param value The value of the mapping.
+	 * @return The value that was previously cached for the given key,
+	 *         or <tt>null</tt> if there wasn't one (implies that
+	 *         no changes were made).
+	 */
+	public synchronized V update( K key, V value ) {
+		
+		CacheList.Node node = keyMap.get( key ); // Look for node.
+		if ( node != null ) { // Already has a node for this key.
+			return node.setValue( value ); // Set new value.
+		} else { // No existing node.
+			return null;
+		}
+		
+	}
+	
+	/**
 	 * Removes from the cache the mapping that has the given key.
 	 * 
 	 * @param key The key of the mapping to remove.
