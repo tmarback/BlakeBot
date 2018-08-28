@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common.utils;
+package com.github.thiagotgm.blakebot.common.storage.xml;
 
 import static org.junit.Assert.assertEquals;
 
@@ -28,6 +28,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 import javax.xml.stream.XMLStreamReader;
 

@@ -15,10 +15,11 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common.utils;
+package com.github.thiagotgm.blakebot.common.storage.xml.translate;
 
 import org.junit.Test;
 
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTestHelper;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLBoolean;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLByte;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLDouble;

@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common.utils;
+package com.github.thiagotgm.blakebot.common.storage.xml.translate;
 
 import static org.junit.Assert.*;
 
@@ -30,8 +30,10 @@ import javax.xml.stream.XMLStreamException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.github.thiagotgm.blakebot.common.storage.xml.XMLTestHelper;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLCollection;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 /**
  * Unit tests for {@link XMLCollection}.

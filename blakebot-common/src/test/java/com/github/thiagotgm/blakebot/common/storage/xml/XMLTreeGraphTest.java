@@ -15,7 +15,7 @@
  * along with BlakeBot. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.github.thiagotgm.blakebot.common.utils;
+package com.github.thiagotgm.blakebot.common.storage.xml;
 
 import static org.junit.Assert.*;
 
@@ -29,6 +29,7 @@ import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTreeGraph;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLInteger;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 /**
  * Unit tests for {@link XMLTreeGraph}.
