@@ -33,20 +33,7 @@ import java.util.Set;
 import java.util.Stack;
 
 /**
- * Implementation of the {@link Tree} interface. The root note is accessible.
- * <p>
- * The default behavior of the graph is to directly map each key to the next node in the
- * graph. Subclasses can alter or tweak the graph's behavior by creating a subclass of {@link Node}
- * that overrides the desired behavior. An instance of the node subclass should then be used as root
- * of the tree by providing the instance to {@link #setRoot(Node)}. The root will remain retrievable only
- * as a general {@link Node}, so subclass-specific methods will not be available on the root unless casted
- * to the subclass.<br>
- * They may be made available by overriding {@link #getRoot()} to use the subclass. May be done by
- * either reusing the original (<tt>super</tt>) method and just casting the return, or by using a
- * new instance variable of the subclassed node type. In the latter case, {@link #setRoot(Node)}
- * must also be overriden, and the <tt>super</tt>'s root may be set to <tt>null</tt> on construction
- * to avoid storing an unused node.<br>
- * The new root must ensure to keep the value of the original root if there is any.
+ * Implementation of the {@link Tree} interface. The root node (empty path) is accessible.
  * <p>
  * Can only be serialized properly if all the values stored are also Serializable.
  *
@@ -66,7 +53,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     /**
      * Node that is the root of the tree.
      */
-    private Node<?> root;
+    protected Node root;
     
     /**
      * How many mappings are stored in this graph.
@@ -79,7 +66,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      */
     public TreeGraph() {
         
-        this.root = new TreeNode();
+        this.root = new Node();
         this.nMappings = 0;
         
     }
@@ -97,28 +84,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         if ( rootValue != null ) {
             this.nMappings++;
         }
-        
-    }
-    
-    /**
-     * Retrieves the root of the tree.
-     *
-     * @return The root of the tree.
-     */
-    protected Node<?> getRoot() {
-        
-        return root;
-        
-    }
-    
-    /**
-     * Sets the root of the tree.
-     *
-     * @param root The new root of the tree. May be null.
-     */
-    protected void setRoot( Node<?> root ) {
-        
-        this.root = root;
         
     }
     
@@ -142,9 +107,9 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @return The descendant. If no keys given, the parent.<br>
      *         If there is not an element that corresponds to the given path, null.
      */
-    protected Node<?> getDescendant( Node<?> parent, List<K> path ) {
+    protected Node getDescendant( Node parent, List<K> path ) {
         
-        Node<?> element = parent;
+        Node element = parent;
         for ( K next : path ) {
             
             element = element.getChild( next );
@@ -165,7 +130,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @return The descendant. If no keys given, the root.<br>
      *         If there is not an element that corresponds to the given path, null.
      */
-    protected Node<?> getDescendant( List<K> path ) {
+    protected Node getDescendant( List<K> path ) {
         
         return getDescendant( root, path );
         
@@ -182,12 +147,12 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of keys that represent the descendants.
      * @return The farthest descendant found. If no keys given, the parent.
      */
-    protected Node<?> getMaxDescendant( Node<?> parent, List<K> path ) {
+    protected Node getMaxDescendant( Node parent, List<K> path ) {
         
-        Node<?> element = parent;
+        Node element = parent;
         for ( K obj : path ) {
             
-            Node<?> child = element.getChild( obj );
+            Node child = element.getChild( obj );
             if ( child == null ) {
                 return element;
             }
@@ -208,7 +173,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of keys that represent the descendants.
      * @return The farthest descendant found. If no keys given, the root.
      */
-    protected Node<?> getMaxDescendant( List<K> path ) {
+    protected Node getMaxDescendant( List<K> path ) {
         
         return getMaxDescendant( root, path );
         
@@ -224,9 +189,9 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of objects that represent the descendants.
      * @return The descendant. If no objects given, the parent.
      */
-    protected Node<?> getOrCreateDescendant( Node<?> parent, List<K> path ) {
+    protected Node getOrCreateDescendant( Node parent, List<K> path ) {
         
-        Node<?> element = parent;
+        Node element = parent;
         for ( K obj : path ) {
             
             element = element.getOrCreateChild( obj );
@@ -245,7 +210,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      * @param path The sequence of objects that represent the descendants.
      * @return The descendant. If no objects given, the root.
      */
-    protected Node<?> getOrCreateDescendant( List<K> path ) {
+    protected Node getOrCreateDescendant( List<K> path ) {
         
         return getOrCreateDescendant( root, path );
         
@@ -254,7 +219,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     @Override
     public V get( List<K> path ) {
         
-        Node<?> node = getDescendant( path );
+        Node node = getDescendant( path );
         return ( node == null ) ? null : node.getValue();
         
     }
@@ -262,7 +227,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     @Override
     public List<V> getAll( List<K> path ) {
         
-        Node<?> cur = root;
+        Node cur = root;
         List<V> values = new LinkedList<>();
         for ( K key : path ) {
             
@@ -302,7 +267,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             throw new NullPointerException( "Value cannot be null." );
         }
         
-        Node<?> node = getOrCreateDescendant( path );
+        Node node = getOrCreateDescendant( path );
         if ( node.getValue() != null ) {
             return false; // Already has a value.
         }
@@ -315,8 +280,8 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     @Override
     public V remove( List<K> path ) {
         
-        Stack<Node<?>> nodes = new Stack<>();
-        Node<?> cur = root;
+        Stack<Node> nodes = new Stack<>();
+        Node cur = root;
         for ( K key : path ) {
             
             if ( cur != null ) {
@@ -1111,23 +1076,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         };
         
     }
-    
-    /**
-     * Retrieves the mapping set only for the given level of the graph.
-     * <p>
-     * If the Graph being implemented does not have a concept of "level",
-     * returns the same as {@link #entrySet()}.
-     * 
-     * @param level The level to get mappings for. The root is level 0.
-     * @return A Set view of the given level of the Graph.
-     */
-    public Set<Entry<K,V>> entrySet( int level ) {
-        
-        Set<Entry<K,V>> entries = new HashSet<>( size() );
-        root.getEntries( entries, new Stack<>(), level ); // Get entries.
-        return entries; // Store in a set and return.
-        
-    }
+
     
     @Override
     public int size() {
@@ -1139,92 +1088,102 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     @Override
     public void clear() {
         
-        this.root = root.newInstance(); // Delete all nodes.
-        this.nMappings = 0; // Reset counters.
+        this.root = new Node(); // Delete all nodes.
+        this.nMappings = 0; // Reset counter.
         
     }
     
     /**
-     * A node in the tree. The exact behavior of the graph can be changed by overriding
-     * methods in a subclass then using the subclass as the root element.
-     * <p>
-     * All children of a node are the same type as the node or a subclass of it.
+     * A node in the tree.
      * <p>
      * Can only be serialized properly if the value stored is also Serializable.
      *
-     * @version 1.0
+     * @version 1.1
      * @author ThiagoTGM
      * @since 2017-08-17
-     * @param <SELF> The type of the node.
      */
-    protected abstract class Node<SELF extends Node<SELF>> implements Serializable {
+    protected class Node implements Serializable {
         
-       /**
-        * UID that represents this class.
-        */
-       private static final long serialVersionUID = 8085251836873812411L;
+		/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = 8085251836873812411L;
 
-       /**
-        * Key that identifies this node in its parent.
-        */
-       protected K key;
-       
-       /**
-        * Value stored inside this Node.
-        */
-       protected V value;
-       
-       /**
-        * Children nodes of this Node.
-        */
-       protected Map<K,SELF> children;
-       
-       {
-           
-           children = new HashMap<>();
-           
-       }
-       
-       /**
-        * Constructs a Node with no value or key.
-        */
-       public Node() {
-           
-           this.key = null;
-           this.value = null;
-           
-       }
-       
-       /**
-        * Constructs a Node with the given key.
-        *
-        * @param key The key of the node.
-        * @throws NullPointerException if the given key is null.
-        */
-       public Node( K key ) throws NullPointerException {
-           
-           if ( key == null ) {
-               throw new NullPointerException( "Node key cannot be null." );
-           }
-           
-           this.key = key;
-           this.value = null;
-           
-       }
-       
-       /**
-        * Constructs a Node with the given value and key.
-        *
-        * @param key The key of the node.
-        * @param value The initial value of the node.
-        * @throws NullPointerException if the given key is null.
-        */
-       public Node( K key, V value ) throws NullPointerException {
-           
-           this( key );
-           this.value = value;
-           
-       }
+		/**
+		 * Key that identifies this node in its parent.
+		 */
+		protected K key;
+
+		/**
+		 * Value stored inside this Node.
+		 */
+		protected V value;
+
+		/**
+		 * Children nodes of this Node.
+		 */
+		protected Map<K,Node> children;
+
+		/**
+		 * Constructs a Node with no value, key, or children.
+		 */
+		public Node() {
+
+			this( null );
+
+		}
+
+		/**
+		 * Constructs a Node with the given key, and no value or chilren.
+		 *
+		 * @param key The key of the node.
+		 */
+		public Node( K key ) {
+
+			this( key, null );
+
+		}
+
+		/**
+		 * Constructs a Node with the given value and key, and no children.
+		 *
+		 * @param key The key of the node.
+		 * @param value The initial value of the node.
+		 */
+		public Node( K key, V value ) {
+
+			this( key, value, null );
+
+		}
+		
+		/**
+		 * Constructs a Node with the given value, key, and children.
+		 *
+		 * @param key The key of the node. 
+		 * @param value The initial value of the node.
+		 * @param children The initial children of the node, If <tt>null</tt>, the
+		 *                 node is initialized with no children (same as if given an
+		 *                 empty Collection).
+		 * @throws IllegalArgumentException if there are two or more children in the given
+		 *                                  Collection with the same key.
+		 */
+		public Node( K key, V value, Collection<Node> children ) throws IllegalArgumentException {
+			
+			this.key = key;
+			this.value = value;
+			this.children = new HashMap<>();
+			
+			if ( children != null ) { // Received children. 
+				for ( Node child : children ) { // Add all children.
+					
+					if ( this.children.put( child.getKey(), child ) != null ) {
+						throw new IllegalArgumentException( "Multiple children with the same key." );
+					}
+					
+				}
+			}
+			
+		}
               
         /**
          * Retrieves the key that identifies this node.
@@ -1234,25 +1193,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
         public K getKey() {
             
             return key;
-            
-        }
-        
-        /**
-         * Sets the key of this node.
-         *
-         * @param key The new value of the key.
-         * @return The previous value of the key, or <tt>null</tt> if none.
-         * @throws NullPointerException if the given key is null.
-         */
-        protected K setKey( K key ) throws NullPointerException {
-            
-            if ( key == null ) {
-                throw new NullPointerException( "Node key cannot be null." );
-            }
-            
-            K oldKey = this.key;
-            this.key = key;
-            return oldKey;
             
         }
         
@@ -1288,7 +1228,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          * @return The child that corresponds to the given key, or <tt>null</tt> if there is
          *         no such child.
          */
-        public SELF getChild( K key ) {
+        public Node getChild( K key ) {
             
             return children.get( key );
             
@@ -1299,36 +1239,24 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          *
          * @return The children of this node.
          */
-        public Collection<SELF> getChildren() {
+        public Collection<Node> getChildren() {
             
             return children.values();
             
         }
         
         /**
-         * Creates a new node instance.
-         *
-         * @return The newly created node.
-         */
-        public abstract SELF newInstance();
-        
-        /**
          * Gets the child of this node that corresponds to the given key.<br>
          * Creates it if it does not exist.
-         * <p>
-         * If a subclass requires no change other than using instances of the subclass for
-         * new nodes, it is easier to just override {@link #newInstance()}.
          *
          * @param key The key to get the child for.
          * @return The child that corresponds to the given key.
-         * @see #newInstance()
          */
-        public SELF getOrCreateChild( K key ) {
+        public Node getOrCreateChild( K key ) {
             
-            SELF child = children.get( key );
+        	Node child = children.get( key );
             if ( child == null ) {
-                child = newInstance();
-                child.setKey( key );
+                child = new Node( key );
                 children.put( key, child );
             }
             return child;
@@ -1361,7 +1289,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          */
         public final boolean addChild( K key, V value ) {
             
-            SELF child = getChild( key );
+            Node child = getChild( key );
             if ( child != null ) {
                 return false; // Child with that key already exists.
             } else {
@@ -1377,78 +1305,9 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          * @param key The key the child corresponds to.
          * @return The deleted child, or null if there is no child for that key.
          */
-        public SELF removeChild( K key ) {
+        public Node removeChild( K key ) {
             
             return children.remove( key );
-            
-        }
-        
-        /**
-         * Retrieves the path-value mapping entries for this node and its children,
-         * placing them into the given entry set.
-         *
-         * @param entries The set to place the entries in.
-         * @param path The path that maps to this node, where the bottom of the stack is
-         *             the beginning of the path.
-         */
-        public void getEntries( Set<Entry<K,V>> entries, Stack<K> path ) {
-            
-            if ( getKey() != null ) {
-                path.push( getKey() ); // Add this node's path.
-            }
-            
-            if ( getValue() != null ) { // This node represents a mapping.
-                entries.add( new TreeGraphEntry( path, this ) );
-            }
-            
-            /* Recursively gets entries for each child */
-            for ( SELF child : getChildren() ) {
-                
-                child.getEntries( entries, path );
-                
-            }
-            
-            if ( getKey() != null ) {
-                path.pop(); // Remove this node's path.
-            }
-            
-        }
-        
-        /**
-         * Retrieves the path-value mapping entries for the nodes in the given level of,
-         * the subtree represented by this node, placing them into the given entry set.
-         *
-         * @param entries The set to place the entries in.
-         * @param path The path that maps to this node, where the bottom of the stack is
-         *             the beginning of the path.
-         * @param level The level of this subtree to get entries for. 0 is root (this node).
-         */
-        public void getEntries( Set<Entry<K,V>> entries, Stack<K> path, int level ) {
-            
-            if ( getKey() != null ) {
-                path.push( getKey() ); // Add this node's path.
-            }
-            
-            if ( level == 0 ) { // In desired level.
-            
-	            if ( getValue() != null ) { // This node represents a mapping.
-	                entries.add( new TreeGraphEntry( path, this ) );
-	            }
-            
-            } else {
-            
-	            /* Recursively gets entries for each child */
-	            for ( SELF child : getChildren() ) {
-	                
-	                child.getEntries( entries, path, level - 1 ); // Child is in next level.
-	                
-	            }
-            
-            }
-            
-            if ( getKey() != null ) {
-                path.pop(); // Remove this node's path.
-            }
             
         }
         
@@ -1478,7 +1337,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             }
             
             /* Recursively search each child */
-            for ( SELF child : getChildren() ) {
+            for ( Node child : getChildren() ) {
                 
                 List<K> result = child.findValue( value, path );
                 if ( result != null ) {
@@ -1492,6 +1351,37 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             }
             
             return null; // Not found.
+            
+        }
+        
+        /**
+         * Retrieves the path-value mapping entries for this node and its children,
+         * placing them into the given entry set.
+         *
+         * @param entries The set to place the entries in.
+         * @param path The path that maps to this node, where the bottom of the stack is
+         *             the beginning of the path.
+         */
+        public void getEntries( Set<Entry<K,V>> entries, Stack<K> path ) {
+            
+            if ( getKey() != null ) {
+                path.push( getKey() ); // Add this node's path.
+            }
+            
+            if ( getValue() != null ) { // This node represents a mapping.
+                entries.add( new TreeGraphEntry( path, this ) );
+            }
+            
+            /* Recursively gets entries for each child */
+            for ( Node child : getChildren() ) {
+                
+                child.getEntries( entries, path );
+                
+            }
+            
+            if ( getKey() != null ) {
+                path.pop(); // Remove this node's path.
+            }
             
         }
         
@@ -1522,9 +1412,9 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             }
             
             /* Write children */
-            Collection<? extends SELF> children = getChildren();
+            Collection<Node> children = getChildren();
             out.writeInt( children.size() ); // Write amount of children.
-            for ( SELF child : children ) {
+            for ( Node child : children ) {
                 
                 out.writeObject( child ); // Write child.
                 
@@ -1568,10 +1458,10 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
             this.children = new HashMap<>();
             for ( int i = 0; i < childNum; i++ ) { // Read each child.
                 
-                SELF child;
+                Node child;
                 try { // Read child.
                     @SuppressWarnings( "unchecked" )
-                    SELF tempChild = (SELF) in.readObject();
+                    Node tempChild = (Node) in.readObject();
                     child = tempChild;
                 } catch ( ClassCastException e ) {
                     throw new IOException( "Deserialized child node is not of the expected type.", e );
@@ -1602,63 +1492,6 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
     }
     
     /**
-     * Basic implementation of a node in the tree.
-     *
-     * @version 1.0
-     * @author ThiagoTGM
-     * @since 2017-08-23
-     */
-    protected class TreeNode extends Node<TreeNode> {
-        
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = 8655661294630464533L;
-
-        /**
-         * Constructs a TreeNode with no value or key.
-         */
-        public TreeNode() {
-            
-            super();
-            
-        }
-        
-        /**
-         * Constructs a TreeNode with the given key.
-         *
-         * @param key The key of the node.
-         * @throws NullPointerException if the given key is null.
-         */
-        public TreeNode( K key ) throws NullPointerException {
-            
-            super( key );
-            
-        }
-        
-        /**
-         * Constructs a TreeNode with the given value and key.
-         *
-         * @param key The key of the node.
-         * @param value The initial value of the node.
-         * @throws NullPointerException if the given key is null.
-         */
-        public TreeNode( K key, V value ) throws NullPointerException {
-            
-            super( key, value );
-            
-        }
-        
-        @Override
-        public TreeNode newInstance() {
-            
-            return new TreeNode();
-            
-        }
-        
-    }
-    
-    /**
      * Represents an entry in the TreeGraph.
      *
      * @version 1.0
@@ -1667,7 +1500,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
      */
     protected class TreeGraphEntry extends AbstractEntry {
         
-        private final Node<?> node;
+        private final Node node;
         
         /**
          * Constructs a new entry for the given path that is linked to the given node.
@@ -1675,7 +1508,7 @@ public class TreeGraph<K,V> extends AbstractGraph<K,V> implements Tree<K,V>, Ser
          * @param path The path of this entry.
          * @param node The node that represents this entry.
          */
-        public TreeGraphEntry( List<K> path, Node<?> node ) {
+        public TreeGraphEntry( List<K> path, Node node ) {
             
             super( path );
             this.node = node;
