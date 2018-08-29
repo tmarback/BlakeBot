@@ -38,7 +38,7 @@ public class StringTranslator implements Translator<String> {
 	}
 
 	@Override
-	public String decode(String str) throws IOException {
+	public String decode( String str ) throws IOException {
 		
 		return str;
 		
