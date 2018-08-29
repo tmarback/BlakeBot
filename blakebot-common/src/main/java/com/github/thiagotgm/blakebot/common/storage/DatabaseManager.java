@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.blakebot.common.storage.Database.DatabaseException;
+import com.github.thiagotgm.blakebot.common.storage.Database.Parameter;
 import com.github.thiagotgm.blakebot.common.storage.impl.XMLDatabase;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 
@@ -53,7 +54,7 @@ public class DatabaseManager {
 		XML( "Local XML Files", () -> { return new XMLDatabase(); } );
 		
 		private final String name;
-		private final List<String> loadParams;
+		private final List<Parameter> loadParams;
 		private final Supplier<Database> instanceProducer;
 		
 		/**
@@ -88,7 +89,7 @@ public class DatabaseManager {
 		 * 
 		 * @return The required load parameters.
 		 */
-		public List<String> getLoadParams() {
+		public List<Parameter> getLoadParams() {
 			
 			return new ArrayList<>( loadParams );
 			

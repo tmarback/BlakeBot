@@ -18,10 +18,11 @@
 package com.github.thiagotgm.blakebot.common.storage;
 
 import java.io.Closeable;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.Graph;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
@@ -306,11 +307,137 @@ public interface Database extends Closeable {
 	Collection<MapEntry<?,?>> getDataMaps() throws IllegalStateException;
 	
 	/**
-	 * Retrieves the names of the parameters required for {@link #load(List)}.
+	 * A parameter required to load the database.
+	 * 
+	 * @version 1.0
+	 * @author ThiagoTGM
+	 * @since 2018-08-28
+	 */
+	public class Parameter {
+		
+		private final List<String> names;
+		private final List<String> choices;
+		
+		/**
+		 * Initializes an argument that has the given previous-choice-dependent name
+		 * and is a pick between the given options (text input if <tt>null</tt>.
+		 * 
+		 * @param names The parameter names.
+		 * @param choices The choices to pick from, or <tt>null</tt> if text input.
+		 */
+		public Parameter( List<String> names, List<String> choices ) {
+			
+			if ( ( names == null ) || names.isEmpty() ) {
+				throw new NullPointerException( "Requires at least one name." );
+			}
+			
+			this.names = Collections.unmodifiableList( names );
+			if ( choices != null ) {
+				this.choices = Collections.unmodifiableList( choices );
+			} else {
+				this.choices = null;
+			}
+			
+		}
+		
+		/**
+		 * Initializes an argument that has the given name
+		 * and is a pick between the given options (text input if <tt>null</tt>.
+		 * 
+		 * @param names The parameter name.
+		 * @param choices The choices to pick from, or <tt>null</tt> if text input.
+		 */
+		public Parameter( String name, List<String> choices ) {
+			
+			this( Arrays.asList( name ), choices );
+			
+		}
+		
+		/**
+		 * Initializes an argument that has the given previous-choice-dependent name
+		 * and is a text input.
+		 * 
+		 * @param names The parameter names.
+		 */
+		public Parameter( List<String> names ) {
+			
+			this( names, null );
+			
+		}
+		
+		/**
+		 * Initializes an argument that has the given name
+		 * and is a text input.
+		 * 
+		 * @param names The parameter name.
+		 */
+		public Parameter( String name ) {
+			
+			this( Arrays.asList( name ) );
+			
+		}
+		
+		/**
+		 * Initializes a boolean argument that has the given previous-choice-dependent name.
+		 * 
+		 * @param names The parameter names.
+		 * @param yesNo If <tt>true</tt>, the choices will be "yes" and "no".
+		 *              If <tt>false</tt>, they will be "true" and "false".
+		 */
+		public Parameter( List<String> names, boolean yesNo ) {
+			
+			this( names, yesNo ? Arrays.asList( "yes", "no" ) :
+											  Arrays.asList( "true", "false" ) );
+			
+		}
+		
+		/**
+		 * Initializes a boolean argument that has the given name.
+		 * 
+		 * @param names The parameter name.
+		 * @param yesNo If <tt>true</tt>, the choices will be "yes" and "no".
+		 *              If <tt>false</tt>, they will be "true" and "false".
+		 */
+		public Parameter( String name, boolean yesNo ) {
+			
+			this( Arrays.asList( name ), yesNo );
+			
+		}
+		
+		/**
+		 * Retrieves the name of the parameter.
+		 * 
+		 * @param lastOption The index of the option picked for the last argument
+		 *                   before this that was a choice between fixed options.<br>
+		 *                   If there wasn't one, should just be 0.
+		 * @return The name of the parameter.
+		 */
+		public String getName( int lastOption ) {
+			
+			return names.get( lastOption );
+			
+		}
+		
+		/**
+		 * Retrieves the possible options that must be given as an argument
+		 * to this parameter. If the argument is a string input, will return <tt>null</tt>.
+		 * 
+		 * @return The options to choose from, or <tt>null</tt> if text input.
+		 */
+		public List<String> getChoices() {
+			
+			return choices;
+			
+		}
+		
+	}
+	
+	/**
+	 * Retrieves the parameters required for {@link #load(List)}.
 	 * 
 	 * @return The load parameters.
 	 */
-	List<String> getLoadParams();
+	List<Parameter> getLoadParams();
 	
 	/**
 	 * Loads/connects the database using the given parameters.

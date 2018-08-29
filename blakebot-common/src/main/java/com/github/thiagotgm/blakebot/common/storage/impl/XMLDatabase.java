@@ -64,8 +64,8 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 	@SuppressWarnings("rawtypes")
 	private static final Class<? extends Map> MAP_CLASS = HashMap.class;
 	
-	private static final List<String> loadParams = Collections.unmodifiableList(
-			Arrays.asList( new String[]{ "Directory path" } ) );
+	private static final List<Parameter> loadParams = Collections.unmodifiableList(
+			Arrays.asList( new Parameter( "Directory path" ) ) );
 	private static final Logger LOG = LoggerFactory.getLogger( XMLDatabase.class );
 	
 	/**
@@ -78,7 +78,7 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 	private final Collection<XMLEntry> storage = new LinkedList<>();
 	
 	@Override
-	public List<String> getLoadParams() {
+	public List<Parameter> getLoadParams() {
 
 		return new ArrayList<>( loadParams );
 		
