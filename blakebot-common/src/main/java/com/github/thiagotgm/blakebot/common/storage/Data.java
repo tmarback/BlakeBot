@@ -203,7 +203,10 @@ public class Data {
 	 */
 	public boolean isFloat() {
 		
-		return isNumber() && number.contains( "." );
+		return isNumber() && ( number.contains( "." ) ||
+				               number.equals( String.valueOf( Double.NaN ) ) ||
+				               number.equals( String.valueOf( Double.NEGATIVE_INFINITY ) ) ||
+				               number.equals( String.valueOf( Double.POSITIVE_INFINITY ) ) );
 		
 	}
 	
@@ -239,7 +242,7 @@ public class Data {
 	 */
 	public long getNumberInteger() {
 		
-		return isNumber() ? Long.parseLong( isFloat() ? number.split( "\\.", 2 )[0] : number ) : 0;
+		return isNumber() ? ( isFloat() ? (long) getNumberFloat() : Long.parseLong( number ) ) : 0;
 		
 	}
 	
