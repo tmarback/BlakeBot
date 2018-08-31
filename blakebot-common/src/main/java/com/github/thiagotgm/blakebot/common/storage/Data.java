@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import com.github.thiagotgm.blakebot.common.storage.translate.DataTranslator;
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
@@ -398,6 +399,13 @@ public class Data {
 				return getMap().hashCode();
 		
 		}
+		
+	}
+	
+	@Override
+	public String toString() {
+		
+		return new DataTranslator().encode( this );
 		
 	}
 	
