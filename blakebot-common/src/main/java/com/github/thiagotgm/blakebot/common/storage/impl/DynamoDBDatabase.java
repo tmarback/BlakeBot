@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -38,10 +40,12 @@ import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.ItemCollection;
+import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
 import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
@@ -53,6 +57,7 @@ import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ResourceInUseException;
 import com.amazonaws.services.dynamodbv2.model.ReturnValue;
 import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
 
@@ -131,16 +136,15 @@ public class DynamoDBDatabase extends TableDatabase {
 		}
 		
 		AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
-		AWSCredentials credentials = new BasicAWSCredentials( args.get( 1 ), args.get( 2 ) );
-		builder.withCredentials( new AWSStaticCredentialsProvider( credentials ) );
-		
 		if ( args.get( 0 ).equals( "no" ) ) { // Use web service.
 			LOG.info( "Starting DynamoDB AWS service, region {}.", args.get( 3 ) );
-			builder.withRegion( Regions.valueOf( args.get( 3 ) ) );
+			AWSCredentials credentials = new BasicAWSCredentials( args.get( 1 ), args.get( 2 ) );
+			builder.withRegion( Regions.valueOf( args.get( 3 ) ) )
+			       .withCredentials( new AWSStaticCredentialsProvider( credentials ) );
 		} else { // Use local database.
 			LOG.info( "Starting DynamoDB local.", args.get( 3 ) );
 			builder.withEndpointConfiguration( new AwsClientBuilder.EndpointConfiguration(
-					"http://localhost:" + args.get( 1 ), "us-west-2" ) );
+					"http://localhost:" + args.get( 1 ), "local" ) );
 		}
 		client = builder.build();
 		
@@ -292,7 +296,57 @@ public class DynamoDBDatabase extends TableDatabase {
 		}
 		
 		/**
-		 * Encodes a value.
+		 * Extracts a Data value into an object that is able to be used as a
+		 * value in DynamoDB.
+		 * 
+		 * @param data The data to extract.
+		 * @return The DynamoDB-compatible object.
+		 */
+		private Object extractData( Data data ) {
+			
+			switch ( data.getType() ) {
+			
+			case STRING:
+				return data.getString();
+				
+			case NUMBER:
+				if ( data.isFloat() ) {
+					return data.getNumberFloat();
+				} else {
+					return data.getNumberInteger();
+				}
+				
+			case BOOLEAN:
+				return data.getBoolean();
+				
+			default:
+			case NULL:
+				return null;
+				
+			case LIST:
+				List<Object> list = new ArrayList<>( data.getList().size() );
+				for ( Data elem : data.getList() ) { // Extract each element.
+					
+					list.add( extractData( elem ) );
+					
+				}
+				return list;
+				
+			case MAP:
+				Map<String,Object> map = new HashMap<>( data.getMap().size() );
+				for ( Map.Entry<String,Data> entry : data.getMap().entrySet() ) {
+					// Extract each mapping.
+					map.put( entry.getKey(), extractData( entry.getValue() ) );
+					
+				}
+				return map;
+				
+			}
+		
+		}
+		
+		/**
+		 * Encodes a value into an object that can be stored into DynamoDB.
 		 * Errors encountered during encoding are automatically
 		 * converted to a DatabaseException.
 		 * 
@@ -301,12 +355,57 @@ public class DynamoDBDatabase extends TableDatabase {
 		 *         is not of the type supported by the value encoder.
 		 * @throws DatabaseException if an error occurred while encoding.
 		 */
-		private String encodeValue( Object value ) throws DatabaseException {
+		private Object encodeValue( Object value ) throws DatabaseException {
 			
+			Data data;
 			try {
-				return valueTranslator.encodeObj( value );
+				data = valueTranslator.objToData( value );
 			} catch ( TranslationException e ) {
 				throw new DatabaseException( "Failed to encode value.", e );
+			}
+			
+			return data == null ? null : extractData( data );
+			
+		}
+		
+		/**
+		 * Stores data received from DynamoDB into a Data instance.
+		 * <p>
+		 * Inverse of {@link #extractData(Data)}.
+		 * 
+		 * @param obj The DynamoDB-supported object.
+		 * @return The Data representation.
+		 */
+		private Data storeData( Object obj ) {
+			
+			if ( obj instanceof String ) {
+				return Data.stringData( (String) obj );
+			} else if ( obj instanceof Number ) {
+				return Data.numberData( obj.toString() );
+			} else if ( obj instanceof Boolean ) {
+				return Data.booleanData( (Boolean) obj );
+			} else if ( obj == null ) {
+				return Data.nullData();
+			} else if ( obj instanceof List ) {
+				List<Data> list = new LinkedList<>();
+				for ( Object elem : (List<?>) obj ) { // Store each element.
+					
+					list.add( storeData( elem ) );
+					
+				}
+				return Data.listData( list );
+			} else if ( obj instanceof Map ) {
+				Map<String,Data> map = new HashMap<>();
+				@SuppressWarnings("unchecked")
+				Map<String,?> extracted = (Map<String,?>) obj;
+				for ( Map.Entry<String,?> entry : extracted.entrySet() ) {
+					// Store each mapping.
+					map.put( entry.getKey(), storeData( entry.getValue() ) );
+					
+				}
+				return Data.mapData( map );
+			} else {
+				throw new DatabaseException( "Unsupported data type received from database." );
 			}
 			
 		}
@@ -316,16 +415,39 @@ public class DynamoDBDatabase extends TableDatabase {
 		 * Errors encountered during decoding are automatically
 		 * converted to a DatabaseException.
 		 * 
-		 * @param encoded The string to decode.
+		 * @param encoded The data to decode.
 		 * @return The decoded value.
 		 * @throws DatabaseException if an error occurred while decoding.
 		 */
-		private V decodeValue( String encoded ) throws DatabaseException {
+		private V decodeValue( Object encoded ) throws DatabaseException {
 			
 			try {
-				return valueTranslator.decode( encoded );
+				return valueTranslator.fromData( storeData( encoded ) );
 			} catch ( TranslationException e ) {
 				throw new DatabaseException( "Failed to decode value.", e );
+			}
+			
+		}
+		
+		/**
+		 * Attempts to retrieve the Item that has the given key.
+		 *
+		 * @param key The key.
+		 * @return The item under the given key, or <tt>null</tt> if there is
+		 *         no such item.
+		 */
+		private Item getItem( Object key ) {
+			
+			String translated = encodeKey( key );
+			if ( translated == null ) {
+				return null; // Incorrect type.
+			}
+		
+			try {
+				return table.getItem( KEY_ATTRIBUTE, translated );
+			} catch ( Exception e ) {
+				LOG.warn( "Failed to retrieve item of key '" + translated + "'.", e );
+				return null;
 			}
 			
 		}
@@ -333,14 +455,14 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public boolean containsKey( Object key ) {
 			
-			return get( key ) != null;
+			return getItem( key ) != null;
 			
 		}
 
 		@Override
 		public boolean containsValue( Object value ) {
 			
-			String translated = encodeValue( value );
+			Object translated = encodeValue( value );
 			if ( translated == null ) {
 				return false; // Incorrect type.
 			}
@@ -348,11 +470,11 @@ public class DynamoDBDatabase extends TableDatabase {
 			ScanSpec scanSpec = new ScanSpec().withProjectionExpression( KEY_ATTRIBUTE ) // Construct scan request.
 					                          .withFilterExpression( "#value = :value" )
 					                          .withNameMap( new NameMap().with( "#value", VALUE_ATTRIBUTE ) )
-					                          .withValueMap( new ValueMap().withString( ":value", translated ) );
+					                          .withValueMap( new ValueMap().with( ":value", translated ) );
 			
 			try {
 	            ItemCollection<ScanOutcome> items = table.scan( scanSpec ); // Run scan.
-	            return items.getAccumulatedItemCount() != 0; // Check if at least one match.
+	            return items.iterator().hasNext(); // Return if there is at least one match.
 	        } catch ( Exception e ) {
 	        	LOG.warn( "Failed to scan for value '" + translated + "'.", e );
 				return false;
@@ -363,28 +485,30 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public V get( Object key ) {
 			
-			String translated = encodeKey( key );
-			if ( translated == null ) {
-				return null; // Incorrect type.
-			}
-			
-			Item result;
-			try {
-				result = table.getItem( KEY_ATTRIBUTE, translated );
-			} catch ( Exception e ) {
-				LOG.warn( "Failed to retrieve item of key '" + translated + "'.", e );
-				return null;
-			}
-			
-			String value = result.getString( VALUE_ATTRIBUTE );
-			return value == null ? null : decodeValue( value );
+			Item result = getItem( key );
+			return result == null ? null : decodeValue( result.get( VALUE_ATTRIBUTE ) );
 			
 		}
 
 		@Override
 		public V put( K key, V value ) {
-			// TODO Auto-generated method stub
-			return null;
+			
+			String translatedKey = encodeKey( key );
+			Object translatedValue = encodeValue( value );
+
+			UpdateItemSpec updateItemSpec = new UpdateItemSpec()
+					.withPrimaryKey( KEY_ATTRIBUTE, translatedKey )
+					.withUpdateExpression( "set #value = :val" )
+					.withNameMap( new NameMap().with( "#value", VALUE_ATTRIBUTE ) )
+		            .withValueMap( new ValueMap().with(":val", translatedValue ) )
+		            .withReturnValues( ReturnValue.UPDATED_OLD );
+			
+			Map<String,AttributeValue> result = table.updateItem(updateItemSpec).getUpdateItemResult()
+					                                 .getAttributes();
+			
+			return result == null ? null : 
+					decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
+			
 		}
 
 		@Override
@@ -395,12 +519,13 @@ public class DynamoDBDatabase extends TableDatabase {
 				return null; // Incorrect type.
 			}
 			
-			AttributeValue result = table.deleteItem( 
+			Map<String,AttributeValue> result = table.deleteItem( 
 					new DeleteItemSpec().withPrimaryKey( KEY_ATTRIBUTE, translated )
 					                    .withReturnValues( ReturnValue.ALL_OLD ) )
-					.getDeleteItemResult().getAttributes().get( VALUE_ATTRIBUTE );
+					.getDeleteItemResult().getAttributes();
 			
-			return result == null ? null : decodeValue( result.getS() );
+			return result == null ? null :
+					decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
 			
 		}
 
@@ -446,7 +571,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		}
 
 		@Override
-		public Set<Entry<K, V>> entrySet() {
+		public Set<Entry<K,V>> entrySet() {
 			// TODO Auto-generated method stub
 			return null;
 		}
