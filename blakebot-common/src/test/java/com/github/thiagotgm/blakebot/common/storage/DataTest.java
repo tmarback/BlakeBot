@@ -409,7 +409,7 @@ public class DataTest {
 		
 		/* Test null list */
 		
-		Data data = Data.listData( null );
+		Data data = Data.listData( (List<Data>) null );
 		
 		// Check type.
 		assertEquals( "Incorrect data type.", Data.Type.NULL, data.getType() );
@@ -489,7 +489,7 @@ public class DataTest {
 		
 		/* Test null map */
 		
-		Data data = Data.listData( null );
+		Data data = Data.mapData( null );
 		
 		// Check type.
 		assertEquals( "Incorrect data type.", Data.Type.NULL, data.getType() );

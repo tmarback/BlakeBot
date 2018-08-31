@@ -19,6 +19,7 @@ package com.github.thiagotgm.blakebot.common.storage;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -484,6 +485,19 @@ public class Data {
 	public static Data nullData() {
 		
 		return new Data( null, null, false, false, true, null, null );
+		
+	}
+	
+	/**
+	 * Creates a List-valued instance, with the value being the list
+	 * made of the given elements in the given order.
+	 * 
+	 * @param elements The list elements.
+	 * @return The instance with the given value.
+	 */
+	public static Data listData( Data... elements ) {
+		
+		return listData( Arrays.asList( elements ) );
 		
 	}
 	
