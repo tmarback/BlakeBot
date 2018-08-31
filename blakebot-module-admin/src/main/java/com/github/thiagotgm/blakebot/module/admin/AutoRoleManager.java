@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;
@@ -49,7 +50,8 @@ public class AutoRoleManager {
     private AutoRoleManager() {
         
     	LOG.info( "Initializing auto-role manager." );
-        roles = DatabaseManager.getDatabase().getDataMap( "AutoRole" );
+        roles = DatabaseManager.getDatabase().getDataMap(
+        		"AutoRole", new StringTranslator(), new StringTranslator() );
         
     }
     

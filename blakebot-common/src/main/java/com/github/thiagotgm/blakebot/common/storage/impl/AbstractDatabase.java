@@ -134,7 +134,7 @@ public abstract class AbstractDatabase implements Database {
 			Translator<V> valueTranslator ) throws DatabaseException;
 	
 	@Override
-	public synchronized <K,V> Tree<K,V> getTranslatedDataTree( String treeName,
+	public synchronized <K,V> Tree<K,V> getDataTree( String treeName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException,
 			DatabaseException {
@@ -192,7 +192,7 @@ public abstract class AbstractDatabase implements Database {
 			Translator<V> valueTranslator ) throws DatabaseException;
 	
 	@Override
-	public synchronized <K,V> Map<K,V> getTranslatedDataMap( String mapName,
+	public synchronized <K,V> Map<K,V> getDataMap( String mapName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException,
 			DatabaseException {

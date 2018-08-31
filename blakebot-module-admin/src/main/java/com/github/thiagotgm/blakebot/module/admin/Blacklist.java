@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.storage.translate.XMLTranslator;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLSet;
@@ -70,7 +71,7 @@ public class Blacklist {
 	protected Blacklist() {
         
     	LOG.info( "Starting blacklist." );
-        this.blacklist = DatabaseManager.getDatabase().getValueTranslatedDataTree( "Blacklist",
+        this.blacklist = DatabaseManager.getDatabase().getDataTree( "Blacklist", new StringTranslator(),
         		new XMLTranslator<>( new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
         				(XMLElement.Translator<Restriction>) () -> {
         					

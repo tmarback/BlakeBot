@@ -92,7 +92,7 @@ public interface Database extends Closeable {
 	 * @param <K> The type of the keys that define connections on the tree.
 	 * @param <V> The type of the values stored in the tree.
 	 */
-	<K,V> Tree<K,V> getTranslatedDataTree( String treeName,
+	<K,V> Tree<K,V> getDataTree( String treeName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException,
 			DatabaseException;
@@ -114,7 +114,7 @@ public interface Database extends Closeable {
 	 * @param <K> The type of the keys that define connections on the map.
 	 * @param <V> The type of the values stored in the map.
 	 */
-	<K,V> Map<K,V> getTranslatedDataMap( String mapName,
+	<K,V> Map<K,V> getDataMap( String mapName,
 			Translator<K> keyTranslator, Translator<V> valueTranslator )
 			throws NullPointerException, IllegalStateException, IllegalArgumentException,
 			DatabaseException;
@@ -382,7 +382,7 @@ public interface Database extends Closeable {
 			for ( TreeEntry<?,?> tree : trees ) {
 				
 				@SuppressWarnings("unchecked")
-				Tree<Object,Object> newTree = (Tree<Object,Object>) getTranslatedDataTree(
+				Tree<Object,Object> newTree = (Tree<Object,Object>) getDataTree(
 						tree.getName(), tree.getKeyTranslator(), tree.getValueTranslator() );
 				for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
 					
@@ -404,7 +404,7 @@ public interface Database extends Closeable {
 			for ( MapEntry<?,?> map : maps ) {
 				
 				@SuppressWarnings("unchecked")
-				Map<Object,Object> newMap = (Map<Object,Object>) getTranslatedDataMap(
+				Map<Object,Object> newMap = (Map<Object,Object>) getDataMap(
 						map.getName(), map.getKeyTranslator(), map.getValueTranslator() );
 				for ( Map.Entry<?,?> mapping : map.getMap().entrySet() ) {
 					
