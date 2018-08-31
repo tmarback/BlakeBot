@@ -30,7 +30,7 @@ import com.google.gson.GsonBuilder;
  */
 public interface Translator<T> {
 	
-	final Gson GSON = new GsonBuilder().registerTypeAdapter( Data.class, new Data.DataAdapter() ).create();
+	final Gson GSON = new GsonBuilder().serializeNulls().registerTypeAdapter( Data.class, new Data.DataAdapter() ).create();
 	
 	/**
 	 * Converts the given object into a Data format.
