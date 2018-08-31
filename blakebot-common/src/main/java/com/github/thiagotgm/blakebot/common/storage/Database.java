@@ -65,9 +65,15 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  * it.<br>
  * This includes operations in the Set and Collection views.
  * <p>
- * <b>NOTE 2:</b> Due to the nature of some database types, using the Set and/or Collection
- * views of trees and maps backed by a database, and in particular iterating over them, may
- * cause massive performance penalties, and so should generally be avoided.
+ * <b>NOTE 2:</b> Due to the nature of some database backends, the following operations may 
+ * involve scanning the entire database and could cause severe performance issues, and so
+ * should generally be avoided:
+ * <ul>
+ * 	<li>Obtaining the size of a map or tree, or their Set or Collection views.</li>
+ * 	<li>Checking if a map or tree contains a value (either directly or through the value 
+ *      Collection view.</li>
+ *  <li>Iterating over any of the Set or Collection views of a tree or map.
+ * </ul>
  * 
  * @version 1.0
  * @author ThiagoTGM
