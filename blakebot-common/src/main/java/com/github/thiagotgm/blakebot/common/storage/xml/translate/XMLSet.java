@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.common.storage.xml.translate;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
@@ -53,6 +54,21 @@ public class XMLSet<E extends XMLElement> extends AbstractXMLCollection<E,Set<E>
     		throws IllegalArgumentException {
     	
     	super( setClass, translator );
+    	
+    }
+    
+    /**
+     * Instantiates an set translator that uses the given translator for the elements.
+     * <p>
+     * The Set implementation to be used is chosen by this class, and no guarantees are
+     * made about it.
+     *
+     * @param translator The translator to use for the set elements.
+     */
+    @SuppressWarnings("unchecked")
+	public XMLSet( XMLTranslator<E> translator ) throws IllegalArgumentException {
+    	
+    	this( (Class<Set<E>>) (Class<?>) HashSet.class, translator );
     	
     }
 	

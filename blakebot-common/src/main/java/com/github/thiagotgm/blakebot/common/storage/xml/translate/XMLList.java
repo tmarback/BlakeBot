@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.common.storage.xml.translate;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
@@ -52,6 +53,21 @@ public class XMLList<E> extends AbstractXMLCollection<E,List<E>> {
     		throws IllegalArgumentException {
     	
     	super( listClass, translator );
+    	
+    }
+    
+    /**
+     * Instantiates an list translator that uses the given translator for the elements.
+     * <p>
+     * The List implementation to be used is chosen by this class, and no guarantees are
+     * made about it.
+     *
+     * @param translator The translator to use for the list elements.
+     */
+    @SuppressWarnings("unchecked")
+	public XMLList( XMLTranslator<E> translator ) {
+    	
+    	this( (Class<List<E>>) (Class<?>) LinkedList.class, translator );
     	
     }
 	

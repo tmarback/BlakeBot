@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot.common.storage.xml.translate;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -88,6 +89,25 @@ public class XMLMap<K,V> implements XMLTranslator<Map<K,V>> {
 		}
 		
 		entryTranslator = new XMLMapEntry( keyTranslator, valueTranslator );
+		
+	}
+	
+	/**
+     * Instantiates an map translator that uses the given translators for keys and values.
+     * <p>
+     * The Map implementation to be used is chosen by this class, and no guarantees are
+     * made about it.
+     *
+     * @param keyTranslator The translator to use for the map keys.
+     * @param valueTranslator The translator to use for the map values.
+     * @throws IllegalArgumentException if the given class does not have an accessible no-arg constructor.
+     * @throws NullPointerException if any of the arguments is <tt>null</tt>.
+     */
+	@SuppressWarnings("unchecked")
+	public XMLMap( XMLTranslator<K> keyTranslator, XMLTranslator<V> valueTranslator )
+			throws IllegalArgumentException, NullPointerException {
+		
+		this( (Class<Map<K,V>>) (Class<?>) HashMap.class, keyTranslator, valueTranslator );
 		
 	}
 	
