@@ -43,7 +43,7 @@ public class DynamoDBDatabaseTest {
 		
 	}
 
-	@Test
+	//@Test
 	public void test() throws Exception {
 		
 		String tableName = "Movies";

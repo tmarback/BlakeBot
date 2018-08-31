@@ -44,11 +44,12 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.SaveManager;
 import com.github.thiagotgm.blakebot.common.SaveManager.Saveable;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
+import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTreeGraph;
+import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLData;
 import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLMap;
-import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLString;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 
@@ -245,11 +246,11 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 	/* Full translator for XML */
 	
 	/**
-	 * Compound translator that cascade a T-String translator with a
-	 * String-XML translator to translate to XML format objects that
-	 * do not have an XML translator, but have a String translator.
+	 * Compound translator that cascade a T-Data translator with a
+	 * Data-XML translator to translate to XML format objects that
+	 * do not have an XML translator, but have a Data translator.
 	 * 
-	 * @version 1.0
+	 * @version 1.1
 	 * @author ThiagoTGM
 	 * @since 2018-07-27
 	 * @param <T> The type of object that is to be translated.
@@ -262,18 +263,18 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 		private static final long serialVersionUID = 7676473726689961837L;
 		
 		private final Translator<T> dataTranslator;
-		private final XMLString stringTranslator;
+		private final XMLData xmlTranslator;
 		
 		/**
 		 * Initializes a cascaded translator that uses the given translator
-		 * and a {@link XMLString String-XML translator}.
+		 * and a {@link XMLData Data-XML translator}.
 		 * 
 		 * @param dataTranslator The translator to encode objects with.
 		 */
 		public CompoundTranslator( Translator<T> dataTranslator ) {
 			
 			this.dataTranslator = dataTranslator;
-			this.stringTranslator = new XMLString();
+			this.xmlTranslator = new XMLData();
 			
 		}
 
@@ -281,8 +282,8 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 		public T read( XMLStreamReader in ) throws XMLStreamException {
 
 			try {
-				return dataTranslator.decode( stringTranslator.read( in ) );
-			} catch ( IOException e ) {
+				return dataTranslator.fromData( xmlTranslator.read( in ) );
+			} catch ( TranslationException e ) {
 				throw new XMLStreamException( "Could not translate data.", e );
 			}
 			
@@ -292,8 +293,8 @@ public class XMLDatabase extends AbstractDatabase implements Saveable {
 		public void write( XMLStreamWriter out, T instance ) throws XMLStreamException {
 
 			try {
-				stringTranslator.write( out, dataTranslator.encode( instance ) );
-			} catch ( IOException e ) {
+				xmlTranslator.write( out, dataTranslator.toData( instance ) );
+			} catch ( TranslationException e ) {
 				throw new XMLStreamException( "Could not translate data.", e );
 			}
 			

@@ -17,12 +17,11 @@
 
 package com.github.thiagotgm.blakebot.common.storage.translate;
 
-import java.io.IOException;
-
+import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
 
 /**
- * Translator for Strings that just acts as a pass-through.
+ * Translator for Strings.
  * 
  * @version 1.0
  * @author ThiagoTGM
@@ -31,16 +30,20 @@ import com.github.thiagotgm.blakebot.common.storage.Translator;
 public class StringTranslator implements Translator<String> {
 
 	@Override
-	public String encode( String obj ) throws IOException {
-		
-		return obj;
+	public Data toData( String obj ) throws TranslationException {
+
+		return Data.stringData( obj );
 		
 	}
 
 	@Override
-	public String decode( String str ) throws IOException {
+	public String fromData( Data data ) throws TranslationException {
+
+		if ( !data.isString() ) {
+			throw new TranslationException( "Given data is not a String." );
+		}
 		
-		return str;
+		return data.getString();
 		
 	}
 

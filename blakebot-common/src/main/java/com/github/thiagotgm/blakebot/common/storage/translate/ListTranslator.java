@@ -17,25 +17,20 @@
 
 package com.github.thiagotgm.blakebot.common.storage.translate;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.github.thiagotgm.blakebot.common.storage.Translator;
-import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 /**
- * Translator for lists of objects, that translates each object and then joins them
- * using {@link Utils#encodeList(List)}.
+ * Translator for lists of objects.
  * 
  * @version 1.0
  * @author ThiagoTGM
  * @since 2018-08-28
- * @param <T> The type of objects in the lists to be translated.
+ * @param <E> The type of objects in the lists to be translated.
  */
-public class ListTranslator<T> implements Translator<List<T>> {
-	
-	private final Translator<T> elementTranslator;
+public class ListTranslator<E> extends CollectionTranslator<E,List<E>> {
 	
 	/**
 	 * Initializes a list translator that uses the given translator for
@@ -44,44 +39,16 @@ public class ListTranslator<T> implements Translator<List<T>> {
 	 * @param elementTranslator The translator to be used for the elements
 	 *                          in the list.
 	 */
-	public ListTranslator( Translator<T> elementTranslator ) {
+	public ListTranslator( Translator<E> elementTranslator ) {
 		
-		this.elementTranslator = elementTranslator;
-		
-	}
-
-	@Override
-	public String encode( List<T> list ) throws IOException {
-
-		List<String> translatedList = new ArrayList<>( list.size() );
-		for ( T element : list ) { // Translate each element in the list.
-			
-			try {
-				translatedList.add( elementTranslator.encode( element ) );
-			} catch ( IOException e ) {
-				throw new IOException( "Could not translate element.", e );
-			}
-			
-		}
-		return Utils.encodeList( translatedList ); // Encode into a string.
+		super( elementTranslator );
 		
 	}
 
 	@Override
-	public List<T> decode( String str ) throws IOException {
-
-		List<String> translatedList = Utils.decodeList( str ); // Decode from string.
-		List<T> list = new ArrayList<>();
-		for ( String element : translatedList ) { // Decode each element.
-			
-			try {
-				list.add( elementTranslator.decode( element ) );
-			} catch ( IOException e ) {
-				throw new IOException( "Could not translate element.", e );
-			}
-			
-		}
-		return list;
+	protected List<E> newInstance() {
+		
+		return new ArrayList<>();
 		
 	}
 
