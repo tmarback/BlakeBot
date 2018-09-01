@@ -21,8 +21,13 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -69,16 +74,20 @@ public class DynamoDBDatabaseTest {
 	private Map<String,Data> map;
 
 	@Before
-	public void setUp() throws Exception {
+	public void setUp() {
 		
 		db = new DynamoDBDatabase();
 		assertTrue( db.load( Arrays.asList( "yes", "8000", "", "" ) ) );
 		map = db.newMap( "BlakeBotTest", new StringTranslator(), new DataTranslator() );
 		
 	}
-
+	
 	@After
 	public void tearDown() throws Exception {
+		
+		if ( hasTempTable ) {
+			deleteTempTable();
+		}
 		
 		map = null;
 		try {
@@ -92,6 +101,8 @@ public class DynamoDBDatabaseTest {
 	
 	private static final String TEMP_TABLE = "temp";
 	
+	private boolean hasTempTable = false;
+	
 	/**
 	 * Creates a temporary table.
 	 * 
@@ -99,6 +110,7 @@ public class DynamoDBDatabaseTest {
 	 */
 	private Map<String,Data> getTempTable() {
 		
+		hasTempTable = true;
 		return db.newMap( TEMP_TABLE, new StringTranslator(), new DataTranslator() );
 		
 	}
@@ -113,6 +125,7 @@ public class DynamoDBDatabaseTest {
 		Table table = db.dynamoDB.getTable( TEMP_TABLE ); // Delete temp table.
 		table.delete();
 		table.waitForDelete();
+		hasTempTable = false;
 		
 	}
 	
@@ -120,9 +133,7 @@ public class DynamoDBDatabaseTest {
 	public void testSize() throws Exception {
 		
 		assertEquals( TEST_DB_MAPPINGS.size(), map.size() );
-		assertEquals( 0, db.newMap( TEMP_TABLE, new StringTranslator(), new DataTranslator() ).size() );
-		
-		deleteTempTable();
+		assertEquals( 0, getTempTable().size() );
 		
 	}
 	
@@ -131,8 +142,6 @@ public class DynamoDBDatabaseTest {
 		
 		assertFalse( map.isEmpty() );
 		assertTrue( getTempTable().isEmpty() );
-
-		deleteTempTable();
 		
 	}
 	
@@ -199,6 +208,22 @@ public class DynamoDBDatabaseTest {
 	@SuppressWarnings("unlikely-arg-type")
 	public void testPutAndRemove() throws Exception {
 		
+		Map<String,Data> map = getTempTable(); // Use a separate table.
+		
+		// Add default test values
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertNull( map.put( mapping.getKey(), mapping.getValue() ) );
+			
+		}
+		
+		// Check that they were inserted.
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertEquals( mapping.getValue(), map.get( mapping.getKey() ) );
+			
+		}
+		
 		String listKey = "mail";
 		String mapKey = "look a map";
 		
@@ -222,7 +247,12 @@ public class DynamoDBDatabaseTest {
 		assertEquals( listData, map.get( listKey ) ); // Check placed values.
 		assertEquals( mapData, map.get( mapKey ) );
 		
-		testGet(); // Check that unrelated values are untouched.
+		// Check that unrelated values are untouched.
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertEquals( mapping.getValue(), map.get( mapping.getKey() ) );
+			
+		}
 		
 		/* Try replacing existing values */
 		
@@ -235,7 +265,12 @@ public class DynamoDBDatabaseTest {
 		assertEquals( newListData, map.get( listKey ) ); // Check new values.
 		assertEquals( newMapData, map.get( mapKey ) );
 		
-		testGet(); // Check that unrelated values are untouched.
+		// Check that unrelated values are untouched.
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertEquals( mapping.getValue(), map.get( mapping.getKey() ) );
+			
+		}
 		
 		/* Try removing non-existant values */
 		
@@ -246,7 +281,12 @@ public class DynamoDBDatabaseTest {
 		assertEquals( newListData, map.get( listKey ) ); // Check placed values.
 		assertEquals( newMapData, map.get( mapKey ) );
 		
-		testGet(); // Check that unrelated values are untouched.
+		// Check that unrelated values are untouched.
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertEquals( mapping.getValue(), map.get( mapping.getKey() ) );
+			
+		}
 		
 		/* Try removing existing values */
 		
@@ -256,7 +296,12 @@ public class DynamoDBDatabaseTest {
 		assertNull( map.get( listKey ) ); // Check removed.
 		assertNull( map.get( mapKey ) );
 		
-		testGet(); // Check that unrelated values are untouched.
+		// Check that unrelated values are untouched.
+		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertEquals( mapping.getValue(), map.get( mapping.getKey() ) );
+			
+		}
 		
 	}
 	
@@ -276,8 +321,6 @@ public class DynamoDBDatabaseTest {
 			
 		}
 		
-		deleteTempTable();
-		
 	}
 	
 	@Test
@@ -294,8 +337,6 @@ public class DynamoDBDatabaseTest {
 		tempMap.clear(); // Clear mappings.
 		
 		assertTrue( tempMap.isEmpty() ); // Check if temp is empty again.
-		
-		deleteTempTable();
 		
 	}
 	
@@ -344,400 +385,968 @@ public class DynamoDBDatabaseTest {
 		assertFalse( temp.equals( otherMap ) );
 		assertFalse( otherMap.equals( temp ) );
 		
-		deleteTempTable();
-		
 	}
 	
 	@Test
 	public void testHashCode() throws Exception {
 		
-		assertEquals( TEST_DB_MAPPINGS, map.hashCode() );
+		assertEquals( TEST_DB_MAPPINGS.hashCode(), map.hashCode() );
 		assertEquals( new HashMap<>().hashCode(), getTempTable().hashCode() );
-		deleteTempTable();
 		
 	}
 	
 	/* Tests for key set view */
 	
 	@Test
-	public void testKeySetSize() {
+	public void testKeySetSize() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertEquals( TEST_DB_MAPPINGS.size(), map.keySet().size() );
+		assertEquals( 0, getTempTable().keySet().size() );
 		
 	}
 
 	@Test
-	public void testKeySetIsEmpty() {
+	public void testKeySetIsEmpty() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( map.keySet().isEmpty() );
+		assertTrue( getTempTable().keySet().isEmpty() );
 		
 	}
 	
 	@Test
+	@SuppressWarnings("unlikely-arg-type")
 	public void testKeySetContains() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Set<String> keys = map.keySet();
+		
+		for ( String key : TEST_DB_MAPPINGS.keySet() ) {
+			
+			assertTrue( keys.contains( key ) );
+			
+		}
+		
+		assertFalse( keys.contains( null ) );
+		assertFalse( keys.contains( new Integer( 42 ) ) );
+		assertFalse( keys.contains( "lololol" ) );
+		assertFalse( keys.contains( "wroooooooong" ) );
 		
 	}
 	
 	@Test
-	public void testKeySetIterator() {
+	public void testKeySetIterator() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Iterator<String> iter = map.keySet().iterator();
+		Set<String> expected = new HashSet<>( TEST_DB_MAPPINGS.keySet() );
 		
-	}
-	
-	@Test
-	public void testKeySetIteratorRemove() {
+		while ( iter.hasNext() ) { // Check if iterator only returns expected values.
+			
+			assertTrue( expected.remove( iter.next() ) );
+			
+		}
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( expected.isEmpty() ); // Ensure all expected values were returned.
 		
-	}
-	
-	@Test
-	public void testKeySetToArrayObj() {
-		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( getTempTable().keySet().iterator().hasNext() );
 		
 	}
 	
 	@Test
-	public void testKeySetToArray() {
+	public void testKeySetIteratorRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		
+		map.put( "one", Data.numberData( 1 ) );
+		map.put( "two", Data.numberData( 2 ) );
+		map.put( "three", Data.numberData( 3 ) );
+		
+		Set<String> toFind = new HashSet<>( map.keySet() );
+		
+		for ( Iterator<String> iter = map.keySet().iterator(); iter.hasNext(); ) {
+			
+			String next = iter.next();
+			toFind.remove( next );
+			if ( next.equals( "two" ) ) {
+				iter.remove(); // Remove one element.
+			}
+			
+		}
+		
+		assertTrue( toFind.isEmpty() ); // Ensure iterated over everything.
+		
+		assertTrue( map.containsKey( "one" ) );  // Check that only the right one
+		assertFalse( map.containsKey( "two" ) ); // got removed.
+		assertTrue( map.containsKey( "three" ) );
+		
+	}
+	
+	@Test
+	public void testKeySetToArrayObj() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.keySet().toArray() );
+		List<Object> actual = Arrays.asList( map.keySet().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().keySet().toArray() );
+		actual = Arrays.asList( getTempTable().keySet().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		assertTrue( Arrays.deepEquals( getTempTable().entrySet().toArray(),
+				new HashMap<>().entrySet().toArray() ) );
+		
+	}
+	
+	@Test
+	public void testKeySetToArray() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.keySet().toArray( new Object[15] ) );
+		List<Object> actual = Arrays.asList( map.keySet().toArray( new Object[15] ) );
+		int size = TEST_DB_MAPPINGS.size();
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().keySet().toArray( new Object[15] ) );
+		actual = Arrays.asList( getTempTable().keySet().toArray( new Object[15] ) );
+		size = 0;
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
 	public void testKeySetAdd() {
 		
-		map.keySet().add( "fail" );
+		getTempTable().keySet().add( "fail" );
 		
 	}
 	
 	@Test
-	public void testKeySetRemove() {
+	public void testKeySetRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		
+		map.put( "testing 1", Data.stringData( "toRemove" ) );
+		map.put( "testing 2", Data.nullData() );
+		map.put( "testing 3", Data.numberData( 5 ) );
+		
+		assertTrue( map.keySet().remove( "testing 2" ) );
+		
+		assertEquals( Data.stringData( "toRemove" ), map.get( "testing 1" ) );
+		assertNull( map.get( "testing 2" ) );
+		assertEquals( Data.numberData( 5 ), map.get( "testing 3" ) );
 		
 	}
 	
 	@Test
 	public void testKeySetContainsAll() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( map.keySet().containsAll( TEST_DB_MAPPINGS.keySet() ) );
+		
+		Map<String,Data> otherMap = new HashMap<>( TEST_DB_MAPPINGS );
+		otherMap.put( "plane", Data.booleanData( false ) );
+		
+		assertFalse( map.keySet().containsAll( otherMap.keySet() ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
 	public void testKeySetAddAll() {
 		
-		map.keySet().addAll( new ArrayList<>( 1 ) );
+		getTempTable().keySet().addAll( TEST_DB_MAPPINGS.keySet() );
 		
 	}
 	
 	@Test
 	public void testKeySetRemoveAll() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Set<String> keys = map.keySet();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( keys.removeAll( toRemove.keySet() ) ); // Remove.
+		
+		for ( String key : toRemove.keySet() ) { // Check removed.
+			
+			assertFalse( keys.contains( key ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( keys.containsAll( toRetain.keySet() ) );
+		
+		assertFalse( keys.removeAll( toRemove.keySet() ) ); // Try removing again.
 		
 	}
 	
 	@Test
 	public void testKeySetRetainAll() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Set<String> keys = map.keySet();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( keys.retainAll( toRetain.keySet() ) ); // Remove.
+		
+		for ( String key : toRemove.keySet() ) { // Check removed.
+			
+			assertFalse( keys.contains( key ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( keys.containsAll( toRetain.keySet() ) );
+		
+		assertFalse( keys.removeAll( toRemove.keySet() ) ); // Try removing again.
 		
 	}
 	
 	@Test
-	public void testKeySetClear() {
+	public void testKeySetClear() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
 		
-	}
-	
-	@Test
-	public void testKeySetEquals() {
+		assertFalse( map.isEmpty() );
 		
-		// TODO
-		fail( "Not implemented yet" );
+		map.keySet().clear();
+		
+		assertTrue( map.isEmpty() );
 		
 	}
 	
 	@Test
-	public void testKeySetHashCode() {
+	@SuppressWarnings("unlikely-arg-type")
+	public void testKeySetEquals() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Set<String> keys = map.keySet();
+		
+		// Check correct map.
+		assertTrue( keys.equals( TEST_DB_MAPPINGS.keySet() ) );
+		assertTrue( TEST_DB_MAPPINGS.keySet().equals( keys ) );
+		
+		// Check correct map but the map itself.
+		assertFalse( keys.equals( TEST_DB_MAPPINGS ) );
+		assertFalse( TEST_DB_MAPPINGS.equals( keys ) );
+		
+		// Check non-map.
+		assertFalse( keys.equals( "str" ) );
+		assertFalse( "str".equals( keys ) );
+		
+		// Check empty map.
+		Map<String,Data> emptyMap = new HashMap<>();
+		
+		assertFalse( keys.equals( emptyMap.keySet() ) );
+		assertFalse( emptyMap.keySet().equals( keys ) );
+		
+		// Check other map.
+		Map<String,Data> otherMap = new HashMap<>();
+		otherMap.put( "one", Data.stringData( "haha" ) );
+		
+		assertFalse( keys.equals( otherMap.keySet() ) );
+		assertFalse( otherMap.keySet().equals( keys ) );
+		
+		/* Test with empty map */
+		
+		keys = getTempTable().keySet();
+		
+		// Check correct map.
+		assertTrue( keys.equals( emptyMap.keySet() ) );
+		assertTrue( emptyMap.keySet().equals( keys ) );
+		
+		// Check correct map but the map itself.
+		assertFalse( keys.equals( emptyMap ) );
+		assertFalse( emptyMap.equals( keys ) );
+		
+		// Check non-map.
+		assertFalse( keys.equals( "str" ) );
+		assertFalse( "str".equals( keys ) );
+		
+		// Check wrong map.
+		assertFalse( keys.equals( TEST_DB_MAPPINGS.keySet() ) );
+		assertFalse( TEST_DB_MAPPINGS.keySet().equals( keys ) );
+		
+		// Check other map.
+		assertFalse( keys.equals( otherMap.keySet() ) );
+		assertFalse( otherMap.keySet().equals( keys ) );
+		
+	}
+	
+	@Test
+	public void testKeySetHashCode() throws Exception {
+		
+		assertEquals( TEST_DB_MAPPINGS.keySet().hashCode(), map.keySet().hashCode() );
+		assertEquals( new HashMap<>().keySet().hashCode(), getTempTable().keySet().hashCode() );
 		
 	}
 	
 	/* Tests for value collection view */
 	
 	@Test
-	public void testValueCollectionSize() {
+	public void testValueCollectionSize() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertEquals( TEST_DB_MAPPINGS.size(), map.values().size() );
+		assertEquals( 0, getTempTable().values().size() );
 		
 	}
 
 	@Test
-	public void testValueCollectionIsEmpty() {
+	public void testValueCollectionIsEmpty() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( map.values().isEmpty() );
+		assertTrue( getTempTable().values().isEmpty() );
 		
 	}
 	
 	@Test
+	@SuppressWarnings("unlikely-arg-type")
 	public void testValueCollectionContains() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Collection<Data> values = map.values();
+		
+		for ( Data value : TEST_DB_MAPPINGS.values() ) {
+			
+			assertTrue( values.contains( value ) );
+			
+		}
+		
+		assertFalse( values.contains( null ) );
+		assertFalse( values.contains( new Integer( 42 ) ) );
+		assertFalse( values.contains( Data.nullData() ) );
+		assertFalse( values.contains( Data.stringData( "thinkTak" ) ) );
 		
 	}
 	
 	@Test
-	public void testValueCollectionIterator() {
+	public void testValueCollectionIterator() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Iterator<Data> iter = map.values().iterator();
+		Collection<Data> expected = new ArrayList<>( TEST_DB_MAPPINGS.values() );
 		
-	}
-	
-	@Test
-	public void testValueCollectionIteratorRemove() {
+		while ( iter.hasNext() ) { // Check if iterator only returns expected values.
+			
+			assertTrue( expected.remove( iter.next() ) );
+			
+		}
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( expected.isEmpty() ); // Ensure all expected values were returned.
 		
-	}
-	
-	@Test
-	public void testValueCollectionToArrayObj() {
-		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( getTempTable().values().iterator().hasNext() );
 		
 	}
 	
 	@Test
-	public void testValueCollectionToArray() {
+	public void testValueCollectionIteratorRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		
+		map.put( "one", Data.numberData( 1 ) );
+		map.put( "two", Data.numberData( 2 ) );
+		map.put( "two.2", Data.numberData( 2 ) );
+		map.put( "three", Data.numberData( 3 ) );
+		
+		Collection<Data> toFind = new ArrayList<>( map.values() );
+		
+		boolean shouldDelete = true;
+		for ( Iterator<Data> iter = map.values().iterator(); iter.hasNext(); ) {
+			
+			Data next = iter.next();
+			toFind.remove( next );
+			if ( shouldDelete && next.equals( Data.numberData( 2 ) ) ) {
+				iter.remove(); // Remove one of 2 possible elements.
+				shouldDelete = false;
+			}
+			
+		}
+		
+		assertTrue( toFind.isEmpty() ); // Ensure iterated over everything.
+		
+		assertTrue( map.containsKey( "one" ) ); // Check that exactly one of the possible elements
+		assertFalse( map.containsKey( "two" ) && map.containsKey( "two.2" ) ); // got removed, and
+		assertTrue( map.containsKey( "two" ) || map.containsKey( "two.2" ) );  // nothing else.
+		assertTrue( map.containsKey( "three" ) );
+		
+	}
+	
+	@Test
+	public void testValueCollectionToArrayObj() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.values().toArray() );
+		List<Object> actual = Arrays.asList( map.values().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().values().toArray() );
+		actual = Arrays.asList( getTempTable().values().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		assertTrue( Arrays.deepEquals( getTempTable().entrySet().toArray(),
+				new HashMap<>().entrySet().toArray() ) );
+		
+	}
+	
+	@Test
+	public void testValueCollectionToArray() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.values().toArray( new Object[15] ) );
+		List<Object> actual = Arrays.asList( map.values().toArray( new Object[15] ) );
+		int size = TEST_DB_MAPPINGS.size();
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().values().toArray( new Object[15] ) );
+		actual = Arrays.asList( getTempTable().values().toArray( new Object[15] ) );
+		size = 0;
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
 	public void testValueCollectionAdd() {
 		
-		map.keySet().add( "fail" );
+		getTempTable().keySet().add( "fail" );
 		
 	}
 	
 	@Test
-	public void testValueCollectionRemove() {
+	public void testValueCollectionRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		
+		map.put( "testing 1", Data.stringData( "toRemove" ) );
+		map.put( "testing 2", Data.nullData() );
+		map.put( "testing 2.5", Data.nullData() );
+		map.put( "testing 3", Data.numberData( 5 ) );
+		
+		assertTrue( map.values().remove( Data.nullData() ) );
+		
+		assertEquals( Data.stringData( "toRemove" ), map.get( "testing 1" ) );
+		assertTrue( ( map.get( "testing 2" ) == null ) || // Ensure exactly one got removed.
+				    ( map.get( "testing 2.5" ) == null ) );
+		assertTrue( Data.nullData().equals( map.get( "testing 2" ) ) ||
+				    Data.nullData().equals( map.get( "testing 2.5" ) ) );
+		assertEquals( Data.numberData( 5 ), map.get( "testing 3" ) );
 		
 	}
 	
 	@Test
 	public void testValueCollectionContainsAll() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( map.values().containsAll( TEST_DB_MAPPINGS.values() ) );
+		
+		Map<String,Data> otherMap = new HashMap<>( TEST_DB_MAPPINGS );
+		otherMap.put( "plane", Data.booleanData( false ) );
+		
+		assertFalse( map.values().containsAll( otherMap.values() ) );
+		
+		otherMap = new HashMap<>( TEST_DB_MAPPINGS );
+		otherMap.put( "plane", map.values().iterator().next() );
+		
+		assertTrue( map.values().containsAll( otherMap.values() ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
 	public void testValueCollectionAddAll() {
 		
-		map.keySet().addAll( new ArrayList<>( 1 ) );
+		getTempTable().values().addAll( TEST_DB_MAPPINGS.values() );
 		
 	}
 	
 	@Test
-	public void testValueCollectionRemoveAll() {
+	public void testValueCollectionRemoveAll() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Collection<Data> values = map.values();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( values.removeAll( toRemove.values() ) ); // Remove.
+		
+		for ( Data value : toRemove.values() ) { // Check removed.
+			
+			assertFalse( values.contains( value ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( values.containsAll( toRetain.values() ) );
+		
+		assertFalse( values.removeAll( toRemove.values() ) ); // Try removing again.
 		
 	}
 	
 	@Test
-	public void testValueCollectionRetainAll() {
+	public void testValueCollectionRetainAll() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Collection<Data> values = map.values();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( values.retainAll( toRetain.values() ) ); // Remove.
+		
+		for ( Data value : toRemove.values() ) { // Check removed.
+			
+			assertFalse( values.contains( value ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( values.containsAll( toRetain.values() ) );
+		
+		assertFalse( values.removeAll( toRemove.values() ) ); // Try removing again.
 		
 	}
 	
 	@Test
-	public void testValueCollectionClear() {
+	public void testValueCollectionClear() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
 		
-	}
-	
-	@Test
-	public void testValueCollectionEquals() {
+		assertFalse( map.isEmpty() );
 		
-		// TODO
-		fail( "Not implemented yet" );
+		map.values().clear();
 		
-	}
-	
-	@Test
-	public void testValueCollectionHashCode() {
-		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( map.isEmpty() );
 		
 	}
 	
 	/* Tests for entry set view */
 	
 	@Test
-	public void testEntrySetSize() {
+	public void testEntrySetSize() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertEquals( TEST_DB_MAPPINGS.size(), map.entrySet().size() );
+		assertEquals( 0, getTempTable().entrySet().size() );
 		
 	}
 
 	@Test
-	public void testEntrySetIsEmpty() {
+	public void testEntrySetIsEmpty() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( map.entrySet().isEmpty() );
+		assertTrue( getTempTable().entrySet().isEmpty() );
 		
 	}
 	
 	@Test
+	@SuppressWarnings("unlikely-arg-type")
 	public void testEntrySetContains() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Set<Map.Entry<String,Data>> entries = map.entrySet();
+		
+		for ( Map.Entry<String,Data> entry : TEST_DB_MAPPINGS.entrySet() ) {
+			
+			assertTrue( entries.contains( entry ) );
+			
+		}
+		
+		assertFalse( entries.contains( null ) );
+		assertFalse( entries.contains( new Integer( 42 ) ) );
+		assertFalse( entries.contains( "lololol" ) );
+		
+		Map<String,Data> otherMap = new HashMap<>();
+		otherMap.put( "wolololo", Data.nullData() );
+		otherMap.put( "trollface", Data.numberData( "4.999" ) );
+		
+		for ( Map.Entry<String,Data> entry : otherMap.entrySet() ) {
+			
+			assertFalse( entries.contains( entry ) );
+			
+		}
 		
 	}
 	
 	@Test
-	public void testEntrySetIterator() {
+	public void testEntrySetIterator() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Iterator<Map.Entry<String,Data>> iter = map.entrySet().iterator();
+		Set<Map.Entry<String,Data>> expected = new HashSet<>( TEST_DB_MAPPINGS.entrySet() );
 		
-	}
-	
-	@Test
-	public void testEntrySetIteratorRemove() {
+		while ( iter.hasNext() ) { // Check if iterator only returns expected values.
+			
+			assertTrue( expected.remove( iter.next() ) );
+			
+		}
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( expected.isEmpty() ); // Ensure all expected values were returned.
 		
-	}
-	
-	@Test
-	public void testEntrySetToArrayObj() {
-		
-		// TODO
-		fail( "Not implemented yet" );
+		assertFalse( getTempTable().entrySet().iterator().hasNext() );
 		
 	}
 	
 	@Test
-	public void testEntrySetToArray() {
+	public void testEntrySetIteratorRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		
+		map.put( "one", Data.numberData( 1 ) );
+		map.put( "two", Data.numberData( 2 ) );
+		map.put( "three", Data.numberData( 3 ) );
+		
+		Set<Map.Entry<String,Data>> toFind = new HashSet<>( map.entrySet() );
+		
+		for ( Iterator<Map.Entry<String,Data>> iter = map.entrySet().iterator(); iter.hasNext(); ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toFind.remove( next );
+			if ( next.getKey().equals( "two" ) ) {
+				iter.remove(); // Remove one element.
+			}
+			
+		}
+		
+		assertTrue( toFind.isEmpty() ); // Ensure iterated over everything.
+		
+		assertTrue( map.containsKey( "one" ) );  // Check that only the right one
+		assertFalse( map.containsKey( "two" ) ); // got removed.
+		assertTrue( map.containsKey( "three" ) );
+		
+	}
+	
+	@Test
+	public void testEntrySetToArrayObj() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.entrySet().toArray() );
+		List<Object> actual = Arrays.asList( map.entrySet().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().entrySet().toArray() );
+		actual = Arrays.asList( getTempTable().entrySet().toArray() );
+		
+		assertEquals( expected.size(), actual.size() );
+		assertFalse( expected.retainAll( actual ) );
+		
+		assertTrue( Arrays.deepEquals( getTempTable().entrySet().toArray(),
+				new HashMap<>().entrySet().toArray() ) );
+		
+	}
+	
+	@Test
+	public void testEntrySetToArray() throws Exception {
+		
+		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.entrySet().toArray( new Object[15] ) );
+		List<Object> actual = Arrays.asList( map.entrySet().toArray( new Object[15] ) );
+		int size = TEST_DB_MAPPINGS.size();
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
+		
+		/* Test with empty map */
+		
+		expected = Arrays.asList( new HashMap<>().entrySet().toArray( new Object[15] ) );
+		actual = Arrays.asList( getTempTable().entrySet().toArray( new Object[15] ) );
+		size = 0;
+		
+		assertEquals( expected.size(), actual.size() );
+		assertEquals( expected.subList( size, expected.size() ), actual.subList( size, expected.size() )  );
+		assertFalse( expected.retainAll( actual ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
-	public void testEntrySetAdd() {
+	public void testEntrySetAdd() throws Exception {
 		
-		map.keySet().add( "fail" );
+		getTempTable().keySet().add( "fail" );
 		
 	}
 	
 	@Test
-	public void testEntrySetRemove() {
+	public void testEntrySetRemove() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		Map.Entry<String,Data> toDelete = iter.next(); // Get a mapping to delete.
+		
+		map.entrySet().remove( toDelete ); // Delete the mapping.
+		
+		assertFalse( map.containsKey( toDelete.getKey() ) );
+		
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			assertEquals( next.getValue(), map.get( next.getKey() ) );
+			
+		}
 		
 	}
 	
 	@Test
 	public void testEntrySetContainsAll() {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		assertTrue( map.entrySet().containsAll( TEST_DB_MAPPINGS.entrySet() ) );
+		
+		Map<String,Data> otherMap = new HashMap<>( TEST_DB_MAPPINGS );
+		otherMap.put( "plane", Data.booleanData( false ) );
+		
+		assertFalse( map.entrySet().containsAll( otherMap.entrySet() ) );
 		
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
-	public void testEntrySetAddAll() {
+	public void testEntrySetAddAll() throws Exception {
 		
-		map.keySet().addAll( new ArrayList<>( 1 ) );
-		
-	}
-	
-	@Test
-	public void testEntrySetRemoveAll() {
-		
-		// TODO
-		fail( "Not implemented yet" );
+		getTempTable().entrySet().addAll( TEST_DB_MAPPINGS.entrySet() );
 		
 	}
 	
 	@Test
-	public void testEntrySetRetainAll() {
+	public void testEntrySetRemoveAll() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Set<Map.Entry<String,Data>> entries = map.entrySet();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( entries.removeAll( toRemove.entrySet() ) ); // Remove.
+		
+		for ( Map.Entry<String,Data> entry : toRemove.entrySet() ) { // Check removed.
+			
+			assertFalse( entries.contains( entry ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( entries.containsAll( toRetain.entrySet() ) );
+		
+		assertFalse( entries.removeAll( toRemove.entrySet() ) ); // Try removing again.
 		
 	}
 	
 	@Test
-	public void testEntrySetClear() {
+	public void testEntrySetRetainAll() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		Set<Map.Entry<String,Data>> entries = map.entrySet();
+		
+		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
+		
+		Map<String,Data> toRemove = new HashMap<>();
+		for ( int i = 0; i <= TEST_DB_MAPPINGS.size() / 2; i++ ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRemove.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		Map<String,Data> toRetain = new HashMap<>();
+		while ( iter.hasNext() ) {
+			
+			Map.Entry<String,Data> next = iter.next();
+			toRetain.put( next.getKey(), next.getValue() );
+			
+		}
+		
+		assertTrue( entries.retainAll( toRetain.entrySet() ) ); // Remove.
+		
+		for ( Map.Entry<String,Data> entry : toRemove.entrySet() ) { // Check removed.
+			
+			assertFalse( entries.contains( entry ) );
+			
+		}
+		
+		// Check nothing else was removed.
+		assertTrue( entries.containsAll( toRetain.entrySet() ) );
+		
+		assertFalse( entries.removeAll( toRemove.entrySet() ) ); // Try removing again.
 		
 	}
 	
 	@Test
-	public void testEntrySetEquals() {
+	public void testEntrySetClear() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Map<String,Data> map = getTempTable();
+		map.putAll( TEST_DB_MAPPINGS );
+		
+		assertFalse( map.isEmpty() );
+		
+		map.entrySet().clear();
+		
+		assertTrue( map.isEmpty() );
 		
 	}
 	
 	@Test
-	public void testEntrySetHashCode() {
+	@SuppressWarnings("unlikely-arg-type")
+	public void testEntrySetEquals() throws Exception {
 		
-		// TODO
-		fail( "Not implemented yet" );
+		Set<Map.Entry<String,Data>> entries = map.entrySet();
+		
+		// Check correct map.
+		assertTrue( entries.equals( TEST_DB_MAPPINGS.entrySet() ) );
+		assertTrue( TEST_DB_MAPPINGS.entrySet().equals( entries ) );
+		
+		// Check correct map but the map itself.
+		assertFalse( entries.equals( TEST_DB_MAPPINGS ) );
+		assertFalse( TEST_DB_MAPPINGS.equals( entries ) );
+		
+		// Check non-map.
+		assertFalse( entries.equals( "str" ) );
+		assertFalse( "str".equals( entries ) );
+		
+		// Check empty map.
+		Map<String,Data> emptyMap = new HashMap<>();
+		
+		assertFalse( entries.equals( emptyMap.entrySet() ) );
+		assertFalse( emptyMap.entrySet().equals( entries ) );
+		
+		// Check other map.
+		Map<String,Data> otherMap = new HashMap<>();
+		otherMap.put( "one", Data.stringData( "haha" ) );
+		
+		assertFalse( entries.equals( otherMap.entrySet() ) );
+		assertFalse( otherMap.entrySet().equals( entries ) );
+		
+		/* Test with empty map */
+		
+		entries = getTempTable().entrySet();
+		
+		// Check correct map.
+		assertTrue( entries.equals( emptyMap.entrySet() ) );
+		assertTrue( emptyMap.entrySet().equals( entries ) );
+		
+		// Check correct map but the map itself.
+		assertFalse( entries.equals( emptyMap ) );
+		assertFalse( emptyMap.equals( entries ) );
+		
+		// Check non-map.
+		assertFalse( entries.equals( "str" ) );
+		assertFalse( "str".equals( entries ) );
+		
+		// Check wrong map.
+		assertFalse( entries.equals( TEST_DB_MAPPINGS.entrySet() ) );
+		assertFalse( TEST_DB_MAPPINGS.entrySet().equals( entries ) );
+		
+		// Check other map.
+		assertFalse( entries.equals( otherMap.entrySet() ) );
+		assertFalse( otherMap.entrySet().equals( entries ) );
+		
+	}
+	
+	@Test
+	public void testEntrySetHashCode() throws Exception {
+		
+		assertEquals( TEST_DB_MAPPINGS.entrySet().hashCode(), map.entrySet().hashCode() );
+		assertEquals( new HashMap<>().entrySet().hashCode(), getTempTable().entrySet().hashCode() );
 		
 	}
 
