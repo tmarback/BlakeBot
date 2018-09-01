@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +44,9 @@ import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.UpdateItemSpec;
 import com.amazonaws.services.dynamodbv2.document.utils.NameMap;
@@ -62,7 +65,7 @@ import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
 
 /**
- * Database that uses a DynamoDB backed, either locally or using the
+ * Database that uses a DynamoDB backend, either locally or using the
  * AWS service.
  * <p>
  * When a map is requested, the table of matching name will be used, and if
@@ -99,8 +102,21 @@ public class DynamoDBDatabase extends TableDatabase {
             new Parameter( Arrays.asList( "(ignored)", "Secret Key" ) ),
             new Parameter( Arrays.asList( "(ignored)", "Region" ), REGIONS ) );
 	
-	private static final String KEY_ATTRIBUTE = "key";
-	private static final String VALUE_ATTRIBUTE = "value";
+	/**
+	 * Attribute that stores the key of a database entry (hash key).
+	 */
+	protected static final String KEY_ATTRIBUTE = "key";
+	/**
+	 * Attribute that stores the value of a database entry.
+	 */
+	protected static final String VALUE_ATTRIBUTE = "value";
+	/**
+	 * Attribute that is (expected to be) not present in a database
+	 * item. Used in projection expressions in get or scan operations
+	 * in order to prevent actual item data from being loaded,
+	 * when only existence checking is needed.
+	 */
+	protected static final String INVALID_ATTRIBUTE = "invalid";
 	
 	private static final List<KeySchemaElement> KEY_SCHEMA = Collections.unmodifiableList(
 			Arrays.asList( new KeySchemaElement( KEY_ATTRIBUTE, KeyType.HASH ) ) );
@@ -171,6 +187,8 @@ public class DynamoDBDatabase extends TableDatabase {
 		}
 
 		closed = true;
+		
+		LOG.info( "Closing DynamoDB." );
 
 		dynamoDB.shutdown();
 		client.shutdown();
@@ -190,11 +208,14 @@ public class DynamoDBDatabase extends TableDatabase {
 			LOG.trace( "Attempting to create table of name '{}'.", tableName );
 			table = dynamoDB.createTable( tableName, KEY_SCHEMA, ATTRIBUTE_DEFINITIONS,
 					DEFAULT_THROUGHPUT );
+			table.waitForActive(); // Wait until table is active.
 			LOG.info( "Created table of name '{}'.", tableName );
 		} catch ( ResourceInUseException e ) {
 			LOG.trace( "Table already exists. Retrieving table of name '{}'.", tableName );
 			table = dynamoDB.getTable( tableName );
 			LOG.info( "Retrieved table of name '{}'.", tableName );
+		} catch ( InterruptedException e ) {
+			throw new DatabaseException( "Interrupted while creating table.", e );
 		}
 		return table;
 		
@@ -244,8 +265,24 @@ public class DynamoDBDatabase extends TableDatabase {
 
 		@Override
 		public int size() {
+			
+			// Construct scan request.
+			ScanSpec scanSpec = new ScanSpec().withProjectionExpression( INVALID_ATTRIBUTE );
 
-			return table.describe().getItemCount().intValue();
+			int count = 0;
+			try {
+				ItemCollection<ScanOutcome> items = table.scan( scanSpec ); // Run scan.
+				Iterator<Item> iter = items.iterator();
+				while ( iter.hasNext() ) {
+					iter.next();
+					count++;
+				}
+			} catch ( Exception e ) {
+				LOG.warn( "Failed to scan database.", e );
+				return 0;
+			}
+
+			return count;
 			
 		}
 
@@ -433,18 +470,27 @@ public class DynamoDBDatabase extends TableDatabase {
 		 * Attempts to retrieve the Item that has the given key.
 		 *
 		 * @param key The key.
+		 * @param loadData Whether the item data (attributes) should be loaded, if it
+		 *                 is found. If this is <tt>false</tt>, then if the returned item
+		 *                 (if any) will not contain any attributes, and is only good for
+		 *                 checking if there exists an item with the given key.
 		 * @return The item under the given key, or <tt>null</tt> if there is
 		 *         no such item.
 		 */
-		private Item getItem( Object key ) {
+		private Item getItem( Object key, boolean loadData ) {
 			
 			String translated = encodeKey( key );
 			if ( translated == null ) {
 				return null; // Incorrect type.
 			}
 		
+			GetItemSpec getSpec = new GetItemSpec().withPrimaryKey( KEY_ATTRIBUTE, translated );
+			if ( !loadData ) { // Should not load data.
+				getSpec.withProjectionExpression( INVALID_ATTRIBUTE );
+			}
+			
 			try {
-				return table.getItem( KEY_ATTRIBUTE, translated );
+				return table.getItem( getSpec );
 			} catch ( Exception e ) {
 				LOG.warn( "Failed to retrieve item of key '" + translated + "'.", e );
 				return null;
@@ -455,7 +501,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public boolean containsKey( Object key ) {
 			
-			return getItem( key ) != null;
+			return getItem( key, false ) != null;
 			
 		}
 
@@ -467,7 +513,8 @@ public class DynamoDBDatabase extends TableDatabase {
 				return false; // Incorrect type.
 			}
 			
-			ScanSpec scanSpec = new ScanSpec().withProjectionExpression( KEY_ATTRIBUTE ) // Construct scan request.
+			// Construct scan request.
+			ScanSpec scanSpec = new ScanSpec().withProjectionExpression( INVALID_ATTRIBUTE )
 					                          .withFilterExpression( "#value = :value" )
 					                          .withNameMap( new NameMap().with( "#value", VALUE_ATTRIBUTE ) )
 					                          .withValueMap( new ValueMap().with( ":value", translated ) );
@@ -485,8 +532,17 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public V get( Object key ) {
 			
-			Item result = getItem( key );
-			return result == null ? null : decodeValue( result.get( VALUE_ATTRIBUTE ) );
+			Item result = getItem( key, true );
+			
+			if ( result == null ) {
+				return null; // No item found.
+			}
+			
+			if ( !result.hasAttribute( VALUE_ATTRIBUTE ) ) { // Missing value attribute.
+				throw new DatabaseException( "Item is missing value attribute." );
+			}
+			
+			return decodeValue( result.get( VALUE_ATTRIBUTE ) );
 			
 		}
 
@@ -503,11 +559,18 @@ public class DynamoDBDatabase extends TableDatabase {
 		            .withValueMap( new ValueMap().with(":val", translatedValue ) )
 		            .withReturnValues( ReturnValue.UPDATED_OLD );
 			
-			Map<String,AttributeValue> result = table.updateItem(updateItemSpec).getUpdateItemResult()
+			Map<String,AttributeValue> result = table.updateItem( updateItemSpec ).getUpdateItemResult()
 					                                 .getAttributes();
 			
-			return result == null ? null : 
-					decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
+			if ( result == null ) {
+				return null; // No old value.
+			}
+			
+			if ( !result.containsKey( VALUE_ATTRIBUTE ) ) { // Missing value attribute.
+				throw new DatabaseException( "Item was missing value attribute." );
+			}
+			
+			return decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
 			
 		}
 
@@ -524,19 +587,41 @@ public class DynamoDBDatabase extends TableDatabase {
 					                    .withReturnValues( ReturnValue.ALL_OLD ) )
 					.getDeleteItemResult().getAttributes();
 			
-			return result == null ? null :
-					decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
+			if ( result == null ) {
+				return null; // No old value.
+			}
+			
+			if ( !result.containsKey( VALUE_ATTRIBUTE ) ) { // Missing value attribute.
+				throw new DatabaseException( "Item was missing value attribute." );
+			}
+			
+			return decodeValue( ItemUtils.toSimpleValue( result.get( VALUE_ATTRIBUTE ) ) );
 			
 		}
 
 		@Override
 		public void putAll( Map<? extends K,? extends V> m ) {
 
+			TableWriteItems writeItems = new TableWriteItems( table.getTableName() );
+			
+			// Obtain all entries to write.
 			for ( Map.Entry<? extends K,? extends V> entry : m.entrySet() ) {
 				
-				put( entry.getKey(), entry.getValue() );
+				AttributeValue keyAttribute = ItemUtils.toAttributeValue( encodeKey( entry.getKey() ) );
+				AttributeValue valueAttribute = ItemUtils.toAttributeValue( encodeValue( entry.getValue() ) );
+				
+				Map<String,AttributeValue> attributes = new HashMap<>();
+				attributes.put( KEY_ATTRIBUTE, keyAttribute );
+				attributes.put( VALUE_ATTRIBUTE, valueAttribute );
+				
+				
+				// Add entry as item.
+				writeItems.addItemToPut( ItemUtils.toItem( attributes ) );
 				
 			}
+			
+			// Write entries.
+			dynamoDB.batchWriteItem( writeItems ).getBatchWriteItemResult();
 			
 		}
 
@@ -555,6 +640,28 @@ public class DynamoDBDatabase extends TableDatabase {
 			LOG.info( "Table cleared." );
 			
 			table = getTable( tableName ); // Recreate table.
+			
+		}
+		
+		@Override
+		public boolean equals( Object o ) {
+			
+			return ( o instanceof Map ) && entrySet().equals( ( (Map<?,?>) o ).entrySet() );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			int sum = 0;
+			
+			for ( Map.Entry<K,V> entry : entrySet() ) {
+				
+				sum += entry.hashCode();
+				
+			}
+			
+			return sum;
 			
 		}
 
