@@ -461,12 +461,28 @@ public class DynamoDBDatabaseTest {
 		
 		Set<String> toFind = new HashSet<>( map.keySet() );
 		
-		for ( Iterator<String> iter = map.keySet().iterator(); iter.hasNext(); ) {
+		Iterator<String> iter  = map.keySet().iterator();
+		
+		try { // Try removing before calling next.
+			iter.remove();
+			fail( "Should have thrown an exception." );
+		} catch ( IllegalStateException e ) {
+			// Normal.
+		}
+		
+		while ( iter.hasNext() ) {
 			
 			String next = iter.next();
 			toFind.remove( next );
 			if ( next.equals( "two" ) ) {
 				iter.remove(); // Remove one element.
+				
+				try { // Try removing twice.
+					iter.remove();
+					fail( "Should have thrown an exception." );
+				} catch ( IllegalStateException e ) {
+					// Normal.
+				}
 			}
 			
 		}
@@ -496,8 +512,8 @@ public class DynamoDBDatabaseTest {
 		assertEquals( expected.size(), actual.size() );
 		assertFalse( expected.retainAll( actual ) );
 		
-		assertTrue( Arrays.deepEquals( getTempTable().entrySet().toArray(),
-				new HashMap<>().entrySet().toArray() ) );
+		assertTrue( Arrays.deepEquals( getTempTable().keySet().toArray(),
+				new HashMap<>().keySet().toArray() ) );
 		
 	}
 	
@@ -794,13 +810,29 @@ public class DynamoDBDatabaseTest {
 		Collection<Data> toFind = new ArrayList<>( map.values() );
 		
 		boolean shouldDelete = true;
-		for ( Iterator<Data> iter = map.values().iterator(); iter.hasNext(); ) {
+		Iterator<Data> iter = map.values().iterator();
+		
+		try { // Try removing before calling next.
+			iter.remove();
+			fail( "Should have thrown an exception." );
+		} catch ( IllegalStateException e ) {
+			// Normal.
+		}
+		
+		while ( iter.hasNext() ) {
 			
 			Data next = iter.next();
 			toFind.remove( next );
 			if ( shouldDelete && next.equals( Data.numberData( 2 ) ) ) {
 				iter.remove(); // Remove one of 2 possible elements.
 				shouldDelete = false;
+				
+				try { // Try removing twice.
+					iter.remove();
+					fail( "Should have thrown an exception." );
+				} catch ( IllegalStateException e ) {
+					// Normal.
+				}
 			}
 			
 		}
@@ -831,8 +863,8 @@ public class DynamoDBDatabaseTest {
 		assertEquals( expected.size(), actual.size() );
 		assertFalse( expected.retainAll( actual ) );
 		
-		assertTrue( Arrays.deepEquals( getTempTable().entrySet().toArray(),
-				new HashMap<>().entrySet().toArray() ) );
+		assertTrue( Arrays.deepEquals( getTempTable().values().toArray(),
+				new HashMap<>().values().toArray() ) );
 		
 	}
 	
@@ -1079,13 +1111,28 @@ public class DynamoDBDatabaseTest {
 		map.put( "three", Data.numberData( 3 ) );
 		
 		Set<Map.Entry<String,Data>> toFind = new HashSet<>( map.entrySet() );
+		Iterator<Map.Entry<String,Data>> iter = map.entrySet().iterator();
 		
-		for ( Iterator<Map.Entry<String,Data>> iter = map.entrySet().iterator(); iter.hasNext(); ) {
+		try { // Try removing before calling next.
+			iter.remove();
+			fail( "Should have thrown an exception." );
+		} catch ( IllegalStateException e ) {
+			// Normal.
+		}
+		
+		while ( iter.hasNext() ) {
 			
 			Map.Entry<String,Data> next = iter.next();
 			toFind.remove( next );
 			if ( next.getKey().equals( "two" ) ) {
 				iter.remove(); // Remove one element.
+				
+				try { // Try removing twice.
+					iter.remove();
+					fail( "Should have thrown an exception." );
+				} catch ( IllegalStateException e ) {
+					// Normal.
+				}
 			}
 			
 		}
