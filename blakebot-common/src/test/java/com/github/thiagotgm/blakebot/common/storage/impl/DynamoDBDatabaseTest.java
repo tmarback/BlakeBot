@@ -130,7 +130,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testSize() throws Exception {
+	public void testSize() {
 		
 		assertEquals( TEST_DB_MAPPINGS.size(), map.size() );
 		assertEquals( 0, getTempTable().size() );
@@ -138,7 +138,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testIsEmpty() throws Exception {
+	public void testIsEmpty() {
 		
 		assertFalse( map.isEmpty() );
 		assertTrue( getTempTable().isEmpty() );
@@ -147,7 +147,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testContainsKey() throws Exception {
+	public void testContainsKey() {
 		
 		for ( String key : TEST_DB_MAPPINGS.keySet() ) {
 			
@@ -167,7 +167,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testContainsValue() throws Exception {
+	public void testContainsValue() {
 		
 		for ( Data value : TEST_DB_MAPPINGS.values() ) {
 			
@@ -187,7 +187,7 @@ public class DynamoDBDatabaseTest {
 
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testGet() throws Exception {
+	public void testGet() {
 		
 		/* Check for test values */
 		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
@@ -206,7 +206,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testPutAndRemove() throws Exception {
+	public void testPutAndRemove() {
 		
 		Map<String,Data> map = getTempTable(); // Use a separate table.
 		
@@ -306,7 +306,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testPutAll() throws Exception {
+	public void testPutAll() {
 		
 		Map<String,Data> tempMap = getTempTable();
 		
@@ -324,7 +324,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testClear() throws Exception {
+	public void testClear() {
 		
 		Map<String,Data> tempMap = getTempTable();
 		
@@ -342,7 +342,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testEquals() throws Exception {
+	public void testEquals() {
 		
 		// Check correct map.
 		assertTrue( map.equals( TEST_DB_MAPPINGS ) );
@@ -388,7 +388,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testHashCode() throws Exception {
+	public void testHashCode() {
 		
 		assertEquals( TEST_DB_MAPPINGS.hashCode(), map.hashCode() );
 		assertEquals( new HashMap<>().hashCode(), getTempTable().hashCode() );
@@ -398,7 +398,7 @@ public class DynamoDBDatabaseTest {
 	/* Tests for key set view */
 	
 	@Test
-	public void testKeySetSize() throws Exception {
+	public void testKeySetSize() {
 		
 		assertEquals( TEST_DB_MAPPINGS.size(), map.keySet().size() );
 		assertEquals( 0, getTempTable().keySet().size() );
@@ -406,7 +406,7 @@ public class DynamoDBDatabaseTest {
 	}
 
 	@Test
-	public void testKeySetIsEmpty() throws Exception {
+	public void testKeySetIsEmpty() {
 		
 		assertFalse( map.keySet().isEmpty() );
 		assertTrue( getTempTable().keySet().isEmpty() );
@@ -433,7 +433,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetIterator() throws Exception {
+	public void testKeySetIterator() {
 		
 		Iterator<String> iter = map.keySet().iterator();
 		Set<String> expected = new HashSet<>( TEST_DB_MAPPINGS.keySet() );
@@ -451,7 +451,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetIteratorRemove() throws Exception {
+	public void testKeySetIteratorRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		
@@ -496,7 +496,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetToArrayObj() throws Exception {
+	public void testKeySetToArrayObj() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.keySet().toArray() );
 		List<Object> actual = Arrays.asList( map.keySet().toArray() );
@@ -518,7 +518,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetToArray() throws Exception {
+	public void testKeySetToArray() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.keySet().toArray( new Object[15] ) );
 		List<Object> actual = Arrays.asList( map.keySet().toArray( new Object[15] ) );
@@ -548,7 +548,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetRemove() throws Exception {
+	public void testKeySetRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		
@@ -664,7 +664,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetClear() throws Exception {
+	public void testKeySetClear() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -679,7 +679,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testKeySetEquals() throws Exception {
+	public void testKeySetEquals() {
 		
 		Set<String> keys = map.keySet();
 		
@@ -735,7 +735,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testKeySetHashCode() throws Exception {
+	public void testKeySetHashCode() {
 		
 		assertEquals( TEST_DB_MAPPINGS.keySet().hashCode(), map.keySet().hashCode() );
 		assertEquals( new HashMap<>().keySet().hashCode(), getTempTable().keySet().hashCode() );
@@ -745,7 +745,7 @@ public class DynamoDBDatabaseTest {
 	/* Tests for value collection view */
 	
 	@Test
-	public void testValueCollectionSize() throws Exception {
+	public void testValueCollectionSize() {
 		
 		assertEquals( TEST_DB_MAPPINGS.size(), map.values().size() );
 		assertEquals( 0, getTempTable().values().size() );
@@ -753,7 +753,7 @@ public class DynamoDBDatabaseTest {
 	}
 
 	@Test
-	public void testValueCollectionIsEmpty() throws Exception {
+	public void testValueCollectionIsEmpty() {
 		
 		assertFalse( map.values().isEmpty() );
 		assertTrue( getTempTable().values().isEmpty() );
@@ -780,7 +780,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionIterator() throws Exception {
+	public void testValueCollectionIterator() {
 		
 		Iterator<Data> iter = map.values().iterator();
 		Collection<Data> expected = new ArrayList<>( TEST_DB_MAPPINGS.values() );
@@ -798,7 +798,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionIteratorRemove() throws Exception {
+	public void testValueCollectionIteratorRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		
@@ -847,7 +847,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionToArrayObj() throws Exception {
+	public void testValueCollectionToArrayObj() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.values().toArray() );
 		List<Object> actual = Arrays.asList( map.values().toArray() );
@@ -869,7 +869,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionToArray() throws Exception {
+	public void testValueCollectionToArray() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.values().toArray( new Object[15] ) );
 		List<Object> actual = Arrays.asList( map.values().toArray( new Object[15] ) );
@@ -899,7 +899,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionRemove() throws Exception {
+	public void testValueCollectionRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		
@@ -944,7 +944,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionRemoveAll() throws Exception {
+	public void testValueCollectionRemoveAll() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -984,7 +984,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionRetainAll() throws Exception {
+	public void testValueCollectionRetainAll() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1024,7 +1024,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testValueCollectionClear() throws Exception {
+	public void testValueCollectionClear() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1040,7 +1040,7 @@ public class DynamoDBDatabaseTest {
 	/* Tests for entry set view */
 	
 	@Test
-	public void testEntrySetSize() throws Exception {
+	public void testEntrySetSize() {
 		
 		assertEquals( TEST_DB_MAPPINGS.size(), map.entrySet().size() );
 		assertEquals( 0, getTempTable().entrySet().size() );
@@ -1048,7 +1048,7 @@ public class DynamoDBDatabaseTest {
 	}
 
 	@Test
-	public void testEntrySetIsEmpty() throws Exception {
+	public void testEntrySetIsEmpty() {
 		
 		assertFalse( map.entrySet().isEmpty() );
 		assertTrue( getTempTable().entrySet().isEmpty() );
@@ -1084,7 +1084,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetIterator() throws Exception {
+	public void testEntrySetIterator() {
 		
 		Iterator<Map.Entry<String,Data>> iter = map.entrySet().iterator();
 		Set<Map.Entry<String,Data>> expected = new HashSet<>( TEST_DB_MAPPINGS.entrySet() );
@@ -1102,7 +1102,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetIteratorRemove() throws Exception {
+	public void testEntrySetIteratorRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		
@@ -1146,7 +1146,48 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetToArrayObj() throws Exception {
+	public void testEntry() {
+		
+		Map<String,Data> map = getTempTable();
+		map.put( "one", Data.numberData( 1 ) );
+		map.put( "two", Data.numberData( 2 ) );
+		map.put( "three", Data.numberData( 3 ) );
+		
+		for ( Map.Entry<String,Data> entry : map.entrySet() ) {
+			
+			switch ( entry.getKey() ) {
+			
+				case "one":
+					assertEquals( Data.numberData( 1 ), entry.getValue() );
+					break;
+					
+				case "two":
+					assertEquals( Data.numberData( 2 ), entry.getValue() );
+					assertEquals( Data.numberData( 2 ),
+							entry.setValue( Data.numberData( 4 ) ) ); // Try setting value.
+					assertEquals( Data.numberData( 4 ), entry.getValue() );
+					break;
+					
+				case "three":
+					assertEquals( Data.numberData( 3 ), entry.getValue() );
+					break;
+					
+				default:
+					fail( "Unexpected key returned" );
+			
+			}
+			
+		}
+		
+		assertEquals( 3, map.size() );
+		assertEquals( Data.numberData( 1 ), map.get( "one" ) );
+		assertEquals( Data.numberData( 4 ), map.get( "two" ) );
+		assertEquals( Data.numberData( 3 ), map.get( "three" ) );
+		
+	}
+	
+	@Test
+	public void testEntrySetToArrayObj() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.entrySet().toArray() );
 		List<Object> actual = Arrays.asList( map.entrySet().toArray() );
@@ -1168,7 +1209,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetToArray() throws Exception {
+	public void testEntrySetToArray() {
 		
 		List<Object> expected = Arrays.asList( TEST_DB_MAPPINGS.entrySet().toArray( new Object[15] ) );
 		List<Object> actual = Arrays.asList( map.entrySet().toArray( new Object[15] ) );
@@ -1191,14 +1232,14 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
-	public void testEntrySetAdd() throws Exception {
+	public void testEntrySetAdd() {
 		
 		getTempTable().keySet().add( "fail" );
 		
 	}
 	
 	@Test
-	public void testEntrySetRemove() throws Exception {
+	public void testEntrySetRemove() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1232,14 +1273,14 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test( expected = UnsupportedOperationException.class )
-	public void testEntrySetAddAll() throws Exception {
+	public void testEntrySetAddAll() {
 		
 		getTempTable().entrySet().addAll( TEST_DB_MAPPINGS.entrySet() );
 		
 	}
 	
 	@Test
-	public void testEntrySetRemoveAll() throws Exception {
+	public void testEntrySetRemoveAll() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1279,7 +1320,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetRetainAll() throws Exception {
+	public void testEntrySetRetainAll() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1319,7 +1360,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetClear() throws Exception {
+	public void testEntrySetClear() {
 		
 		Map<String,Data> map = getTempTable();
 		map.putAll( TEST_DB_MAPPINGS );
@@ -1334,7 +1375,7 @@ public class DynamoDBDatabaseTest {
 	
 	@Test
 	@SuppressWarnings("unlikely-arg-type")
-	public void testEntrySetEquals() throws Exception {
+	public void testEntrySetEquals() {
 		
 		Set<Map.Entry<String,Data>> entries = map.entrySet();
 		
@@ -1390,7 +1431,7 @@ public class DynamoDBDatabaseTest {
 	}
 	
 	@Test
-	public void testEntrySetHashCode() throws Exception {
+	public void testEntrySetHashCode() {
 		
 		assertEquals( TEST_DB_MAPPINGS.entrySet().hashCode(), map.entrySet().hashCode() );
 		assertEquals( new HashMap<>().entrySet().hashCode(), getTempTable().entrySet().hashCode() );
