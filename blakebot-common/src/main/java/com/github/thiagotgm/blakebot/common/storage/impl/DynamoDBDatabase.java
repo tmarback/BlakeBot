@@ -44,7 +44,6 @@ import com.amazonaws.services.dynamodbv2.document.ItemCollection;
 import com.amazonaws.services.dynamodbv2.document.ItemUtils;
 import com.amazonaws.services.dynamodbv2.document.ScanOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.document.TableWriteItems;
 import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.ScanSpec;
@@ -54,6 +53,7 @@ import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AmazonDynamoDBException;
 import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
@@ -477,7 +477,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		 * @return The item under the given key, or <tt>null</tt> if there is
 		 *         no such item.
 		 */
-		private Item getItem( Object key, boolean loadData ) {
+		protected Item getItem( Object key, boolean loadData ) {
 			
 			String translated = encodeKey( key );
 			if ( translated == null ) {
@@ -602,26 +602,12 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public void putAll( Map<? extends K,? extends V> m ) {
 
-			TableWriteItems writeItems = new TableWriteItems( table.getTableName() );
-			
-			// Obtain all entries to write.
+			// Put each entry.
 			for ( Map.Entry<? extends K,? extends V> entry : m.entrySet() ) {
 				
-				AttributeValue keyAttribute = ItemUtils.toAttributeValue( encodeKey( entry.getKey() ) );
-				AttributeValue valueAttribute = ItemUtils.toAttributeValue( encodeValue( entry.getValue() ) );
-				
-				Map<String,AttributeValue> attributes = new HashMap<>();
-				attributes.put( KEY_ATTRIBUTE, keyAttribute );
-				attributes.put( VALUE_ATTRIBUTE, valueAttribute );
-				
-				
-				// Add entry as item.
-				writeItems.addItemToPut( ItemUtils.toItem( attributes ) );
+				put( entry.getKey(), entry.getValue() );
 				
 			}
-			
-			// Write entries.
-			dynamoDB.batchWriteItem( writeItems ).getBatchWriteItemResult();
 			
 		}
 
@@ -667,20 +653,705 @@ public class DynamoDBDatabase extends TableDatabase {
 
 		@Override
 		public Set<K> keySet() {
-			// TODO Auto-generated method stub
-			return null;
+
+			final Map<K,V> thisMap = this;
+			return new Set<K>() {
+
+				@Override
+				public int size() {
+
+					return thisMap.size();
+					
+				}
+
+				@Override
+				public boolean isEmpty() {
+					
+					return thisMap.isEmpty();
+							
+				}
+
+				@Override
+				public boolean contains( Object o ) {
+
+					return thisMap.containsKey( o );
+					
+				}
+
+				@Override
+				public Iterator<K> iterator() {
+
+					// Construct scan request.
+					ScanSpec scanSpec = new ScanSpec().withProjectionExpression( "#k" )
+							                          .withNameMap( new NameMap().with( "#k", KEY_ATTRIBUTE ) );
+					
+					Iterator<Item> itemIter;
+					try {
+			            ItemCollection<ScanOutcome> items = table.scan( scanSpec ); // Run scan.
+			            itemIter = items.iterator(); // Get iterator.
+			        } catch ( Exception e ) {
+			        	throw new DatabaseException( "Failed to scan table.", e );
+			        }
+					
+					final Iterator<Item> backing = itemIter;
+					return new Iterator<K>() {
+						
+						private K lastKey = null;
+
+						@Override
+						public boolean hasNext() {
+
+							return backing.hasNext();
+							
+						}
+
+						@Override
+						public K next() {
+
+							Item next = backing.next();
+							if ( !next.hasAttribute( KEY_ATTRIBUTE ) ) {
+								throw new DatabaseException( "Missing key attribute." );
+							}
+							
+							K key = decodeKey( next.getString( KEY_ATTRIBUTE ) );
+							
+							lastKey = key; // Store last key.
+							return key;
+							
+						}
+						
+						@Override
+						public void remove() {
+							
+							if ( lastKey == null ) {
+								throw new IllegalStateException( "Must have called next() beforehand." );
+							}
+							
+							thisMap.remove( lastKey );
+							lastKey = null; // Last key was removed.
+							
+						}
+						
+					};
+					
+				}
+
+				@Override
+				public Object[] toArray() {
+
+					return toArray( new Object[0] );
+					
+				}
+
+				@Override
+				public <T> T[] toArray( T[] a ) {
+					
+					List<K> elems = new LinkedList<>(); 
+					for ( K elem : this ) { // Get all elements.
+						
+						elems.add( elem );
+						
+					}
+					return elems.toArray( a ); // Put into array.
+					
+				}
+
+				@Override
+				public boolean add( K e ) {
+
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean remove( Object o ) {
+
+					return thisMap.remove( o ) != null;
+					
+				}
+
+				@Override
+				public boolean containsAll( Collection<?> c ) {
+
+					for ( Object elem : c ) {
+						
+						if ( !contains( elem ) ) {
+							return false; // Found not contained.
+						}
+						
+					}
+					return true;
+					
+				}
+
+				@Override
+				public boolean addAll( Collection<? extends K> c ) {
+					
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean retainAll( Collection<?> c ) {
+					
+					boolean changed = false;
+					
+					for ( Iterator<K> iter = iterator(); iter.hasNext(); ) {
+						
+						if ( !c.contains( iter.next() ) ) {
+							iter.remove();
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public boolean removeAll( Collection<?> c ) {
+					
+					boolean changed = false;
+					
+					for ( Object elem : c ) {
+						
+						if ( remove( elem ) ) {
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public void clear() {
+
+					thisMap.clear();
+					
+				}
+				
+				@Override
+				public boolean equals( Object o ) {
+					
+					if ( !( o instanceof Set ) ) {
+						return false;
+					}
+					
+					Set<?> other = (Set<?>) o;
+					
+					return ( size() == other.size() ) && containsAll( other );
+					
+				}
+				
+				@Override
+				public int hashCode() {
+					
+					int sum = 0;
+					
+					for ( K elem : this ) {
+						
+						sum += elem == null ? 0 : elem.hashCode();
+						
+					}
+					
+					return sum;
+					
+				}
+				
+			};
+			
 		}
 
 		@Override
 		public Collection<V> values() {
-			// TODO Auto-generated method stub
-			return null;
+
+			final Map<K,V> thisMap = this;
+			return new Collection<V>() {
+
+				@Override
+				public int size() {
+
+					return thisMap.size();
+					
+				}
+
+				@Override
+				public boolean isEmpty() {
+					
+					return thisMap.isEmpty();
+							
+				}
+
+				@Override
+				public boolean contains( Object o ) {
+
+					return thisMap.containsValue( o );
+					
+				}
+
+				@Override
+				public Iterator<V> iterator() {
+
+					final Iterator<Map.Entry<K,V>> backing = thisMap.entrySet().iterator();
+					return new Iterator<V>() {
+
+						@Override
+						public boolean hasNext() {
+
+							return backing.hasNext();
+							
+						}
+
+						@Override
+						public V next() {
+
+							return backing.next().getValue();
+							
+						}
+
+						@Override
+						public void remove() {
+							
+							backing.remove(); // Delegate.
+							
+						}
+						
+					};
+					
+				}
+
+				@Override
+				public Object[] toArray() {
+					
+					return toArray( new Object[0] );
+					
+				}
+
+				@Override
+				public <T> T[] toArray( T[] a ) {
+
+					List<V> elems = new LinkedList<>(); 
+					for ( V elem : this ) { // Get all elements.
+						
+						elems.add( elem );
+						
+					}
+					return elems.toArray( a ); // Put into array.
+					
+				}
+
+				@Override
+				public boolean add( V e ) {
+
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean remove( Object o ) {
+
+					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
+						// Search through values.
+						V next = iter.next();
+						if ( o == null ? next == null : o.equals( next ) ) {
+							iter.remove();
+							return true; // Found object.
+						}
+						
+					}
+					return false; // Didn't find object.
+					
+				}
+
+				@Override
+				public boolean containsAll( Collection<?> c ) {
+
+					for ( Object elem : c ) {
+						
+						if ( !contains( elem ) ) {
+							return false; // Found not contained.
+						}
+						
+					}
+					return true;
+					
+				}
+
+				@Override
+				public boolean addAll( Collection<? extends V> c ) {
+					
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean retainAll( Collection<?> c ) {
+
+					boolean changed = false;
+					
+					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
+						
+						if ( !c.contains( iter.next() ) ) {
+							iter.remove();
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public boolean removeAll( Collection<?> c ) {
+
+					boolean changed = false;
+					
+					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
+						
+						if ( c.contains( iter.next() ) ) {
+							iter.remove(); // Remove matching element.
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public void clear() {
+
+					thisMap.clear();
+					
+				}
+				
+			};
+			
 		}
 
 		@Override
 		public Set<Entry<K,V>> entrySet() {
-			// TODO Auto-generated method stub
-			return null;
+
+			final TableMap<K,V> thisMap = this;
+			return new Set<Entry<K,V>>() {
+
+				@Override
+				public int size() {
+
+					return thisMap.size();
+					
+				}
+
+				@Override
+				public boolean isEmpty() {
+					
+					return thisMap.isEmpty();
+							
+				}
+
+				@Override
+				public boolean contains( Object o ) {
+
+					if ( !( o instanceof Map.Entry ) ) {
+						return false; // Wrong type.
+					}
+					
+					Map.Entry<?,?> other = (Map.Entry<?,?>) o;
+					
+					Item item = thisMap.getItem( other.getKey(), true );
+					if ( item == null ) {
+						return false;
+					}
+					
+					if ( !item.hasAttribute( VALUE_ATTRIBUTE ) ) {
+						throw new DatabaseException( "Missing value attribute." );
+					}
+					
+					V value = decodeValue( item.get( VALUE_ATTRIBUTE ) );
+					return value == null ? other.getValue() == null : value.equals( other.getValue() );
+					
+				}
+
+				@Override
+				public Iterator<Entry<K,V>> iterator() {
+
+					// Construct scan request.
+					ScanSpec scanSpec = new ScanSpec().withProjectionExpression( "#k,#val" )
+							                          .withNameMap( new NameMap().with( "#k", KEY_ATTRIBUTE )
+							                        		  .with( "#val", VALUE_ATTRIBUTE ) );
+					
+					Iterator<Item> itemIter;
+					try {
+			            ItemCollection<ScanOutcome> items = table.scan( scanSpec ); // Run scan.
+			            itemIter = items.iterator(); // Get iterator.
+			        } catch ( Exception e ) {
+			        	throw new DatabaseException( "Failed to scan table.", e );
+			        }
+					
+					final Iterator<Item> backing = itemIter;
+					return new Iterator<Entry<K,V>>() {
+						
+						private K lastKey = null;
+
+						@Override
+						public boolean hasNext() {
+
+							return backing.hasNext();
+							
+						}
+
+						@Override
+						public Entry<K,V> next() {
+
+							Item next = backing.next();
+							if ( !next.hasAttribute( KEY_ATTRIBUTE ) ) {
+								throw new DatabaseException( "Missing key attribute." );
+							}
+							if ( !next.hasAttribute( VALUE_ATTRIBUTE ) ) {
+								throw new DatabaseException( "Missing value attribute." );
+							}
+							
+							final K key = decodeKey( next.getString( KEY_ATTRIBUTE ) );
+							final V value = decodeValue( next.get( VALUE_ATTRIBUTE ) );
+							
+							lastKey = key; // Store last key.
+							return new Map.Entry<K,V>() {
+								
+								private V entryValue = value; // Current value.
+
+								@Override
+								public K getKey() {
+
+									return key;
+									
+								}
+
+								@Override
+								public V getValue() {
+
+									return entryValue;
+									
+								}
+
+								@Override
+								public V setValue( V value ) {
+
+									thisMap.put( key, value ); // Set value.
+									
+									V previousValue = entryValue;
+									entryValue = value; // Update stored value.
+									
+									return previousValue;
+									
+								}
+							
+								@Override
+								public boolean equals( Object o ) {
+									
+									if ( !( o instanceof Map.Entry ) ) {
+										return false; // Wrong type.
+									}
+									
+									Map.Entry<?,?> other = (Map.Entry<?,?>) o;
+									
+									K key = getKey();
+									V value = getValue();
+									
+									return ( key == null ? other.getKey() == null :
+										                   key.equals( other.getKey() ) ) &&
+										   ( value == null ? other.getValue() == null :
+											                 value.equals( other.getValue() ) );
+									
+								}
+								
+								@Override
+								public int hashCode() {
+									
+									K key = getKey();
+									V value = getValue();
+									
+									return ( key == null ? 0 : key.hashCode() ) ^
+								         ( value == null ? 0 : value.hashCode() );
+
+									
+								}
+								
+							};
+							
+						}
+						
+						@Override
+						public void remove() {
+							
+							if ( lastKey == null ) {
+								throw new IllegalStateException( "Must have called next() beforehand." );
+							}
+							
+							thisMap.remove( lastKey );
+							lastKey = null; // Last key was removed.
+							
+						}
+						
+					};
+					
+				}
+
+				@Override
+				public Object[] toArray() {
+					
+					return toArray( new Object[0] );
+					
+				}
+
+				@Override
+				public <T> T[] toArray( T[] a ) {
+
+					List<Map.Entry<K,V>> elems = new LinkedList<>(); 
+					for ( Map.Entry<K,V> elem : this ) { // Get all elements.
+						
+						elems.add( elem );
+						
+					}
+					return elems.toArray( a ); // Put into array.
+					
+				}
+
+				@Override
+				public boolean add( Entry<K,V> e ) {
+
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean remove( Object o ) {
+					
+					if ( !( o instanceof Map.Entry ) ) {
+						return false; // Not an entry.
+					}
+					
+					Map.Entry<?,?> other = (Map.Entry<?,?>) o;
+					
+					final String key = encodeKey( other.getKey() );
+					final Object value = encodeValue( other.getValue() );
+					
+					if ( ( key == null ) || ( value == null ) ) {
+						return false; // Wrong entry type.
+					}
+					
+					DeleteItemSpec deleteSpec = new DeleteItemSpec().withPrimaryKey( KEY_ATTRIBUTE, key )
+							.withConditionExpression( "#val = :val" )
+							.withNameMap( new NameMap().with( "#val", VALUE_ATTRIBUTE ) )
+							.withValueMap( new ValueMap().with( ":val", value ) )
+							.withReturnValues( ReturnValue.ALL_OLD );
+					
+					try {
+						return table.deleteItem( deleteSpec ).getDeleteItemResult()
+								.getAttributes() != null; // Check if found item and deleted.
+					} catch ( ConditionalCheckFailedException e ) {
+						return false; // Value didn't match.
+					}
+
+				}
+
+				@Override
+				public boolean containsAll( Collection<?> c ) {
+
+					for ( Object elem : c ) {
+						
+						if ( !contains( elem ) ) {
+							return false; // Found not contained.
+						}
+						
+					}
+					return true;
+					
+				}
+
+				@Override
+				public boolean addAll( Collection<? extends Entry<K,V>> c ) {
+					
+					throw new UnsupportedOperationException();
+					
+				}
+
+				@Override
+				public boolean retainAll( Collection<?> c ) {
+					
+					boolean changed = false;
+					
+					for ( Iterator<Map.Entry<K,V>> iter = iterator(); iter.hasNext(); ) {
+						
+						if ( !c.contains( iter.next() ) ) {
+							iter.remove();
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public boolean removeAll( Collection<?> c ) {
+
+					boolean changed = false;
+					
+					for ( Object elem : c ) {
+						
+						if ( remove( elem ) ) {
+							changed = true;
+						}
+						
+					}
+					
+					return changed;
+					
+				}
+
+				@Override
+				public void clear() {
+
+					thisMap.clear();
+					
+				}
+				
+				@Override
+				public boolean equals( Object o ) {
+					
+					if ( !( o instanceof Set ) ) {
+						return false;
+					}
+					
+					Set<?> other = (Set<?>) o;
+					
+					return ( size() == other.size() ) && containsAll( other );
+					
+				}
+				
+				@Override
+				public int hashCode() {
+					
+					int sum = 0;
+					
+					for ( Entry<K,V> elem : this ) {
+						
+						sum += elem == null ? 0 : elem.hashCode();
+						
+					}
+					
+					return sum;
+					
+				}
+				
+			};
+			
 		}
 		
 	}

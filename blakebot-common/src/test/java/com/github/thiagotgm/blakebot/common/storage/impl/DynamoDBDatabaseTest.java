@@ -1247,7 +1247,7 @@ public class DynamoDBDatabaseTest {
 		Iterator<Map.Entry<String,Data>> iter = TEST_DB_MAPPINGS.entrySet().iterator();
 		Map.Entry<String,Data> toDelete = iter.next(); // Get a mapping to delete.
 		
-		map.entrySet().remove( toDelete ); // Delete the mapping.
+		assertTrue( map.entrySet().remove( toDelete ) ); // Delete the mapping.
 		
 		assertFalse( map.containsKey( toDelete.getKey() ) );
 		
@@ -1257,6 +1257,24 @@ public class DynamoDBDatabaseTest {
 			assertEquals( next.getValue(), map.get( next.getKey() ) );
 			
 		}
+		
+		assertFalse( map.entrySet().remove( toDelete ) ); // Try deleting twice.
+		
+		map.put( "aTest", Data.numberData( -54 ) );
+		
+		Map<String,Data> otherMap = new HashMap<>();
+		otherMap.put( "aTest", Data.nullData() );
+		
+		// Try entry with the right key but wrong value.
+		assertFalse( map.entrySet().remove( otherMap.entrySet().iterator().next() ) );
+		
+		// Now with right value.
+		otherMap.put( "aTest", Data.numberData( -54 ) );
+		assertTrue( map.entrySet().remove( otherMap.entrySet().iterator().next() ) );
+		
+		assertFalse( map.containsKey( "aTest" ) );
+		
+		assertEquals( TEST_DB_MAPPINGS.size() - 1, map.size() );
 		
 	}
 	
