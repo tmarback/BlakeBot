@@ -17,9 +17,12 @@
 
 package com.github.thiagotgm.blakebot.common.storage.translate;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Supplier;
 
 import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
@@ -36,17 +39,79 @@ import com.github.thiagotgm.blakebot.common.storage.Translator;
  */
 public abstract class CollectionTranslator<E,T extends Collection<E>> implements Translator<T> {
 	
+	private final Supplier<? extends T> instanceSupplier;
 	private final Translator<E> elementTranslator;
 	
 	/**
 	 * Initializes a collection translator that uses the given translator for
-	 * each of the objects in the collection.
+	 * each of the elements in the collection, and uses the given supplier
+	 * to create collection instances.
 	 * 
+	 * @param instanceSupplier Supplier to get instances from when decoding.
 	 * @param elementTranslator The translator to be used for the elements
 	 *                          in the collection.
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
 	 */
-	public CollectionTranslator( Translator<E> elementTranslator ) {
+	public CollectionTranslator( Supplier<? extends T> instanceSupplier,
+			Translator<E> elementTranslator ) throws NullPointerException {
 		
+		if ( instanceSupplier == null ) {
+			throw new NullPointerException( "Supplier cannot be null." );
+		}
+		
+		if ( elementTranslator == null ) {
+			throw new NullPointerException( "Translator cannot be null." );
+		}
+		
+		this.instanceSupplier = instanceSupplier;
+		this.elementTranslator = elementTranslator;
+		
+	}
+	
+	/**
+	 * Initializes a collection translator that uses the given translator for
+	 * each of the elements in the collection, and instances of the given class
+	 * for decoded collections. The given class must have a public no-arg
+	 * constructor.
+	 * 
+	 * @param clazz Class to make instances of when decoding.
+	 * @param elementTranslator The translator to be used for the elements
+	 *                          in the collection.
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the given class does not have
+	 *                                  a public no-arg constructor.
+	 */
+	public CollectionTranslator( Class<? extends T> clazz, Translator<E> elementTranslator )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( clazz == null ) {
+			throw new NullPointerException( "Class cannot be null." );
+		}
+		
+		if ( elementTranslator == null ) {
+			throw new NullPointerException( "Translator cannot be null." );
+		}
+		
+		Constructor<? extends T> ctor;
+		try {
+			ctor = clazz.getConstructor();
+		} catch ( NoSuchMethodException | SecurityException e ) {
+			throw new IllegalArgumentException( "No avaliable no-arg ctor." );
+		}
+		
+		if ( !Modifier.isPublic( ctor.getModifiers() ) ) {
+			throw new IllegalArgumentException( "No-arg ctor is not public." );
+		}
+		
+		instanceSupplier = () -> {
+			
+			try {
+				return ctor.newInstance();
+			} catch ( Exception e ) {
+				throw new TranslationException( "Could not create instance.", e );
+			}
+			
+		};
 		this.elementTranslator = elementTranslator;
 		
 	}
@@ -69,13 +134,6 @@ public abstract class CollectionTranslator<E,T extends Collection<E>> implements
 		return Data.listData( list );
 		
 	}
-	
-	/**
-	 * Creates an instance of the Collection subtype to use.
-	 * 
-	 * @return The instance.
-	 */
-	protected abstract T newInstance();
 
 	/**
 	 * Decodes the collection from a list-typed Data instance.
@@ -97,7 +155,7 @@ public abstract class CollectionTranslator<E,T extends Collection<E>> implements
 			throw new TranslationException( "Given data is not a list." );
 		}
 		
-		T obj = newInstance();
+		T obj = instanceSupplier.get();
 		for ( Data elem : data.getList() ) { // Translate each element.
 			
 			obj.add( elementTranslator.fromData( elem ) );
