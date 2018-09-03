@@ -360,6 +360,10 @@ public interface Database extends Closeable {
 	 * will be String-String trees/maps (e.g. using the {@link StringTranslator} translator for both keys
 	 * and values). In order to use them with different translators, it will be necessary to refresh the
 	 * database by closing this instance and creating+loading a new one using the same set of parameters.
+	 * <p>
+	 * Any data currently in the backing storage of this Database that matches data in the given database
+	 * (same tree name with same path, or same map name with same key), that data is overwritten with
+	 * the data in the given database.
 	 * 
 	 * @param db The database to load into this one.
 	 * @throws IllegalStateException if either database hasn't been successfully loaded yet, was already
@@ -392,7 +396,9 @@ public interface Database extends Closeable {
 						tree.getName(), tree.getKeyTranslator(), tree.getValueTranslator() );
 				for ( Graph.Entry<?,?> mapping : tree.getTree().entrySet() ) {
 					
-					newTree.add( mapping.getValue(), mapping.getPath() );
+					@SuppressWarnings("unchecked")
+					List<Object> path = (List<Object>) mapping.getPath();
+					newTree.set( mapping.getValue(), path );
 					
 				}
 				
