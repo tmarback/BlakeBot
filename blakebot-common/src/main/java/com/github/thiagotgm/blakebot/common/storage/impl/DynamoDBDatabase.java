@@ -554,6 +554,10 @@ public class DynamoDBDatabase extends TableDatabase {
 			
 			String translatedKey = encodeKey( key );
 			Object translatedValue = encodeValue( value );
+			
+			if ( translatedKey == null ) {
+				throw new DatabaseException( "Failed to translate key." );
+			}
 
 			UpdateItemSpec updateItemSpec = new UpdateItemSpec()
 					.withPrimaryKey( KEY_ATTRIBUTE, translatedKey )
