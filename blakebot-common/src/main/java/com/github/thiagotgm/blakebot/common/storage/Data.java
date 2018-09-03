@@ -92,6 +92,9 @@ public class Data {
 	
 	private final String string;
 	private final String number;
+	private final boolean isFloat;
+	private final double floatValue;
+	private final long integerValue;
 	private final boolean bool;
 	private final List<Data> list;
 	private final Map<String,Data> map;
@@ -116,10 +119,12 @@ public class Data {
 	 * @throws IllegalArgumentException if none of the arguments is filled, or more than one is.
 	 * @throws NullPointerException if a list or map is given that contains the value <tt>null</tt>
 	 *                              (as either a key or value, in the case of a map).
+	 * @throws NumberFormatException if the "number" argument is a string that cannot be parsed as
+	 *                               a decimal number (using {@link Double#parseDouble(String)}).
 	 */
 	private Data( String string, String number, boolean bool, boolean isBool,
 			boolean NULL, List<Data> list, Map<String,Data> map )
-					throws IllegalArgumentException, NullPointerException {
+					throws IllegalArgumentException, NullPointerException, NumberFormatException {
 		
 		EnumSet<Type> types = EnumSet.noneOf( Type.class ); // Determine data type.
 		if ( string != null ) {
@@ -149,6 +154,25 @@ public class Data {
 		this.type = types.iterator().next();
 		this.string = string;
 		this.number = number;
+		if ( number == null ) {
+			this.floatValue = 0.0;
+			this.integerValue = 0;
+			this.isFloat = false;
+		} else { 
+			this.floatValue = Double.parseDouble( number ); // Parse number.
+			
+			long integerValue;
+			boolean isFloat;
+			try { // Try parsing as integer.
+				integerValue = Long.parseLong( number );
+				isFloat = false; // Valid integer.
+			} catch ( NumberFormatException e ) { // Not a valid integer.
+				integerValue = (long) this.floatValue; // Truncate from double.
+				isFloat = true; // Is a floating-point.
+			}
+			this.integerValue = integerValue;
+			this.isFloat = isFloat;
+		}
 		this.bool = bool;
 		if ( list == null ) {
 			this.list = null;
@@ -223,10 +247,7 @@ public class Data {
 	 */
 	public boolean isFloat() {
 		
-		return isNumber() && ( number.contains( "." ) ||
-				               number.equals( String.valueOf( Double.NaN ) ) ||
-				               number.equals( String.valueOf( Double.NEGATIVE_INFINITY ) ) ||
-				               number.equals( String.valueOf( Double.POSITIVE_INFINITY ) ) );
+		return isFloat;
 		
 	}
 	
@@ -248,21 +269,25 @@ public class Data {
 	 */
 	public double getNumberFloat() {
 		
-		return isNumber() ? Double.parseDouble( number ) : 0;
+		return floatValue;
 		
 	}
 	
 	/**
 	 * Retrieves the data if this is a number, as an integer number.
 	 * <p>
-	 * If the number data is actually a decimal number, the return of this
-	 * method is the truncated number.
+	 * If the number data is actually a decimal (floating-point) number, the
+	 * return of this method is the truncated number (the same as
+	 * <tt>(long) getNumberFloat()</tt>).<br>
+	 * This also implies that if the value is beyond the range
+	 * [{@link Long#MIN_VALUE}, {@link Long#MAX_VALUE}], the appropriate bound
+	 * is returned.
 	 * 
 	 * @return If this is number data, the data, 0 otherwise.
 	 */
 	public long getNumberInteger() {
 		
-		return isNumber() ? ( isFloat() ? (long) getNumberFloat() : Long.parseLong( number ) ) : 0;
+		return integerValue;
 		
 	}
 	
@@ -459,14 +484,15 @@ public class Data {
 	 * 
 	 * @param number The value.
 	 * @return The instance with the given value.
-	 * @throws NumberFormatException if the string given is not a valid number.
+	 * @throws NumberFormatException if the given string cannot be parsed as
+	 *                               a decimal number (using
+	 *                               {@link Double#parseDouble(String)}).
 	 */
 	public static Data numberData( String number ) throws NumberFormatException {
 		
 		if ( number == null ) {
 			return nullData();
 		} else {
-			Double.valueOf( number ); // Check valid string.
 			return new Data( null, number, false, false, false, null, null );
 		}
 		
