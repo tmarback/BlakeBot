@@ -388,20 +388,16 @@ public class DynamoDBDatabase extends TableDatabase {
 		 * converted to a DatabaseException.
 		 * 
 		 * @param value The value to encode.
-		 * @return The encoded value, or <tt>null</tt> if the given object
-		 *         is not of the type supported by the value encoder.
+		 * @return The encoded value.
 		 * @throws DatabaseException if an error occurred while encoding.
 		 */
-		private Object encodeValue( Object value ) throws DatabaseException {
+		private Object encodeValue( V value ) throws DatabaseException {
 			
-			Data data;
 			try {
-				data = valueTranslator.objToData( value );
+				return extractData( valueTranslator.toData( value ) );
 			} catch ( TranslationException e ) {
 				throw new DatabaseException( "Failed to encode value.", e );
 			}
-			
-			return data == null ? null : extractData( data );
 			
 		}
 		
@@ -508,10 +504,17 @@ public class DynamoDBDatabase extends TableDatabase {
 		@Override
 		public boolean containsValue( Object value ) {
 			
-			Object translated = encodeValue( value );
-			if ( translated == null ) {
+			Data data = null;
+			try {
+				data = valueTranslator.objToData( value );
+			} catch ( TranslationException e ) {
+				throw new DatabaseException( "Failed to translate value." );
+			}
+			if ( data == null ) {
 				return false; // Incorrect type.
 			}
+			
+			Object translated = extractData( data );
 			
 			// Construct scan request.
 			ScanSpec scanSpec = new ScanSpec().withProjectionExpression( INVALID_ATTRIBUTE )
@@ -1237,12 +1240,21 @@ public class DynamoDBDatabase extends TableDatabase {
 					
 					Map.Entry<?,?> other = (Map.Entry<?,?>) o;
 					
-					final String key = encodeKey( other.getKey() );
-					final Object value = encodeValue( other.getValue() );
-					
-					if ( ( key == null ) || ( value == null ) ) {
-						return false; // Wrong entry type.
+					final String key = encodeKey( other.getKey() ); // Translate key.
+					if ( key == null ) {
+						return false; // Wrong entry key type.
 					}
+					
+					Data data = null;
+					try {
+						data = valueTranslator.objToData( other.getValue() );
+					} catch ( TranslationException e ) {
+						throw new DatabaseException( "Failed to translate value." );
+					}
+					if ( data == null ) {
+						return false; // Wrong entry value type.
+					}
+					final Object value = extractData( data );
 					
 					DeleteItemSpec deleteSpec = new DeleteItemSpec().withPrimaryKey( KEY_ATTRIBUTE, key )
 							.withConditionExpression( "#val = :val" )
