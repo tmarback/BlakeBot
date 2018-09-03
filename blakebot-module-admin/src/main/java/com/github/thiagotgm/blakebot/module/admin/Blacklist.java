@@ -17,24 +17,23 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.Storable;
+import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
+import com.github.thiagotgm.blakebot.common.storage.translate.SetTranslator;
+import com.github.thiagotgm.blakebot.common.storage.translate.StorableTranslator;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
-import com.github.thiagotgm.blakebot.common.storage.translate.XMLTranslator;
-import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
-import com.github.thiagotgm.blakebot.common.storage.xml.translate.XMLSet;
 import com.github.thiagotgm.blakebot.common.utils.Tree;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 
@@ -64,20 +63,12 @@ public class Blacklist {
     
     /**
      * Creates a new instance.
-     * 
-     * @param client The client to be used to obtain ID-linked objects from their IDs.
      */
-    @SuppressWarnings("unchecked")
 	protected Blacklist() {
         
     	LOG.info( "Starting blacklist." );
         this.blacklist = DatabaseManager.getDatabase().getDataTree( "Blacklist", new StringTranslator(),
-        		new XMLTranslator<>( new XMLSet<Restriction>( (Class<Set<Restriction>>) (Class<?>) HashSet.class,
-        				(XMLElement.Translator<Restriction>) () -> {
-        					
-        					return new Restriction();
-        					
-        				}) ) );
+        		new SetTranslator<>( new StorableTranslator<>( () -> { return new Restriction(); } ) ) );
         
     }
     
@@ -458,12 +449,7 @@ public class Blacklist {
      * @author ThiagoTGM
      * @since 2017-08-15
      */
-    public static class Restriction implements XMLElement {
-        
-        /**
-         * UID that represents this class.
-         */
-        private static final long serialVersionUID = -3849151675045924279L;
+    public static class Restriction implements Storable {
 
         /**
          * Identifies the type of restriction.
@@ -495,11 +481,7 @@ public class Blacklist {
         
         private static final int CASE_FLAG = Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE;
         
-        /**
-         * Local name that identifies this XML element.
-         */
-        public static final String TAG = "restriction";
-        
+        private static final String TEXT_ATTRIBUTE = "text";
         private static final String TYPE_ATTRIBUTE = "type";
         
         private String text;
@@ -601,65 +583,44 @@ public class Blacklist {
             
         }
 
-        @Override
-        public void read( XMLStreamReader in ) throws XMLStreamException {
+		@Override
+		public Data toData() {
 
-            if ( ( in.getEventType() != XMLStreamConstants.START_ELEMENT ) ||
-                  !in.getLocalName().equals( TAG ) ) {
-                throw new XMLStreamException( "Not in start tag." );
-            }
-            
-            /* Parse type */
-            String typeStr = in.getAttributeValue( null, TYPE_ATTRIBUTE );
-            if ( typeStr == null ) {
-                throw new XMLStreamException( "Missing type attribute." );
-            }
-            try {
-                type = Enum.valueOf( Type.class, typeStr.toUpperCase() );
-            } catch ( IllegalArgumentException e ) {
-                throw new XMLStreamException( "Invalid type attribute.", e );
-            }
-            
-            text = null;
-            while ( in.hasNext() ) {
-                
-                switch ( in.next() ) {
-                    
-                    case XMLStreamConstants.START_ELEMENT:
-                        throw new XMLStreamException( "Unexpected subelement." );
-                        
-                    case XMLStreamConstants.CHARACTERS:
-                        text = in.getText();
-                        break;
-                        
-                    case XMLStreamConstants.END_ELEMENT:
-                        if ( in.getLocalName().equals( TAG ) ) {
-                            if ( text != null ) {
-                                pattern = makePattern( text, type );
-                                return; // Done reading.
-                            } else {
-                                throw new XMLStreamException( "Missing restriction text." );
-                            }
-                        } else {
-                            throw new XMLStreamException( "Unexpected end element." );
-                        }
-                    
-                }
-                
-            }
-            throw new XMLStreamException( "Unexpected end of document." );
-            
-        }
+			Map<String,Data> map = new HashMap<>();
+			map.put( TEXT_ATTRIBUTE, Data.stringData( text ) );
+			map.put( TYPE_ATTRIBUTE, Data.stringData( type.toString() ) );
+			
+			return Data.mapData( map );
+			
+		}
 
-        @Override
-        public void write( XMLStreamWriter out ) throws XMLStreamException {
-
-            out.writeStartElement( TAG );
-            out.writeAttribute( TYPE_ATTRIBUTE, getType().toString().toLowerCase() );
-            out.writeCharacters( getText() );
-            out.writeEndElement();
-            
-        }
+		@Override
+		public void fromData( Data data ) throws TranslationException {
+			
+			if ( !data.isMap() ) {
+				throw new TranslationException( "Given data is not a map." );
+			}
+			Map<String,Data> map = data.getMap();
+			
+			Data textData = map.get( TEXT_ATTRIBUTE ); // Get text.
+			if ( !textData.isString() ) {
+				throw new TranslationException( "Text attribute is not a string." );
+			}
+			text = textData.getString();
+			
+			Data typeData = map.get( TYPE_ATTRIBUTE ); // Get type.
+			if ( !typeData.isString() ) {
+				throw new TranslationException( "Type attribute is not a string." );
+			}
+			try {
+				type = Type.valueOf( typeData.getString() ); // Compile pattern.
+			} catch ( IllegalArgumentException e ) {
+				throw new TranslationException( "Invalid restriction type.", e );
+			}
+			
+			pattern = makePattern( text, type );
+			
+		}
         
         /**
          * Compares this restriction with an object for equality. Returns <tt>true</tt> if
