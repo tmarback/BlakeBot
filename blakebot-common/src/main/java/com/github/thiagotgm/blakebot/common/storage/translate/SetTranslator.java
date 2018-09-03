@@ -33,6 +33,10 @@ import com.github.thiagotgm.blakebot.common.storage.Translator;
  */
 public class SetTranslator<E> extends CollectionTranslator<E,Set<E>> {
 	
+	/**
+	 * When the no-arg constructor is used, the instances returned when
+	 * decoding will be of this class.
+	 */
 	public static final Class<?> DEFAULT_CLASS = HashSet.class;
 	
 	/**
