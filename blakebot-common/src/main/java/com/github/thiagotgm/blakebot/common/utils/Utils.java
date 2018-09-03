@@ -458,16 +458,82 @@ public abstract class Utils {
     	
     }    
     
-    private static final String SPECIAL_CHARACTER = "&";
-    private static final String SPECIAL_CHARACTER_MARKER = "&amp";
-    private static final String SEPARATOR = ";";
-    private static final String SEPARATOR_MARKER = "&scln";
-    private static final String EMPTY_MARKER = "&empty";
-    private static final String NULL_MARKER = "&null";
+    /**
+     * Character used to mark special expressions in sanitized strings.
+     */
+    public static final String SPECIAL_CHARACTER = "&";
+    /**
+     * Expression that marks an occurrence of {@value #SPECIAL_CHARACTER} in a 
+     * sanitized string.
+     */
+    public static final String SPECIAL_CHARACTER_MARKER = "&amp";
+    /**
+     * Character used to join lists of strings.
+     */
+    public static final String SEPARATOR = ";";
+    /**
+     * Expression that marks an occurrence of {@value #SEPARATOR} in a 
+     * sanitized string.
+     */
+    public static final String SEPARATOR_MARKER = "&scln";
+    /**
+     * Expression that marks that a sanitized string is the empty string.
+     */
+    public static final String EMPTY_MARKER = "&empty";
+    /**
+     * Expression that marks that a sanitized string is <tt>null</tt>.
+     */
+    public static final String NULL_MARKER = "&null";
+    
+    /**
+     * Sanitizes a string, converting typical edge cases (<tt>null</tt>, empty
+     * strings) into normal strings, and encoding occurrences of other special characters
+     * ({@value #SPECIAL_CHARACTER}, {@value #SEPARATOR}).
+     * <p>
+     * The original string may be obtained afterwards using {@link #desanitize(String)}.
+     * 
+     * @param str The string to sanitize.
+     * @return The sanitized string.
+     */
+    public static String sanitize( String str ) {
+    	
+    	if ( str == null ) { // Null element.
+			return NULL_MARKER;
+		} else if ( str.isEmpty() ) { // Empty string.
+			return EMPTY_MARKER;
+		} else { // Regular string.
+    		return str.replace( SPECIAL_CHARACTER, SPECIAL_CHARACTER_MARKER ) // Replace special char.
+    				  .replace( SEPARATOR, SEPARATOR_MARKER ); // Replace separator.
+		}
+    	
+    }
+    
+    /**
+     * Desanitizes a string, obtaining the original string that
+     * was given to {@link #sanitize(String)}.
+     * 
+     * @param str The sanitized string.
+     * @return The original string.
+     */
+    public static String desanitize( String str ) {
+    	
+    	if ( str.equals( NULL_MARKER ) ) { // Null element.
+			return null;
+		} else if ( str.equals( EMPTY_MARKER ) ) { // Empty string.
+			return "";
+		} else { // Regular string.
+			return str.replace( SEPARATOR_MARKER, SEPARATOR ) // Restore separator.
+					  .replace( SPECIAL_CHARACTER_MARKER, SPECIAL_CHARACTER ); // Restore special char.
+		}
+    	
+    }
     
     /**
      * Encodes a list of strings into a single string, that can later be decoded using
      * {@link #decode(String)}.
+     * <p>
+     * Each element of the list is sanitized using {@link #sanitize(String)} before
+     * encoding.
      * 
      * @param list The list to be encoded.
      * @return The encoded version of the list.
@@ -477,15 +543,7 @@ public abstract class Utils {
     	List<String> sanitized = new ArrayList<>( list.size() );
     	for ( String elem : list ) { // Sanitize each element of the list.
     		
-    		if ( elem == null ) { // Null element.
-    			sanitized.add( NULL_MARKER );
-    		} else if ( elem.isEmpty() ) { // Empty string.
-    			sanitized.add( EMPTY_MARKER );
-    		} else { // Regular string.
-	    		sanitized.add( elem
-	    				.replace( SPECIAL_CHARACTER, SPECIAL_CHARACTER_MARKER ) // Replace special char.
-	    				.replace( SEPARATOR, SEPARATOR_MARKER ) ); // Replace separator.
-    		}
+    		sanitized.add( sanitize( elem ) );
     		
     	}
     	return String.join( SEPARATOR, sanitized ); // Join sanitized strings.
@@ -504,15 +562,7 @@ public abstract class Utils {
     	List<String> list = new ArrayList<>( sanitized.size() );
     	for ( String elem : sanitized ) { // Un-sanitize each element.
     		
-    		if ( elem.equals( NULL_MARKER ) ) { // Null element.
-    			list.add( null );
-    		} else if ( elem.equals( EMPTY_MARKER ) ) { // Empty string.
-    			list.add( "" );
-    		} else { // Regular string.
-    			list.add( elem
-    					.replace( SEPARATOR_MARKER, SEPARATOR ) // Restore separator.
-    					.replace( SPECIAL_CHARACTER_MARKER, SPECIAL_CHARACTER ) ); // Restore special char.
-    		}
+    		list.add( desanitize( elem ) );
     		
     	}
     	return list;
