@@ -113,10 +113,13 @@ public class Data {
 	 * @param NULL Whether this data is the value NULL.
 	 * @param list List data.
 	 * @param map Map data.
-	 * @throws IllegalArgumentException if none of the arguments is filled.
+	 * @throws IllegalArgumentException if none of the arguments is filled, or more than one is.
+	 * @throws NullPointerException if a list or map is given that contains the value <tt>null</tt>
+	 *                              (as either a key or value, in the case of a map).
 	 */
 	private Data( String string, String number, boolean bool, boolean isBool,
-			boolean NULL, List<Data> list, Map<String,Data> map ) throws IllegalArgumentException {
+			boolean NULL, List<Data> list, Map<String,Data> map )
+					throws IllegalArgumentException, NullPointerException {
 		
 		EnumSet<Type> types = EnumSet.noneOf( Type.class ); // Determine data type.
 		if ( string != null ) {
@@ -147,8 +150,25 @@ public class Data {
 		this.string = string;
 		this.number = number;
 		this.bool = bool;
-		this.list = list == null ? null : Collections.unmodifiableList( new ArrayList<>( list ) );
-		this.map = map == null ? null : Collections.unmodifiableMap( new HashMap<>( map ) );
+		if ( list == null ) {
+			this.list = null;
+		} else {
+			this.list = Collections.unmodifiableList( new ArrayList<>( list ) );
+			if ( this.list.contains( null ) ) { // Ensure no null elements.
+				throw new NullPointerException( "Given list contains null." );
+			}
+		}
+		if ( map == null ) {
+			this.map = null;
+		} else {
+			this.map = Collections.unmodifiableMap( new HashMap<>( map ) );
+			if ( this.map.containsKey( null ) ) { // Ensure no null keys.
+				throw new NullPointerException( "Given map contains null key." );
+			}
+			if ( this.map.containsValue( null ) ) { // Ensure no null values.
+				throw new NullPointerException( "Given map contains null value." );
+			}
+		}
 		
 	}
 	
@@ -520,8 +540,11 @@ public class Data {
 	 * 
 	 * @param list The value.
 	 * @return The instance with the given value.
+	 * @throws NullPointerException if the given list contains <tt>null</tt> (in order
+	 *                              to represent a <tt>null</tt> element, use a
+	 *                              {@link #nullData() NULL-valued} Data).
 	 */
-	public static Data listData( List<Data> list ) {
+	public static Data listData( List<Data> list ) throws NullPointerException {
 		
 		if ( list == null ) {
 			return nullData();
@@ -539,8 +562,11 @@ public class Data {
 	 * 
 	 * @param map The value.
 	 * @return The instance with the given value.
+	 * @throws NullPointerException if the given map contains a <tt>null</tt> key or value (in order
+	 *                              to represent a <tt>null</tt> value, use a 
+	 *                              {@link #nullData() NULL-valued} Data).
 	 */
-	public static Data mapData( Map<String,Data> map ) {
+	public static Data mapData( Map<String,Data> map ) throws NullPointerException {
 		
 		if ( map == null ) {
 			return nullData();
