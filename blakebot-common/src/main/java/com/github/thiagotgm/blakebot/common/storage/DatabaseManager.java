@@ -28,6 +28,7 @@ import com.github.thiagotgm.blakebot.common.Settings;
 import com.github.thiagotgm.blakebot.common.storage.Database.DatabaseException;
 import com.github.thiagotgm.blakebot.common.storage.Database.Parameter;
 import com.github.thiagotgm.blakebot.common.storage.impl.XMLDatabase;
+import com.github.thiagotgm.blakebot.common.storage.impl.DynamoDBDatabase;
 import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 /**
@@ -51,7 +52,9 @@ public class DatabaseManager {
 	public enum DatabaseType {
 		
 		/** Stores data in local XML files. */
-		XML( "Local XML Files", () -> { return new XMLDatabase(); } );
+		XML( "Local XML Files", () -> { return new XMLDatabase(); } ),
+		
+		DYNAMO_DB( "DynamoDB (AWS)", () -> { return new DynamoDBDatabase(); } );
 		
 		private final String name;
 		private final List<Parameter> loadParams;
