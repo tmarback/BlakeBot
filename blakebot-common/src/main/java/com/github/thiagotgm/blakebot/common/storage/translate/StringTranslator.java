@@ -35,6 +35,16 @@ public class StringTranslator implements Translator<String> {
 		return Data.stringData( obj );
 		
 	}
+	
+	/**
+	 * Simply returns the given string.
+	 */
+	@Override
+	public String encode( String obj ) {
+		
+		return obj;
+		
+	}
 
 	@Override
 	public String fromData( Data data ) throws TranslationException {
@@ -44,6 +54,16 @@ public class StringTranslator implements Translator<String> {
 		}
 		
 		return data.getString();
+		
+	}
+	
+	/**
+	 * Simply returns the given string.
+	 */
+	@Override
+	public String decode( String str ) {
+		
+		return str;
 		
 	}
 

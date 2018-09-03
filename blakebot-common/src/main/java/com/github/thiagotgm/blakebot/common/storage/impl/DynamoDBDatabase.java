@@ -63,6 +63,7 @@ import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
 import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 /**
  * Database that uses a DynamoDB backend, either locally or using the
@@ -306,7 +307,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		private String encodeKey( Object key ) throws DatabaseException {
 			
 			try {
-				return keyTranslator.encodeObj( key );
+				return Utils.sanitize( keyTranslator.encodeObj( key ) );
 			} catch ( TranslationException e ) {
 				throw new DatabaseException( "Failed to encode key.", e );
 			}
@@ -325,7 +326,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		private K decodeKey( String encoded ) throws DatabaseException {
 			
 			try {
-				return keyTranslator.decode( encoded );
+				return keyTranslator.decode( Utils.desanitize( encoded ) );
 			} catch ( TranslationException e ) {
 				throw new DatabaseException( "Failed to decode key.", e );
 			}
@@ -344,7 +345,7 @@ public class DynamoDBDatabase extends TableDatabase {
 			switch ( data.getType() ) {
 			
 			case STRING:
-				return data.getString();
+				return Utils.sanitize( data.getString() );
 				
 			case NUMBER:
 				if ( data.isFloat() ) {
@@ -412,7 +413,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		private Data storeData( Object obj ) {
 			
 			if ( obj instanceof String ) {
-				return Data.stringData( (String) obj );
+				return Data.stringData( Utils.desanitize( (String) obj ) );
 			} else if ( obj instanceof Number ) {
 				return Data.numberData( obj.toString() );
 			} else if ( obj instanceof Boolean ) {

@@ -231,6 +231,7 @@ public class DynamoDBDatabaseTest {
 		
 		assertNull( map.get( listKey ) );
 		assertNull( map.get( mapKey ) );
+		assertNull( map.get( "" ) );
 		
 		/* Try putting inexistent values */
 		
@@ -244,8 +245,11 @@ public class DynamoDBDatabaseTest {
 		Data mapData = Data.mapData( testMap );
 		assertNull( map.put( mapKey , mapData ) );
 		
+		assertNull( map.put( "", Data.stringData( "empty" ) ) );
+		
 		assertEquals( listData, map.get( listKey ) ); // Check placed values.
 		assertEquals( mapData, map.get( mapKey ) );
+		assertEquals( Data.stringData( "empty" ), map.get( "" ) );
 		
 		// Check that unrelated values are untouched.
 		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
@@ -261,9 +265,11 @@ public class DynamoDBDatabaseTest {
 		
 		assertEquals( listData, map.put( listKey, newListData ) );
 		assertEquals( mapData, map.put( mapKey, newMapData ) );
+		assertEquals( Data.stringData( "empty" ), map.put( "", Data.stringData( "" ) ) );
 		
-		assertEquals( newListData, map.get( listKey ) ); // Check new values.
+		assertEquals( newListData, map.get( listKey ) ); // Check new values.;
 		assertEquals( newMapData, map.get( mapKey ) );
+		assertEquals( Data.stringData( "" ), map.get( "" ) );
 		
 		// Check that unrelated values are untouched.
 		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
@@ -292,9 +298,11 @@ public class DynamoDBDatabaseTest {
 		
 		assertEquals( newListData, map.remove( listKey ) );
 		assertEquals( newMapData, map.remove( mapKey ) );
+		assertEquals( Data.stringData( "" ), map.remove( "" ) );
 		
 		assertNull( map.get( listKey ) ); // Check removed.
 		assertNull( map.get( mapKey ) );
+		assertNull( map.get( "" ) );
 		
 		// Check that unrelated values are untouched.
 		for ( Map.Entry<String,Data> mapping : TEST_DB_MAPPINGS.entrySet() ) {
