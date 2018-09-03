@@ -49,7 +49,7 @@ public class DynamoDBDatabaseTest {
 	
 	private static final Map<String,Data> TEST_DB_MAPPINGS = new HashMap<>();
 	
-	{
+	static {
 		
 		TEST_DB_MAPPINGS.put( "foobar", Data.listData( Data.numberData( 23 ), Data.numberData( 25 ) ) );
 		TEST_DB_MAPPINGS.put( "tryOne", Data.numberData( 42 ) );
