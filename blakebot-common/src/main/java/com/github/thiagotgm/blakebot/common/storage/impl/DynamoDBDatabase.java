@@ -19,7 +19,6 @@ package com.github.thiagotgm.blakebot.common.storage.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -241,7 +240,7 @@ public class DynamoDBDatabase extends TableDatabase {
 	 * @param <K> The type of the keys in the map.
 	 * @param <V> The type of the values in the map.
 	 */
-	private class TableMap<K,V> implements Map<K,V> {
+	private class TableMap<K,V> extends AbstractTableMap<K,V> {
 		
 		private Table table;
 		private final Translator<K> keyTranslator;
@@ -663,28 +662,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		public Set<K> keySet() {
 
 			final Map<K,V> thisMap = this;
-			return new Set<K>() {
-
-				@Override
-				public int size() {
-
-					return thisMap.size();
-					
-				}
-
-				@Override
-				public boolean isEmpty() {
-					
-					return thisMap.isEmpty();
-							
-				}
-
-				@Override
-				public boolean contains( Object o ) {
-
-					return thisMap.containsKey( o );
-					
-				}
+			return new KeySet() {
 
 				@Override
 				public Iterator<K> iterator() {
@@ -740,305 +718,11 @@ public class DynamoDBDatabase extends TableDatabase {
 							
 						}
 						
-					};
-					
-				}
-
-				@Override
-				public Object[] toArray() {
-
-					return toArray( new Object[0] );
-					
-				}
-
-				@Override
-				public <T> T[] toArray( T[] a ) {
-					
-					List<K> elems = new LinkedList<>(); 
-					for ( K elem : this ) { // Get all elements.
-						
-						elems.add( elem );
-						
-					}
-					return elems.toArray( a ); // Put into array.
-					
-				}
-
-				@Override
-				public boolean add( K e ) {
-
-					throw new UnsupportedOperationException();
-					
-				}
-
-				@Override
-				public boolean remove( Object o ) {
-
-					return thisMap.remove( o ) != null;
-					
-				}
-
-				@Override
-				public boolean containsAll( Collection<?> c ) {
-
-					for ( Object elem : c ) {
-						
-						if ( !contains( elem ) ) {
-							return false; // Found not contained.
-						}
-						
-					}
-					return true;
-					
-				}
-
-				@Override
-				public boolean addAll( Collection<? extends K> c ) {
-					
-					throw new UnsupportedOperationException();
-					
-				}
-
-				@Override
-				public boolean retainAll( Collection<?> c ) {
-					
-					boolean changed = false;
-					
-					for ( Iterator<K> iter = iterator(); iter.hasNext(); ) {
-						
-						if ( !c.contains( iter.next() ) ) {
-							iter.remove();
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public boolean removeAll( Collection<?> c ) {
-					
-					boolean changed = false;
-					
-					for ( Object elem : c ) {
-						
-						if ( remove( elem ) ) {
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public void clear() {
-
-					thisMap.clear();
+					};  // End of anonymous Iterator.
 					
 				}
 				
-				@Override
-				public boolean equals( Object o ) {
-					
-					if ( !( o instanceof Set ) ) {
-						return false;
-					}
-					
-					Set<?> other = (Set<?>) o;
-					
-					return ( size() == other.size() ) && containsAll( other );
-					
-				}
-				
-				@Override
-				public int hashCode() {
-					
-					int sum = 0;
-					
-					for ( K elem : this ) {
-						
-						sum += elem == null ? 0 : elem.hashCode();
-						
-					}
-					
-					return sum;
-					
-				}
-				
-			};
-			
-		}
-
-		@Override
-		public Collection<V> values() {
-
-			final Map<K,V> thisMap = this;
-			return new Collection<V>() {
-
-				@Override
-				public int size() {
-
-					return thisMap.size();
-					
-				}
-
-				@Override
-				public boolean isEmpty() {
-					
-					return thisMap.isEmpty();
-							
-				}
-
-				@Override
-				public boolean contains( Object o ) {
-
-					return thisMap.containsValue( o );
-					
-				}
-
-				@Override
-				public Iterator<V> iterator() {
-
-					final Iterator<Map.Entry<K,V>> backing = thisMap.entrySet().iterator();
-					return new Iterator<V>() {
-
-						@Override
-						public boolean hasNext() {
-
-							return backing.hasNext();
-							
-						}
-
-						@Override
-						public V next() {
-
-							return backing.next().getValue();
-							
-						}
-
-						@Override
-						public void remove() {
-							
-							backing.remove(); // Delegate.
-							
-						}
-						
-					};
-					
-				}
-
-				@Override
-				public Object[] toArray() {
-					
-					return toArray( new Object[0] );
-					
-				}
-
-				@Override
-				public <T> T[] toArray( T[] a ) {
-
-					List<V> elems = new LinkedList<>(); 
-					for ( V elem : this ) { // Get all elements.
-						
-						elems.add( elem );
-						
-					}
-					return elems.toArray( a ); // Put into array.
-					
-				}
-
-				@Override
-				public boolean add( V e ) {
-
-					throw new UnsupportedOperationException();
-					
-				}
-
-				@Override
-				public boolean remove( Object o ) {
-
-					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
-						// Search through values.
-						V next = iter.next();
-						if ( o == null ? next == null : o.equals( next ) ) {
-							iter.remove();
-							return true; // Found object.
-						}
-						
-					}
-					return false; // Didn't find object.
-					
-				}
-
-				@Override
-				public boolean containsAll( Collection<?> c ) {
-
-					for ( Object elem : c ) {
-						
-						if ( !contains( elem ) ) {
-							return false; // Found not contained.
-						}
-						
-					}
-					return true;
-					
-				}
-
-				@Override
-				public boolean addAll( Collection<? extends V> c ) {
-					
-					throw new UnsupportedOperationException();
-					
-				}
-
-				@Override
-				public boolean retainAll( Collection<?> c ) {
-
-					boolean changed = false;
-					
-					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
-						
-						if ( !c.contains( iter.next() ) ) {
-							iter.remove();
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public boolean removeAll( Collection<?> c ) {
-
-					boolean changed = false;
-					
-					for ( Iterator<V> iter = iterator(); iter.hasNext(); ) {
-						
-						if ( c.contains( iter.next() ) ) {
-							iter.remove(); // Remove matching element.
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public void clear() {
-
-					thisMap.clear();
-					
-				}
-				
-			};
+			};  // End of anonymous KeySet.
 			
 		}
 
@@ -1046,21 +730,7 @@ public class DynamoDBDatabase extends TableDatabase {
 		public Set<Entry<K,V>> entrySet() {
 
 			final TableMap<K,V> thisMap = this;
-			return new Set<Entry<K,V>>() {
-
-				@Override
-				public int size() {
-
-					return thisMap.size();
-					
-				}
-
-				@Override
-				public boolean isEmpty() {
-					
-					return thisMap.isEmpty();
-							
-				}
+			return new AbstractEntrySet() {		
 
 				@Override
 				public boolean contains( Object o ) {
@@ -1128,7 +798,7 @@ public class DynamoDBDatabase extends TableDatabase {
 							final V value = decodeValue( next.get( VALUE_ATTRIBUTE ) );
 							
 							lastKey = key; // Store last key.
-							return new Map.Entry<K,V>() {
+							return new AbstractEntry() {
 								
 								private V entryValue = value; // Current value.
 
@@ -1157,39 +827,8 @@ public class DynamoDBDatabase extends TableDatabase {
 									return previousValue;
 									
 								}
-							
-								@Override
-								public boolean equals( Object o ) {
-									
-									if ( !( o instanceof Map.Entry ) ) {
-										return false; // Wrong type.
-									}
-									
-									Map.Entry<?,?> other = (Map.Entry<?,?>) o;
-									
-									K key = getKey();
-									V value = getValue();
-									
-									return ( key == null ? other.getKey() == null :
-										                   key.equals( other.getKey() ) ) &&
-										   ( value == null ? other.getValue() == null :
-											                 value.equals( other.getValue() ) );
-									
-								}
 								
-								@Override
-								public int hashCode() {
-									
-									K key = getKey();
-									V value = getValue();
-									
-									return ( key == null ? 0 : key.hashCode() ) ^
-								         ( value == null ? 0 : value.hashCode() );
-
-									
-								}
-								
-							};
+							};  // End of anonymous Entry.
 							
 						}
 						
@@ -1205,34 +844,7 @@ public class DynamoDBDatabase extends TableDatabase {
 							
 						}
 						
-					};
-					
-				}
-
-				@Override
-				public Object[] toArray() {
-					
-					return toArray( new Object[0] );
-					
-				}
-
-				@Override
-				public <T> T[] toArray( T[] a ) {
-
-					List<Map.Entry<K,V>> elems = new LinkedList<>(); 
-					for ( Map.Entry<K,V> elem : this ) { // Get all elements.
-						
-						elems.add( elem );
-						
-					}
-					return elems.toArray( a ); // Put into array.
-					
-				}
-
-				@Override
-				public boolean add( Entry<K,V> e ) {
-
-					throw new UnsupportedOperationException();
+					}; // End of anonymous Iterator.
 					
 				}
 
@@ -1275,99 +887,8 @@ public class DynamoDBDatabase extends TableDatabase {
 					}
 
 				}
-
-				@Override
-				public boolean containsAll( Collection<?> c ) {
-
-					for ( Object elem : c ) {
-						
-						if ( !contains( elem ) ) {
-							return false; // Found not contained.
-						}
-						
-					}
-					return true;
-					
-				}
-
-				@Override
-				public boolean addAll( Collection<? extends Entry<K,V>> c ) {
-					
-					throw new UnsupportedOperationException();
-					
-				}
-
-				@Override
-				public boolean retainAll( Collection<?> c ) {
-					
-					boolean changed = false;
-					
-					for ( Iterator<Map.Entry<K,V>> iter = iterator(); iter.hasNext(); ) {
-						
-						if ( !c.contains( iter.next() ) ) {
-							iter.remove();
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public boolean removeAll( Collection<?> c ) {
-
-					boolean changed = false;
-					
-					for ( Object elem : c ) {
-						
-						if ( remove( elem ) ) {
-							changed = true;
-						}
-						
-					}
-					
-					return changed;
-					
-				}
-
-				@Override
-				public void clear() {
-
-					thisMap.clear();
-					
-				}
 				
-				@Override
-				public boolean equals( Object o ) {
-					
-					if ( !( o instanceof Set ) ) {
-						return false;
-					}
-					
-					Set<?> other = (Set<?>) o;
-					
-					return ( size() == other.size() ) && containsAll( other );
-					
-				}
-				
-				@Override
-				public int hashCode() {
-					
-					int sum = 0;
-					
-					for ( Entry<K,V> elem : this ) {
-						
-						sum += elem == null ? 0 : elem.hashCode();
-						
-					}
-					
-					return sum;
-					
-				}
-				
-			};
+			}; // End of anonymous EntrySet.
 			
 		}
 		
