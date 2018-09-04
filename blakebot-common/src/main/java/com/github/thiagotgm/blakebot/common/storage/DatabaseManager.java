@@ -160,6 +160,18 @@ public class DatabaseManager {
 	}
 	
 	/**
+	 * Retrieves the type of database that is going to be migrated to.
+	 * 
+	 * @return The database request type, or <tt>null</tt> if there is
+	 *         no change request currently.
+	 */
+	public static synchronized DatabaseType getDatabaseChangeRequestType() {
+		
+		return dbChangeType;
+		
+	}
+	
+	/**
 	 * Cancels/aborts the current database change request, if any.
 	 * 
 	 * @return Whether a database change was pending and was cancelled.

@@ -19,6 +19,7 @@ package com.github.thiagotgm.blakebot.console;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -37,6 +38,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager.DatabaseType;
 import com.github.thiagotgm.blakebot.common.storage.impl.AbstractDatabase;
 
 /**
@@ -48,6 +51,11 @@ import com.github.thiagotgm.blakebot.common.storage.impl.AbstractDatabase;
  */
 public class SettingsDialog extends JDialog {
 	
+	/**
+	 * UID that represents this class.
+	 */
+	private static final long serialVersionUID = -7466923438781284439L;
+
 	private static final Logger LOG = LoggerFactory.getLogger( SettingsDialog.class );
 	
 	private static final int BORDER_SIZE = 20;
@@ -65,7 +73,7 @@ public class SettingsDialog extends JDialog {
 	
 	public SettingsDialog( ConsoleGUI owner ) {
 		
-		super( owner );
+		super( owner, "Settings" );
 		
 		LOG.debug( "Opening settings menu." );
 		
@@ -121,6 +129,38 @@ public class SettingsDialog extends JDialog {
 		cacheInvalid.setAlignmentX( LEFT_ALIGNMENT );
 		cacheInvalid.setVisible( false );
 		contentPane.add( cacheInvalid );
+		
+		// Database change.
+		contentPane.add( Box.createVerticalStrut( SETTING_SPACING ) );
+		
+		DatabaseType changeType = DatabaseManager.getDatabaseChangeRequestType();
+		JLabel databaseLabel = new JLabel( changeType == null ? "No database change pending.":
+																"Database changing to: " + changeType );
+		contentPane.add( databaseLabel );
+		contentPane.add( Box.createVerticalStrut( FIELD_SPACING ) );
+		JButton databaseChange = new JButton( "Change" );
+		databaseChange.addActionListener( ( e ) -> {
+			
+			new DatabaseChangeDialog( this );
+			DatabaseType type = DatabaseManager.getDatabaseChangeRequestType();
+			databaseLabel.setText( type == null ? "No database change pending.":
+				                                  "Database changing to: " + type );
+			
+		});
+		JButton databaseCancel = new JButton( "Cancel" );
+		databaseCancel.addActionListener( ( e ) -> {
+			
+			if ( DatabaseManager.cancelDatabaseChange() ) {
+				databaseLabel.setText( "No database change pending." );
+			}
+			
+		});
+		JPanel databasePanel = new JPanel();
+		databasePanel.setAlignmentX( LEFT_ALIGNMENT );
+		databasePanel.setLayout( new FlowLayout( FlowLayout.LEFT ) );
+		databasePanel.add( databaseChange );
+		databasePanel.add( databaseCancel );
+		contentPane.add( databasePanel );
 		
 		/* Create exit buttons */
 		
@@ -203,11 +243,11 @@ public class SettingsDialog extends JDialog {
                 		}
                 	}
                 	
-                	if ( error ) { // Found errors, abort.
+                	if ( error ) { // Found errors, abort closing.
                 		LOG.error( "Error in inputted settings. Aborting close." );
                 		pack();
                 		save = false;
-                		return;
+                		return; // Try again.
                 	} else { // Save settings.
                 		Settings.setSetting( Bot.LOGIN_TOKEN_SETTING, token );
                 		Settings.setSetting( AbstractDatabase.CACHE_SETTING, cacheSize );
