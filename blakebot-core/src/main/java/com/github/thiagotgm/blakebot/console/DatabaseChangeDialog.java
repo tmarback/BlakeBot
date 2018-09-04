@@ -97,6 +97,11 @@ public class DatabaseChangeDialog extends JDialog {
 		
 	};
 	
+	/**
+	 * Instantiates a dialog owned by the given dialog.
+	 * 
+	 * @param owner The dialog that owns this dialog.
+	 */
 	public DatabaseChangeDialog( Dialog owner ) {
 		
 		super( owner, "Database Change Request", true );

@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot.console;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -71,9 +72,14 @@ public class SettingsDialog extends JDialog {
 	private final JLabel cacheMissing;
 	private final JLabel cacheInvalid;
 	
-	public SettingsDialog( ConsoleGUI owner ) {
+	/**
+	 * Instantiates a dialog owned by the given frame.
+	 * 
+	 * @param owner The frame that owns this dialog.
+	 */
+	public SettingsDialog( Frame owner ) {
 		
-		super( owner, "Settings" );
+		super( owner, "Settings", true );
 		
 		LOG.debug( "Opening settings menu." );
 		
