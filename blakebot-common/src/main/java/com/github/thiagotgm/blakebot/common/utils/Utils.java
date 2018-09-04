@@ -459,31 +459,32 @@ public abstract class Utils {
     }    
     
     /**
-     * Character used to mark special expressions in sanitized strings.
+     * Character used to mark the beginning of special expressions in
+     * sanitized strings.
      */
     public static final String SPECIAL_CHARACTER = "&";
     /**
      * Expression that marks an occurrence of {@value #SPECIAL_CHARACTER} in a 
      * sanitized string.
      */
-    public static final String SPECIAL_CHARACTER_MARKER = "&amp";
+    public static final String SPECIAL_CHARACTER_MARKER = "&amp;";
     /**
      * Character used to join lists of strings.
      */
-    public static final String SEPARATOR = ";";
+    public static final String SEPARATOR = ":";
     /**
      * Expression that marks an occurrence of {@value #SEPARATOR} in a 
      * sanitized string.
      */
-    public static final String SEPARATOR_MARKER = "&scln";
+    public static final String SEPARATOR_MARKER = "&cln;";
     /**
      * Expression that marks that a sanitized string is the empty string.
      */
-    public static final String EMPTY_MARKER = "&empty";
+    public static final String EMPTY_MARKER = "&empty;";
     /**
      * Expression that marks that a sanitized string is <tt>null</tt>.
      */
-    public static final String NULL_MARKER = "&null";
+    public static final String NULL_MARKER = "&null;";
     
     /**
      * Sanitizes a string, converting typical edge cases (<tt>null</tt>, empty
