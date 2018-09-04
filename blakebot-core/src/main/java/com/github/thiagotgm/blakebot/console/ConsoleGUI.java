@@ -312,6 +312,12 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
             LOG.debug( "Image change cancelled." );
             
         });
+        JButton settingsButton = new JButton( "Settings" );
+        settingsButton.addActionListener( ( e ) -> {
+        	
+        	new SettingsDialog( ConsoleGUI.this ).requestFocus();
+        	
+        });
 
         /* Organizes the buttons in a panel */
         JPanel buttons = new JPanel();
@@ -326,6 +332,8 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         buttons.add( presenceButton );
         buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
         buttons.add( imageButton );
+        buttons.add( Box.createHorizontalStrut( BUTTON_SPACING ) );
+        buttons.add( settingsButton );
         buttons.add( Box.createHorizontalGlue() );
         
         getContentPane().add( buttons, BorderLayout.SOUTH );

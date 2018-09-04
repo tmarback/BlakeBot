@@ -66,7 +66,11 @@ import com.github.thiagotgm.blakebot.common.utils.Tree;
  */
 public abstract class AbstractDatabase implements Database {
 	
-	private static final int CACHE_SIZE = Settings.getIntSetting( "Cache size" );
+	/**
+	 * Name of the setting that determines the size of the used caches.
+	 */
+	public static final String CACHE_SETTING = "Cache size";
+	private static final int CACHE_SIZE = Settings.getIntSetting( CACHE_SETTING );
 	
 	/**
 	 * Trees currently managed by the database.

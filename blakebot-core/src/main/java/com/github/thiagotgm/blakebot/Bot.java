@@ -53,7 +53,7 @@ public class Bot {
 
     private static final Logger LOG = LoggerFactory.getLogger( Bot.class );
     private static final String[] IMAGE_TYPES = { "png", "jpeg", "jpg", "bmp", "gif" };
-    protected static final String LOGIN_TOKEN_SETTING = "token";
+    public static final String LOGIN_TOKEN_SETTING = "token";
     
     private static Bot instance = null;
     
