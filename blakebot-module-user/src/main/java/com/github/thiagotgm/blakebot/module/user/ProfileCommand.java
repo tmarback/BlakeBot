@@ -17,8 +17,12 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
+import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
@@ -36,6 +40,17 @@ import sx.blah.discord.util.EmbedBuilder;
  */
 public class ProfileCommand {
 	
+	private static final Clock CLOCK = Clock.systemDefaultZone();
+	
+	private final Map<String,String> infoData;
+	
+	public ProfileCommand() {
+		
+		infoData = DatabaseManager.getDatabase().getDataMap( "CustomInfo",
+				new StringTranslator(), new StringTranslator() );
+		
+	}
+	
 	@MainCommand(
 			name = "Profile command",
 			aliases = { "profile","mystats" },
@@ -52,17 +67,49 @@ public class ProfileCommand {
 		} else {
 			user = context.getAuthor();
 		}
+
+		EmbedBuilder embed = new EmbedBuilder().withTimestamp( CLOCK.instant() );
 		
-		EmbedBuilder embed = new EmbedBuilder();
+		// Basic info.
 		embed.withThumbnail( user.getAvatarURL() );
 		embed.appendField( "Name", user.getName(), true );
 		String nickname = user.getNicknameForGuild( context.getGuild() );
 		if ( nickname != null ) {
 			embed.appendField( "Nickname", nickname, true );
 		}
-		embed.appendField( "Message", "TODO", false );
+		String customInfo = infoData.get( user.getStringID() );
+		if ( customInfo == null ) {
+			if ( user.isBot() ) {
+				customInfo = "Hi, I am a bot!";
+			} else {
+				customInfo = "Wow such empty";
+			}
+		}
+		embed.appendField( "Custom Info", customInfo, false );
 		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
+		
+	}
+	
+	@MainCommand(
+			name = "Custom info set",
+			aliases = { "setinfo" },
+			description = "Sets the message for the Custom Info field of the calling user's profile. "
+					+ "Remember to put the argument between quotes (\") if it has any blank space "
+					+ "(spaces or line breaks).",
+			usage = "{}setinfo <custom info>",
+			replyPrivately = true
+			)
+	public void setInfoCommand( CommandContext context ) {
+		
+		if ( context.getArgs().isEmpty() ) {
+			context.getReplyBuilder().withContent( "Missing argument." ).build();
+			return; // Abort.
+		}
+		
+		String info = context.getArgs().get( 0 );
+		infoData.put( context.getAuthor().getStringID(), info );
+		context.getReplyBuilder().withContent( String.format( "Set custom info to \"%s\"!", info ) ).build();
 		
 	}
 
