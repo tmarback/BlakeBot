@@ -251,5 +251,75 @@ public class AsyncTools {
         return createScheduledThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, true );
         
     }
+    
+    /* Keyed Thread Pool Executors */
+    
+    /**
+     * Creates a keyed executor that uses a fixed amount of threads, where the threads
+     * used have the given settings.
+     * 
+     * @param nThreads The amount of threads to use.
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @param daemon Whether the threads to be used should be daemon threads.
+     * @return The keyed executor with the given parameters.
+     * @throws IllegalArgumentException if <tt>nThreads <= 0</tt>.
+     */
+    public static KeyedExecutorService createKeyedThreadPool( int nThreads, ThreadGroup group,
+            UncaughtExceptionHandler handler, boolean daemon ) throws IllegalArgumentException {
+    	
+    	ThreadFactory factory = createThreadFactory( group, handler, daemon );
+        return new KeyedThreadPoolExecutor( nThreads, factory );
+    	
+    }
+    
+    /**
+     * Creates a keyed executor that uses the {@link #DEFAULT_THREAD_AMOUNT default amount of threads},
+     * where the threads used have the given settings.
+     *
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @param daemon Whether the threads to be used should be daemon threads.
+     * @return The keyed executor with the given parameters.
+     */
+    public static KeyedExecutorService createKeyedThreadPool( ThreadGroup group,
+            UncaughtExceptionHandler handler, boolean daemon ) {
+    	
+    	return createKeyedThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, daemon );
+    	
+    }
+    
+    /**
+     * Creates a keyed executor that uses a fixed amount of threads, where the threads
+     * used have the given settings and are daemon threads.
+     *
+     * @param nThreads The amount of threads to use.
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @return The keyed executor with the given parameters.
+     * @throws IllegalArgumentException if <tt>nThreads <= 0</tt>.
+     */
+    public static KeyedExecutorService createKeyedThreadPool( int nThreads, ThreadGroup group,
+            UncaughtExceptionHandler handler ) throws IllegalArgumentException {
+    	
+    	return createKeyedThreadPool( nThreads, group, handler, true );
+    	
+    }
+    
+    /**
+     * Creates a keyed executor that uses the
+     * {@link #DEFAULT_THREAD_AMOUNT default amount of threads}, where the threads used have
+     * the given settings and are daemon threads.
+     *
+     * @param group The group to place the threads in.
+     * @param handler The handler to run if an uncaught exception happens.
+     * @return The keyed executor with the given parameters.
+     */
+    public static KeyedExecutorService createKeyedThreadPool( ThreadGroup group,
+            UncaughtExceptionHandler handler ) {
+    	
+    	return createKeyedThreadPool( DEFAULT_THREAD_AMOUNT, group, handler, true );
+    	
+    }
 
 }
