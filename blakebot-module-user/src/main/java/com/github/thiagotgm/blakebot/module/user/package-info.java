@@ -16,10 +16,10 @@
  */
 
 /**
- * Collection of commands and utilities to be used by server managers.
+ * User data tracking utilities, and commands to display and interact with user data.
  *
  * @version 1.0
  * @author ThiagoTGM
- * @since 2017-02-06
+ * @since 2018-09-04
  */
-package com.github.thiagotgm.blakebot.module.admin;
+package com.github.thiagotgm.blakebot.module.user;
