@@ -17,6 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.awt.Color;
+
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.modules.IModule;
@@ -32,10 +34,18 @@ public class UserModule implements IModule {
 
     private static final String MODULE_NAME = "User";
     
+    /**
+     * Color for embeds of this module.
+     */
+    public static final Color EMBED_COLOR = Color.CYAN;
+    
     IDiscordClient client;
+    private LevelingManager levelManager = LevelingManager.getInstance();
     
     @Override
     public void disable() {
+    	
+    	client.getDispatcher().unregisterListener( levelManager );
         
         CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
         client = null; // Remove client.
@@ -46,6 +56,8 @@ public class UserModule implements IModule {
     public boolean enable( IDiscordClient arg0 ) {
 
         client = arg0; // Store client.
+        
+        client.getDispatcher().registerListener( levelManager );
         
         CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
         registerCommands( registry ); // Register commands.

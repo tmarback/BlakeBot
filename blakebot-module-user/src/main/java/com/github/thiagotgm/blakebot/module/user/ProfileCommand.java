@@ -23,6 +23,7 @@ import java.util.Map;
 
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
+import com.github.thiagotgm.blakebot.module.user.LevelingManager.LevelState;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
@@ -41,6 +42,7 @@ import sx.blah.discord.util.EmbedBuilder;
 public class ProfileCommand {
 	
 	private static final Clock CLOCK = Clock.systemDefaultZone();
+	private static final int EXP_BAR_SIZE = 10;
 	
 	private final Map<String,String> infoData;
 	
@@ -68,7 +70,8 @@ public class ProfileCommand {
 			user = context.getAuthor();
 		}
 
-		EmbedBuilder embed = new EmbedBuilder().withTimestamp( CLOCK.instant() );
+		EmbedBuilder embed = new EmbedBuilder().withTimestamp( CLOCK.instant() )
+				.withColor( UserModule.EMBED_COLOR );
 		
 		// Basic info.
 		embed.withThumbnail( user.getAvatarURL() );
@@ -86,6 +89,29 @@ public class ProfileCommand {
 			}
 		}
 		embed.appendField( "Custom Info", customInfo, false );
+		
+		// Level info.
+		LevelState state = LevelingManager.getInstance().getLevelState( user );
+		embed.appendField( "Level", "Lvl. " + state.getLevel(), true );
+		long exp = state.getExp();
+		long maxExp = state.getExpToNextLevel();
+		float percent = (float) exp / maxExp;
+		int progress = Math.round( percent * 100 );
+		int bars = Math.round( percent * EXP_BAR_SIZE );
+		StringBuilder barBuilder = new StringBuilder();
+		int i = 0;
+		for ( ; i < bars; i++ ) {
+			
+			barBuilder.append( '*' );
+			
+		}
+		for ( ; i < EXP_BAR_SIZE; i++ ) {
+			
+			barBuilder.append( '.' );
+			
+		}
+		embed.appendField( "EXP", String.format( "%d/%d `[%s]` %d%%", exp, maxExp,
+				barBuilder.toString(), progress ), true );
 		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
 		
