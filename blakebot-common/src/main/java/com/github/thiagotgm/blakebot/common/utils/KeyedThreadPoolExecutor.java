@@ -74,7 +74,7 @@ public class KeyedThreadPoolExecutor extends AbstractExecutorService implements 
 	}
 
 	@Override
-	public void shutdown() {
+	public synchronized void shutdown() {
 		
 		for ( ExecutorService executor : executors ) {
 			
@@ -85,7 +85,7 @@ public class KeyedThreadPoolExecutor extends AbstractExecutorService implements 
 	}
 
 	@Override
-	public List<Runnable> shutdownNow() {
+	public synchronized List<Runnable> shutdownNow() {
 
 		List<Runnable> pending = new LinkedList<>();
 		for ( ExecutorService executor : executors ) {

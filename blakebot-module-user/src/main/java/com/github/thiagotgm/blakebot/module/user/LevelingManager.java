@@ -105,8 +105,9 @@ public class LevelingManager {
 	 */
 	private LevelingManager() {
 		
-		stateMap = DatabaseManager.getDatabase().getDataMap( "LevelSystem", new StringTranslator(),
-				new StorableTranslator<>( () -> new LevelState() ) );
+		stateMap = Collections.synchronizedMap( DatabaseManager.getDatabase()
+				.getDataMap( "LevelSystem", new StringTranslator(),
+				new StorableTranslator<>( () -> new LevelState() ) ) );
 		cooldownUsers = Collections.synchronizedSet( new HashSet<>() );
 		cooldownRemover = Executors.newSingleThreadScheduledExecutor(
 				t -> new Thread( t, "EXP Cooldown Remover" ) );
@@ -177,7 +178,7 @@ public class LevelingManager {
 	 * @param e The event triggered by the message.
 	 */
 	@EventSubscriber
-	public synchronized void handleMessage( MessageReceivedEvent e ) {
+	public void handleMessage( MessageReceivedEvent e ) {
 		
 		IUser user = e.getAuthor();
 		EXECUTOR.execute( user.getStringID(), () -> {
