@@ -96,6 +96,19 @@ public class LevelingManager {
 		
 	}
 	
+	/**
+	 * Determines the amount of currency that should be gifted to a user when
+	 * that user levels up.
+	 * 
+	 * @param newLevel The level that the user leveled up to.
+	 * @return The amount of currency that should be gifted.
+	 */
+	private static long getCurrencyGift( int newLevel ) {
+		
+		return newLevel * 10;
+		
+	}
+	
 	private final Map<String,LevelState> stateMap;
 	private final Set<String> cooldownUsers;
 	private final ScheduledExecutorService cooldownRemover;
@@ -185,14 +198,20 @@ public class LevelingManager {
 			
 			if ( !cooldownUsers.contains( user.getStringID() ) ) { // Not on cooldown.
 				int newLevel = gainExp( user ); // Give EXP.
-				if ( ( newLevel != 0 ) && !user.isBot() ) { // Send message only to non-bots.
-					new MessageBuilder( e.getClient() ).withChannel( e.getChannel() )
-					.withEmbed( new EmbedBuilder().withTimestamp( CLOCK.instant() )
-							.withColor( UserModule.EMBED_COLOR )
-							.withTitle( user.getName() + " has leveled up! :tada:" )
-							.withDesc( "Hooray!" )
-							.appendField( "Level", String.valueOf( newLevel ), true )
-							.build() ).build(); // Leveled up!
+				if ( newLevel != 0 ) {
+					long currencyGift = getCurrencyGift( newLevel );
+					long newAmount = CurrencyManager.getInstance().deposit( user, currencyGift );
+					if ( !user.isBot() ) { // Send message only to non-bots.
+						new MessageBuilder( e.getClient() ).withChannel( e.getChannel() )
+						.withEmbed( new EmbedBuilder().withTimestamp( CLOCK.instant() )
+								.withColor( UserModule.EMBED_COLOR )
+								.withTitle( user.getName() + " has leveled up! :tada:" )
+								.withDesc( "Hooray! You got **" + CurrencyManager.format( currencyGift )
+								+ "** as a gift! :moneybag:" )
+								.appendField( "Level", String.valueOf( newLevel ), true )
+								.appendField( "Money", CurrencyManager.format( newAmount ), true )
+								.build() ).build(); // Leveled up!
+					}
 				}
 				cooldownUsers.add( user.getStringID() ); // Add to cooldown set.
 				cooldownRemover.schedule( () -> { cooldownUsers.remove( user.getStringID() ); },

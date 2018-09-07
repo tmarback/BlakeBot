@@ -63,8 +63,14 @@ public class DailiesCommand {
 		
 	});
 	
-	private static final String DAILY_AMOUNT_SETTING = "Daily currency amount";
-	private static final long DAILY_AMOUNT = Settings.getLongSetting( DAILY_AMOUNT_SETTING );
+	/**
+	 * Setting that defines {@link #DAILY_AMOUNT}.
+	 */
+	public static final String DAILY_AMOUNT_SETTING = "Daily currency amount";
+	/**
+	 * How much currency a user gets in a daily.
+	 */
+	public static final long DAILY_AMOUNT = Settings.getLongSetting( DAILY_AMOUNT_SETTING );
 	
 	private final Map<String,ZonedDateTime> cooldownMap;
 	
