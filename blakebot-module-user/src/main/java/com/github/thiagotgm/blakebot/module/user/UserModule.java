@@ -74,6 +74,7 @@ public class UserModule implements IModule {
     private void registerCommands( CommandRegistry registry ) {
         
         registry.registerAnnotatedCommands( new ProfileCommand() );
+        registry.registerAnnotatedCommands( new CurrencyManagementCommands() );
         
     }
 
