@@ -113,6 +113,10 @@ public class ProfileCommand {
 		embed.appendField( "EXP", String.format( "%d/%d `[%s]` %d%%", exp, maxExp,
 				barBuilder.toString(), progress ), true );
 		
+		// Currency info
+		embed.appendField( "Money",
+				CurrencyManager.format( CurrencyManager.getInstance().getCurrency( user ) ), true );
+		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
 		
 	}

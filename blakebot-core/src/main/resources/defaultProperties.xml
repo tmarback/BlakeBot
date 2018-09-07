@@ -14,4 +14,5 @@
 <entry key="Database Service">XML</entry> <!-- Database provider to use -->
 <entry key="Database Args">data</entry> <!-- Arguments to initialize the database with -->
 <entry key="EXP Cooldown">60</entry> <!-- Cooldown after a user being granted EXP, in seconds -->
+<entry key="Currency Symbol">$</entry> <!-- Symbol (prefix) used to represent currency -->
 </properties>
