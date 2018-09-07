@@ -116,6 +116,8 @@ public class ProfileCommand {
 		// Currency info
 		embed.appendField( "Money",
 				CurrencyManager.format( CurrencyManager.getInstance().getCurrency( user ) ), true );
+		embed.appendField( "Dailies", UserModule.DAILIES.isAvailable( user ) ? "Available"
+				                                                             : "Not available", true );
 		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
 		

@@ -33,6 +33,7 @@ import sx.blah.discord.modules.IModule;
 public class UserModule implements IModule {
 
     private static final String MODULE_NAME = "User";
+    protected static final DailiesCommand DAILIES = new DailiesCommand();
     
     /**
      * Color for embeds of this module.
@@ -75,6 +76,7 @@ public class UserModule implements IModule {
         
         registry.registerAnnotatedCommands( new ProfileCommand() );
         registry.registerAnnotatedCommands( new CurrencyManagementCommands() );
+        registry.registerAnnotatedCommands( DAILIES );
         
     }
 
