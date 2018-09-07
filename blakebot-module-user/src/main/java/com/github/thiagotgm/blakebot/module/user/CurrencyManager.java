@@ -97,7 +97,7 @@ public class CurrencyManager {
 	 */
 	public static String format( long amount ) {
 		
-		return SYMBOL + amount;
+		return String.format( "%s%,d", SYMBOL, amount );
 		
 	}
 	
