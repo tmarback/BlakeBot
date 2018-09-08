@@ -27,7 +27,7 @@ import sx.blah.discord.modules.IModule;
  * Main module manager for the 'user' module.
  * 
  * @author ThiagoTGM
- * @version 0.1.0
+ * @version 1.0
  * @since 2018-09-04
  */
 public class UserModule implements IModule {

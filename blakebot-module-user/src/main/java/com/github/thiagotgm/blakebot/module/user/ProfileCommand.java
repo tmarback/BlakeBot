@@ -24,6 +24,7 @@ import java.util.Map;
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.module.user.LevelingManager.LevelState;
+import com.github.thiagotgm.blakebot.module.user.ReputationManager.Reputation;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
@@ -46,6 +47,9 @@ public class ProfileCommand {
 	
 	private final Map<String,String> infoData;
 	
+	/**
+	 * Instantiates a command.
+	 */
 	public ProfileCommand() {
 		
 		infoData = DatabaseManager.getDatabase().getDataMap( "CustomInfo",
@@ -76,9 +80,11 @@ public class ProfileCommand {
 		// Basic info.
 		embed.withThumbnail( user.getAvatarURL() );
 		embed.appendField( "Name", user.getName(), true );
-		String nickname = user.getNicknameForGuild( context.getGuild() );
-		if ( nickname != null ) {
-			embed.appendField( "Nickname", nickname, true );
+		if ( !context.getChannel().isPrivate() ) { // Get nickname if in server.
+			String nickname = user.getNicknameForGuild( context.getGuild() );
+			if ( nickname != null ) {
+				embed.appendField( "Nickname", nickname, true );
+			}
 		}
 		String customInfo = infoData.get( user.getStringID() );
 		if ( customInfo == null ) {
@@ -113,11 +119,17 @@ public class ProfileCommand {
 		embed.appendField( "EXP", String.format( "%d/%d `[%s]` %d%%", exp, maxExp,
 				barBuilder.toString(), progress ), true );
 		
-		// Currency info
+		// Currency info.
 		embed.appendField( "Money",
 				CurrencyManager.format( CurrencyManager.getInstance().getCurrency( user ) ), true );
 		embed.appendField( "Dailies", UserModule.DAILIES.isAvailable( user ) ? "Available"
 				                                                             : "Not available", true );
+		
+		// Reputation info.
+		Reputation rep = ReputationManager.getInstance().getReputation( user );
+		embed.appendField( "Reputation", String.format( "%+d", rep.getOverall() ), true );
+		embed.appendField( "Reputation Details", String.format( "%d votes, %.1f%% positive",
+				rep.getTotalVotes(), rep.getPositivePercentage() ), true );
 		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
 		
