@@ -147,7 +147,7 @@ public class KeyedThreadPoolExecutor extends AbstractExecutorService implements 
 	 */
 	private ExecutorService getExecutor( Object key ) {
 		
-		int idx = key == null ? 0 : ( key.hashCode() % executors.length );
+		int idx = key == null ? 0 : Math.abs( key.hashCode() % executors.length );
 		return executors[idx];
 		
 	}
