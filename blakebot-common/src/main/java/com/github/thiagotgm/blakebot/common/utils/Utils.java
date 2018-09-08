@@ -29,7 +29,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -567,6 +570,433 @@ public abstract class Utils {
     		
     	}
     	return list;
+    	
+    }
+    
+    /* Special wrappers for Graphs */
+    
+    // Unmodifiable wrappers.
+    
+    /**
+     * Wrapper for a graph that passes through most operations, but throws an exception on operations
+     * that modify the graph.
+     * 
+     * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+     * @param <K> Type of keys in a path of the graph.
+     * @param <V> Type of values stored in the graph.
+     */
+    private static class UnmodifiableGraph<K,V> implements Graph<K,V>, Serializable {
+    	
+    	/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -6974332055825955444L;
+		
+		private final Graph<K,V> backing;
+    	
+    	/**
+    	 * Creates an instance that wraps the given graph.
+    	 * 
+    	 * @param backing The graph to be wrapped.
+    	 */
+    	public UnmodifiableGraph( Graph<K,V> backing ) {
+    		
+    		this.backing = backing;
+    		
+    	}
+    	
+    	@Override
+    	public boolean containsPath( List<K> path ) {
+    		
+    		return backing.containsPath( path );
+    		
+    	}
+
+		@Override
+		public boolean containsValue( V value ) {
+
+			return backing.containsValue( value );
+			
+		}
+
+		@Override
+		public V get( List<K> path ) throws IllegalArgumentException {
+
+			return backing.get( path );
+			
+		}
+
+		@Override
+		public List<V> getAll( List<K> path ) throws IllegalArgumentException {
+
+			return backing.getAll( path );
+			
+		}
+
+		@Override
+		public V set( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			throw new UnsupportedOperationException( "Graph is unmodifiable." );
+			
+		}
+
+		@Override
+		public boolean add( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			throw new UnsupportedOperationException( "Graph is unmodifiable." );
+			
+		}
+
+		@Override
+		public V remove( List<K> path ) throws UnsupportedOperationException, IllegalArgumentException {
+
+			throw new UnsupportedOperationException( "Graph is unmodifiable." );
+			
+		}
+
+		@Override
+		public Set<List<K>> pathSet() {
+
+			return Collections.unmodifiableSet( backing.pathSet() );
+			
+		}
+
+		@Override
+		public Collection<V> values() {
+			
+			return Collections.unmodifiableCollection( backing.values() );
+			
+		}
+
+		@Override
+		public Set<Entry<K, V>> entrySet() {
+
+			return Collections.unmodifiableSet( backing.entrySet() );
+			
+		}
+
+		@Override
+		public int size() {
+
+			return backing.size();
+			
+		}
+
+		@Override
+		public void clear() {
+
+			backing.clear();
+			
+		}
+    	
+    }
+    
+    /**
+     * Wrapper for a tree that passes through most operations, but throws an exception on operations
+     * that modify the tree.
+     * 
+     * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+     * @param <K> Type of keys in a path of the tree.
+     * @param <V> Type of values stored in the tree.
+     */
+    private static class UnmodifiableTree<K,V> extends UnmodifiableGraph<K,V> implements Tree<K,V> {
+    	
+    	/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -6137572584756055579L;
+
+		/**
+    	 * Creates an instance that wraps the given tree.
+    	 * 
+    	 * @param backing The tree to be wrapped.
+    	 */
+    	public UnmodifiableTree( Tree<K,V> backing ) {
+    		
+    		super( backing );
+    		
+    	}
+    	
+    }
+    
+    /**
+     * Returns an unmodifiable view of the specified graph. This method allows modules to provide
+     * users with "read-only" access to internal graphs. Query operations on the returned graph
+     * "read through" to the specified graph, and attempts to modify the returned graph, whether
+     * direct or via its collection views, result in an UnsupportedOperationException.
+     * <p>
+     * The returned graph will be serializable if the specified graph is serializable.
+     * 
+     * @param <K> The type of keys that make a path in the graph.
+     * @param <V> The type of values stored in the graph.
+     * @param g The graph for which an unmodifiable view is to be returned.
+     * @return An unmodifiable view of the specified graph.
+     * @throws NullPointerException if the given graph is <tt>null</tt>.
+     */
+    public static <K,V> Graph<K,V> unmodifiableGraph( Graph<K,V> g ) throws NullPointerException {
+    	
+    	if ( g == null ) {
+    		throw new NullPointerException( "Argument cannot be null." );
+    	}
+    	
+    	return new UnmodifiableGraph<>( g );
+    	
+    }
+    
+    /**
+     * Returns an unmodifiable view of the specified tree. This method allows modules to provide
+     * users with "read-only" access to internal trees. Query operations on the returned tree
+     * "read through" to the specified tree, and attempts to modify the returned tree, whether
+     * direct or via its collection views, result in an UnsupportedOperationException.
+     * <p>
+     * The returned tree will be serializable if the specified tree is serializable.
+     * 
+     * @param <K> The type of keys that make a path in the tree.
+     * @param <V> The type of values stored in the tree.
+     * @param t The tree for which an unmodifiable view is to be returned.
+     * @return An unmodifiable view of the specified tree.
+     * @throws NullPointerException if the given tree is <tt>null</tt>.
+     */
+    public static <K,V> Tree<K,V> unmodifiableTree( Tree<K,V> t ) throws NullPointerException {
+    	
+    	if ( t == null ) {
+    		throw new NullPointerException( "Argument cannot be null." );
+    	}
+    	
+    	return new UnmodifiableTree<>( t );
+    	
+    }
+    
+    // Synchronized wrappers.
+    
+    /**
+     * Wrapper for a graph that passes through all operations, and synchronizes
+     * all method calls.
+     * 
+     * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+     * @param <K> Type of keys in a path of the graph.
+     * @param <V> Type of values stored in the graph.
+     */
+    private static class SynchronizedGraph<K,V> implements Graph<K,V>, Serializable {
+    	
+		/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -6618016289702403440L;
+		
+		private final Graph<K,V> backing;
+    	
+    	/**
+    	 * Creates an instance that wraps the given graph.
+    	 * 
+    	 * @param backing The graph to be wrapped.
+    	 */
+    	public SynchronizedGraph( Graph<K,V> backing ) {
+    		
+    		this.backing = backing;
+    		
+    	}
+    	
+    	@Override
+    	public synchronized boolean containsPath( List<K> path ) {
+    		
+    		return backing.containsPath( path );
+    		
+    	}
+
+		@Override
+		public synchronized boolean containsValue( V value ) {
+
+			return backing.containsValue( value );
+			
+		}
+
+		@Override
+		public synchronized V get( List<K> path ) throws IllegalArgumentException {
+
+			return backing.get( path );
+			
+		}
+
+		@Override
+		public synchronized List<V> getAll( List<K> path ) throws IllegalArgumentException {
+
+			return backing.getAll( path );
+			
+		}
+
+		@Override
+		public synchronized V set( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			return backing.set( value, path );
+			
+		}
+
+		@Override
+		public synchronized boolean add( V value, List<K> path )
+				throws UnsupportedOperationException, NullPointerException, IllegalArgumentException {
+
+			return backing.add( value, path );
+			
+		}
+
+		@Override
+		public synchronized V remove( List<K> path ) throws UnsupportedOperationException, IllegalArgumentException {
+
+			return backing.remove( path );
+			
+		}
+
+		@Override
+		public synchronized Set<List<K>> pathSet() {
+
+			return Collections.synchronizedSet( backing.pathSet() );
+			
+		}
+
+		@Override
+		public synchronized Collection<V> values() {
+			
+			return Collections.synchronizedCollection( backing.values() );
+			
+		}
+
+		@Override
+		public synchronized Set<Entry<K, V>> entrySet() {
+
+			return Collections.synchronizedSet( backing.entrySet() );
+			
+		}
+
+		@Override
+		public synchronized int size() {
+
+			return backing.size();
+			
+		}
+
+		@Override
+		public synchronized void clear() {
+
+			backing.clear();
+			
+		}
+    	
+    }
+    
+    /**
+     * Wrapper for a tree that passes through all operations, and synchronizes
+     * all method calls.
+     * 
+     * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+     * @param <K> Type of keys in a path of the tree.
+     * @param <V> Type of values stored in the tree.
+     */
+    private static class SynchronizedTree<K,V> extends SynchronizedGraph<K,V> implements Tree<K,V> {
+    	
+    	/**
+		 * UID that represents this class.
+		 */
+		private static final long serialVersionUID = -4615164564699994857L;
+
+		/**
+    	 * Creates an instance that wraps the given tree.
+    	 * 
+    	 * @param backing The tree to be wrapped.
+    	 */
+    	public SynchronizedTree( Tree<K,V> backing ) {
+    		
+    		super( backing );
+    		Collections.synchronizedMap(null);
+    		
+    	}
+    	
+    }
+    
+    /**
+     * Returns a synchronized (thread-safe) graph backed by the specified graph. In order to
+     * guarantee serial access, it is critical that <b>all</b> access to the backing graph is
+     * accomplished through the returned graph.
+     * <p>
+     * It is imperative that the user manually synchronize on the returned graph when
+     * iterating over any of its collection views: 
+     * <pre>
+     *  Graph g = Utils.synchronizedGraph(new TreeGraph());
+     *      ...
+     *  Set s = g.pathSet();  // Needn't be in synchronized block
+     *      ...
+     *  synchronized (g) {  // Synchronizing on g, not s!
+     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * Failure to follow this advice may result in non-deterministic behavior. 
+     * <p>
+     * The returned graph will be serializable if the specified graph is serializable.
+     * 
+     * @param <K> The type of keys that make a path in the graph.
+     * @param <V> The type of values stored in the graph.
+     * @param g The graph to be "wrapped" in a synchronized graph.
+     * @return A synchronized view of the specified graph.
+     * @throws NullPointerException if the given graph is <tt>null</tt>.
+     */
+    public static <K,V> Graph<K,V> synchronizedGraph( Graph<K,V> g ) throws NullPointerException {
+    	
+    	if ( g == null ) {
+    		throw new NullPointerException( "Argument cannot be null." );
+    	}
+    	
+    	return new SynchronizedGraph<>( g );
+    	
+    }
+    
+    /**
+     * Returns a synchronized (thread-safe) tree backed by the specified tree. In order to
+     * guarantee serial access, it is critical that <b>all</b> access to the backing tree is
+     * accomplished through the returned tree.
+     * <p>
+     * It is imperative that the user manually synchronize on the returned tree when
+     * iterating over any of its collection views: 
+     * <pre>
+     *  Tree t = Utils.synchronizedTree(new TreeGraph());
+     *      ...
+     *  Set s = t.pathSet();  // Needn't be in synchronized block
+     *      ...
+     *  synchronized (t) {  // Synchronizing on t, not s!
+     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * Failure to follow this advice may result in non-deterministic behavior. 
+     * <p>
+     * The returned tree will be serializable if the specified tree is serializable.
+     * 
+     * @param <K> The type of keys that make a path in the tree.
+     * @param <V> The type of values stored in the tree.
+     * @param t The tree to be "wrapped" in a synchronized tree.
+     * @return A synchronized view of the specified tree.
+     * @throws NullPointerException if the given tree is <tt>null</tt>.
+     */
+    public static <K,V> Tree<K,V> synchronizedTree( Tree<K,V> t ) throws NullPointerException {
+    	
+    	if ( t == null ) {
+    		throw new NullPointerException( "Argument cannot be null." );
+    	}
+    	
+    	return new SynchronizedTree<>( t );
     	
     }
 

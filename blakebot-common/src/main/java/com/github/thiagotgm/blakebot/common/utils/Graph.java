@@ -174,7 +174,7 @@ public interface Graph<K,V> {
      * @param path The sequence of keys that map to the value.
      * @return <tt>true</tt> if the value was added to the graph.<br>
      *         <tt>false</tt> if there is already a value mapped to the given path.
-     * @throws UnsupportedOperationException if the add operation is not supported by this map.
+     * @throws UnsupportedOperationException if the add operation is not supported by this graph.
      * @throws NullPointerException if the value given is null.
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
@@ -189,7 +189,7 @@ public interface Graph<K,V> {
      * @param path The sequence of keys that map to the value.
      * @return <tt>true</tt> if the value was added to the graph.<br>
      *         <tt>false</tt> if there is already a value mapped to the given path.
-     * @throws UnsupportedOperationException if the add operation is not supported by this map.
+     * @throws UnsupportedOperationException if the add operation is not supported by this graph.
      * @throws NullPointerException if the value given is null.
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
@@ -208,7 +208,7 @@ public interface Graph<K,V> {
      * @param path The sequence of keys that map to the value to be removed.
      * @return The removed value, or <tt>null</tt> if there is no mapping for the
      *         given path.
-     * @throws UnsupportedOperationException if the remove operation is not supported by this map.
+     * @throws UnsupportedOperationException if the remove operation is not supported by this graph.
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
@@ -220,7 +220,7 @@ public interface Graph<K,V> {
      * @param path The sequence of keys that map to the value to be removed.
      * @return The removed value, or <tt>null</tt> if there is no mapping for the
      *         given path.
-     * @throws UnsupportedOperationException if the remove operation is not supported by this map.
+     * @throws UnsupportedOperationException if the remove operation is not supported by this graph.
      * @throws IllegalArgumentException if the path is empty but such a path
      *         is not valid under the current implementation.
      */
