@@ -918,7 +918,6 @@ public abstract class Utils {
     	public SynchronizedTree( Tree<K,V> backing ) {
     		
     		super( backing );
-    		Collections.synchronizedMap(null);
     		
     	}
     	

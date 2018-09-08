@@ -20,18 +20,21 @@ package com.github.thiagotgm.blakebot.module.user;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.Data;
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.Storable;
+import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
 import com.github.thiagotgm.blakebot.common.storage.translate.StorableTranslator;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 import com.github.thiagotgm.blakebot.common.utils.KeyedExecutorService;
+import com.github.thiagotgm.blakebot.common.utils.Tree;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 import sx.blah.discord.handle.obj.IUser;
 
@@ -43,6 +46,15 @@ import sx.blah.discord.handle.obj.IUser;
  * @since 2018-09-07
  */
 public class ReputationManager {
+	
+	/**
+	 * Possible votes a user can give to another user.
+	 * 
+	 * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+	 */
+	public enum Vote { UPVOTE, NO_VOTE, DOWNVOTE };
 	
 	private static final Logger LOG = LoggerFactory.getLogger( ReputationManager.class );
 	private static final ThreadGroup THREADS = new ThreadGroup( "Reputation System" );
@@ -75,6 +87,7 @@ public class ReputationManager {
 	}
 	
 	private final Map<String,Reputation> reputationMap;
+	private final Tree<String,Vote> voteMap;
 	
 	/**
 	 * Instantiates a manager.
@@ -84,6 +97,8 @@ public class ReputationManager {
 		reputationMap = Collections.synchronizedMap( DatabaseManager.getDatabase().getDataMap(
 				"ReputationSystem", new StringTranslator(),
 				new StorableTranslator<>( () -> new Reputation() ) ) );
+		voteMap = Utils.synchronizedTree( DatabaseManager.getDatabase().getDataTree(
+				"ReputationVotes", new StringTranslator(), new VoteTranslator() ) );
 		
 	}
 	
@@ -102,6 +117,78 @@ public class ReputationManager {
 		
 		Reputation rep = reputationMap.get( user.getStringID() );
 		return rep == null ? new Reputation() : rep;
+		
+	}
+	
+	/**
+	 * Sets a vote from the given voter user towards the reputation of the
+	 * given target user. If the voter has placed a vote towards the target before,
+	 * the previous vote is discarded if different from the given vote. If the
+	 * given vote is the same as the previous vote, nothing is changed.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user
+	 * (either voter or target) across different threads. If calls to this method
+	 * are parallelized, is not necessary for the caller to synchronize those calls.
+	 * 
+	 * @param voter The user casting the vote.
+	 * @param target The user to whose reputation the vote goes to.
+	 * @param vote The vote.
+	 * @return <tt>true</tt> if the voter's vote towards the target was registered
+	 *         (either didn't vote on the target before, or had a different vote).<br>
+	 *         <tt>false</tt> if the voter has already voted on the target, and
+	 *         that previous vote was the same as the given vote.
+	 * @throws NullPointerException if any of the arguments is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the given voter and target are the same user
+	 *                                  (same ID).
+	 */
+	public boolean vote( IUser voter, IUser target, Vote vote )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( ( voter == null ) || ( target == null ) || ( vote == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		if ( voter.getLongID() == target.getLongID() ) {
+			throw new IllegalArgumentException( "A user cannot vote on him/herself." );
+		}
+		
+		final String voterID = voter.getStringID();
+		final String targetID = target.getStringID();
+		
+		try {
+			return EXECUTOR.submit( voterID, () -> {
+				
+				Vote curVote = voteMap.get( voterID, targetID );
+				if ( curVote == null ) { // No vote in the system.
+					curVote = Vote.NO_VOTE;
+				}
+				
+				if ( vote == curVote ) {
+					return false; // Same vote as current.
+				}
+				
+				final Vote oldVote = curVote;
+				EXECUTOR.execute( targetID, () -> {
+					
+					Reputation rep = reputationMap.get( targetID ); // Get current rep.
+					rep.changeVote( oldVote, vote ); // Change vote.
+					reputationMap.put( targetID, rep ); // Update rep.
+					
+				});
+				
+				if ( vote == Vote.NO_VOTE ) { // Just remove the vote.
+					voteMap.remove( voterID, targetID );
+				} else { // Update the vote.
+					voteMap.set( vote, voterID, targetID );
+				}
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException | ExecutionException e ) {
+			LOG.error( "Error while submitting vote.", e );
+			return false;
+		}
 		
 	}
 	
@@ -184,6 +271,51 @@ public class ReputationManager {
 			return total == 0 ? 0.0 : ( downvotes * 100.0 ) / total;
 			
 		}
+		
+		/**
+		 * Changes the value of a vote towards this reputation.
+		 * <p>
+		 * e.g. removes a vote of the type given by oldVote,
+		 * and adds a vote of the type given by newVote.
+		 * 
+		 * @param oldVote The previous value of the vote.
+		 * @param newVote The new value of the vote.
+		 */
+		protected void changeVote( Vote oldVote, Vote newVote ) {
+			
+			switch ( oldVote ) { // Remove effect of old vote.
+			
+				case UPVOTE:
+					upvotes -= 1; // Remove the upvote
+					break;
+					
+				case DOWNVOTE:
+					downvotes -= 1; // Remove the downvote.
+					break;
+					
+				case NO_VOTE:
+					// Do nothing.
+					break;
+					
+			}
+			
+			switch ( newVote ) {
+			
+				case UPVOTE:
+					upvotes += 1; // Add the upvote
+					break;
+					
+				case DOWNVOTE:
+					downvotes += 1; // Add the downvote.
+					break;
+					
+				case NO_VOTE:
+					// Do nothing.
+					break;
+			
+			}
+			
+		}
 
 		@Override
 		public Data toData() {
@@ -216,6 +348,40 @@ public class ReputationManager {
 				throw new TranslationException( "Downvotes attribute is not a number." );
 			}
 			upvotes = downvoteData.getNumberInteger();
+			
+		}
+		
+	}
+	
+	/* Translator for the enum */
+	
+	/**
+	 * Translator for Vote values.
+	 * 
+	 * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-07
+	 */
+	private class VoteTranslator implements Translator<Vote> {
+
+		@Override
+		public Data toData( Vote obj ) throws TranslationException {
+
+			return Data.stringData( obj.toString() );
+			
+		}
+
+		@Override
+		public Vote fromData( Data data ) throws TranslationException {
+
+			if ( !data.isString() ) {
+				throw new TranslationException( "Given data is not a string." );
+			}
+			try {
+				return Vote.valueOf( data.getString() );
+			} catch ( IllegalArgumentException e ) {
+				throw new TranslationException( "String data is not a valid vote." );
+			}
 			
 		}
 		
