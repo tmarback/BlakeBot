@@ -168,10 +168,15 @@ public class ReputationManager {
 					return false; // Same vote as current.
 				}
 				
+				LOG.debug( "Switching vote from {} towards {}, from {} to {}.",
+						voter.getName(), target.getName(), curVote, vote );
 				final Vote oldVote = curVote;
 				EXECUTOR.execute( targetID, () -> {
 					
 					Reputation rep = reputationMap.get( targetID ); // Get current rep.
+					if ( rep == null ) { // No reputation yet.
+						rep = new Reputation();
+					}
 					rep.changeVote( oldVote, vote ); // Change vote.
 					reputationMap.put( targetID, rep ); // Update rep.
 					
@@ -347,7 +352,7 @@ public class ReputationManager {
 			if ( !downvoteData.isNumber() ) {
 				throw new TranslationException( "Downvotes attribute is not a number." );
 			}
-			upvotes = downvoteData.getNumberInteger();
+			downvotes = downvoteData.getNumberInteger();
 			
 		}
 		

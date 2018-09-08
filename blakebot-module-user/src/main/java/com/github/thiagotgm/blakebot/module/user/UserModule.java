@@ -77,6 +77,7 @@ public class UserModule implements IModule {
         registry.registerAnnotatedCommands( new ProfileCommand() );
         registry.registerAnnotatedCommands( new CurrencyManagementCommands() );
         registry.registerAnnotatedCommands( DAILIES );
+        registry.registerAnnotatedCommands( new ReputationCommands() );
         
     }
 
