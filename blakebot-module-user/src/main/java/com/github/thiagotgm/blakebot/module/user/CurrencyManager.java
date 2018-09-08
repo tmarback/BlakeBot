@@ -73,7 +73,7 @@ public class CurrencyManager {
 	 * 
 	 * @return The instance.
 	 */
-	public static CurrencyManager getInstance() {
+	public synchronized static CurrencyManager getInstance() {
 		
 		if ( instance == null ) {
 			instance = new CurrencyManager();

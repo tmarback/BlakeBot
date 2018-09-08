@@ -87,7 +87,7 @@ public class LevelingManager {
 	 * 
 	 * @return The instance.
 	 */
-	public static LevelingManager getInstance() {
+	public synchronized static LevelingManager getInstance() {
 		
 		if ( instance == null ) {
 			instance = new LevelingManager();
