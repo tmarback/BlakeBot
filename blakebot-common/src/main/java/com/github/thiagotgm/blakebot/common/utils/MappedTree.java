@@ -49,6 +49,13 @@ class MappedTree<K,V> implements Tree<K,V> {
 		this.backing = backing;
 		
 	}
+	
+	@Override
+	public boolean containsPath( List<K> path ) {
+		
+		return backing.containsKey( path );
+		
+	}
 
 	@Override
 	public boolean containsValue( V value ) {
