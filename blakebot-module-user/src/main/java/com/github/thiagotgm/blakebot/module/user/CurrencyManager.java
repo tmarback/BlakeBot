@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -108,8 +109,8 @@ public class CurrencyManager {
 	 */
 	private CurrencyManager() {
 		
-		currencyMap = DatabaseManager.getDatabase().getDataMap( "CurrencySystem",
-				new StringTranslator(), new LongTranslator() );
+		currencyMap = Collections.synchronizedMap( DatabaseManager.getDatabase()
+				.getDataMap( "CurrencySystem", new StringTranslator(), new LongTranslator() ) );
 		
 	}
 	
