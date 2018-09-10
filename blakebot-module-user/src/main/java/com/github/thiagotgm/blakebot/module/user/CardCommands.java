@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -106,7 +107,7 @@ public class CardCommands {
 	@MainCommand(
 			name = "Card command",
 			aliases = "card",
-			description = "Cards that can be customized by the user to be shown in chat. "
+			description = "Cards that can be customized by the user to be shown in chat.\n"
 					+ "Each user starts off being able to have " + UserCards.STARTING_CARDS
 					+ " cards at the same time, and may purchase more card slots using the "
 					+ "bot currency (up to " + UserCards.MAX_CARDS + " cards)!",
@@ -136,7 +137,7 @@ public class CardCommands {
 	public boolean getCardCommand( CommandContext context ) {
 		
 		IUser target = getTarget( context ); // Parse target.
-		List<String> args = context.getArgs();
+		List<String> args = new ArrayList<>( context.getArgs() );
 		if ( target != null ) {
 			args.remove( 0 ); // Remove target arg.
 		} else {
@@ -270,9 +271,11 @@ public class CardCommands {
 	@SubCommand(
 			name = SET_FIELD_SUBCOMMAND,
 			aliases = { "setfield", "setf" },
-			description = "Sets the text of the field with the given name in the given card. "
+			description = "Sets the text of the field with the given name in the given card.\n"
 					+ "If the card does not have a field with the given name, and does not yet "
-					+ "have the maximum amount of fields, the field is created.",
+					+ "have the maximum amount of fields (" + Card.MAX_FIELDS + "), the field "
+					+ "is created.\nNOTE: When displaying the card, the fields are ordered by "
+					+ "the title.",
 			usage = "{}card setfield|setf <card name> <field name> <field text>",
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
