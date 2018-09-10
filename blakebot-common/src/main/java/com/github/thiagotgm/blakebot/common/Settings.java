@@ -29,8 +29,23 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Class that manages the settings for the bot.
+ * <p>
+ * Setting values are extracted from 3 different files, in the following precedence order
+ * (highest precedence to lowest precedence):
+ * <ul>
+ * 	<li>{@value #SETTINGS_FILE}: Values specified by the user.</li>
+ * 	<li>{@value #DEFAULTS_FILE}: Default values specified by the bot maker (optional).</li>
+ * 	<li>{@value #LIB_DEFAULTS_FILE}: Default values specified by this library.</li>
+ * </ul>
+ * When a setting is retrieved, it uses the value specified in the highest precedence file
+ * where that setting is present.
+ * <p>
+ * When the value of a setting is changed, it will be reflected in the
+ * {@link #SETTINGS_FILE user-defined settings} file. Changes aren't written to the file
+ * immediately, but rather are cached in memory and flushed at regular intervals as
+ * defined by {@link SaveManager}.
  *
- * @version 1.0
+ * @version 1.1
  * @author ThiagoTGM
  * @since 2017-07-28
  */
@@ -39,32 +54,72 @@ public class Settings implements SaveManager.Saveable {
     private static final Logger LOG = LoggerFactory.getLogger( Settings.class );
     
     private static final int FILE_ERROR = 2;
-    private static final String DEFAULTS_FILE = "defaultProperties.xml";
-    private static final String SETTINGS_FILE = "properties.xml";
+    
+    /**
+     * File with default values provided by this library are stored, which takes
+     * the lowest precedence. A settings in this file is used only if there is no
+     * override for its value in the other files.
+     */
+    public static final String LIB_DEFAULTS_FILE = "defaultLibSettings.xml";
+    /**
+     * File with default values provided by the bot, which takes the second lowest
+     * precedence. A settings in this file is used if there is no override for its
+     * value in the user-set file, and overrides any value it may have in the library
+     * defaults file.
+     * <p>
+     * The existence of this file is optional. If it does not exist, then there are
+     * no bot-default values (same as if it existed but specified no values).
+     */
+    public static final String DEFAULTS_FILE = "defaultSettings.xml";
+    /**
+     * File with settings specified by the user. It takes the highest precedence,
+     * which means a value specified for a setting here is used even if other
+     * values are provided in the default files.
+     * <p>
+     * If it does not exist at startup, it is created.
+     */
+    public static final String SETTINGS_FILE = "settings.xml";
     private static final String SETTINGS_COMMENT = "Bot settings.";
     
-    private static final Properties settings;
+    private static final Properties SETTINGS;
 
     static {
+    	
+    	/* Reads library-default settings */
+        Properties libDefaults = new Properties();
+        try {
+            ClassLoader loader = Settings.class.getClassLoader();
+            InputStream input = loader.getResourceAsStream( LIB_DEFAULTS_FILE );
+            libDefaults.loadFromXML( input );
+            input.close();
+            LOG.info( "Loaded library-default properties." );
+        } catch ( IOException e ) {
+            LOG.error( "Error reading library-default properties file.", e );
+            System.exit( FILE_ERROR );
+        }
         
         /* Reads default settings */
-        Properties defaults = new Properties();
+        Properties defaults = new Properties( libDefaults );
         try {
             ClassLoader loader = Settings.class.getClassLoader();
             InputStream input = loader.getResourceAsStream( DEFAULTS_FILE );
-            defaults.loadFromXML( input );
-            input.close();
-            LOG.info( "Loaded default properties." );
+            if ( input != null ) { // Found bot-default properties.
+	            defaults.loadFromXML( input );
+	            input.close();
+	            LOG.info( "Loaded bot-default properties." );
+            } else { // Did not find bot-default properties.
+            	LOG.info( "No bot-default properties found." );
+            }
         } catch ( IOException e ) {
-            LOG.error( "Error reading default properties file.", e );
+            LOG.error( "Error reading bot-default properties file.", e );
             System.exit( FILE_ERROR );
         }
 
         /* Reads settings */
-        settings = new Properties( defaults );
+        SETTINGS = new Properties( defaults );
         try {
             FileInputStream input = new FileInputStream( SETTINGS_FILE );
-            settings.loadFromXML( input );
+            SETTINGS.loadFromXML( input );
             input.close();
             LOG.info( "Loaded bot properties." );
         } catch ( FileNotFoundException e ) {
@@ -86,7 +141,7 @@ public class Settings implements SaveManager.Saveable {
      */
     public synchronized static boolean hasSetting( String setting ) {
         
-        return settings.getProperty( setting ) != null;
+        return SETTINGS.getProperty( setting ) != null;
         
     }
     
@@ -102,7 +157,7 @@ public class Settings implements SaveManager.Saveable {
         if ( !hasSetting( setting ) ) { // Check if setting exists.
             throw new IllegalArgumentException( "Setting does not exist." );
         }
-        return settings.getProperty( setting );
+        return SETTINGS.getProperty( setting );
         
     }
     
@@ -120,7 +175,7 @@ public class Settings implements SaveManager.Saveable {
             throw new IllegalArgumentException( "Setting does not exist." );
         }
         try {
-            return Long.valueOf( settings.getProperty( setting ) );
+            return Long.valueOf( SETTINGS.getProperty( setting ) );
         } catch ( NumberFormatException e ) {
             throw new IllegalArgumentException( "Setting does not have a long value.", e );
         }
@@ -141,7 +196,7 @@ public class Settings implements SaveManager.Saveable {
             throw new IllegalArgumentException( "Setting does not exist." );
         }
         try {
-            return Integer.valueOf( settings.getProperty( setting ) );
+            return Integer.valueOf( SETTINGS.getProperty( setting ) );
         } catch ( NumberFormatException e ) {
             throw new IllegalArgumentException( "Setting does not have a int value.", e );
         }
@@ -161,7 +216,7 @@ public class Settings implements SaveManager.Saveable {
         if ( !hasSetting( setting ) ) { // Check if setting exists.
             throw new IllegalArgumentException( "Setting does not exist." );
         }
-        String str = settings.getProperty( setting );
+        String str = SETTINGS.getProperty( setting );
         boolean value = Boolean.valueOf( str );
         if ( !str.equalsIgnoreCase( String.valueOf( value ) ) ) {
             throw new IllegalArgumentException( "Setting does not have a boolean value." );
@@ -182,7 +237,7 @@ public class Settings implements SaveManager.Saveable {
         if ( value == null ) {
             throw new NullPointerException( "Value cannot be null." );
         }
-        settings.setProperty( setting, value );
+        SETTINGS.setProperty( setting, value );
         
     }
     
@@ -194,7 +249,7 @@ public class Settings implements SaveManager.Saveable {
      */
     public synchronized static void setSetting( String setting, long value ) {
         
-        settings.setProperty( setting, String.valueOf( value ) );
+        SETTINGS.setProperty( setting, String.valueOf( value ) );
         
     }
     
@@ -206,7 +261,7 @@ public class Settings implements SaveManager.Saveable {
      */
     public synchronized static void setSetting( String setting, int value ) {
         
-        settings.setProperty( setting, String.valueOf( value ) );
+        SETTINGS.setProperty( setting, String.valueOf( value ) );
         
     }
     
@@ -218,7 +273,7 @@ public class Settings implements SaveManager.Saveable {
      */
     public synchronized static void setSetting( String setting, boolean value ) {
         
-        settings.setProperty( setting, String.valueOf( value ) );
+        SETTINGS.setProperty( setting, String.valueOf( value ) );
         
     }
     
@@ -231,7 +286,7 @@ public class Settings implements SaveManager.Saveable {
         FileOutputStream file;
         try {
             file = new FileOutputStream( SETTINGS_FILE );
-            settings.storeToXML( file, SETTINGS_COMMENT );
+            SETTINGS.storeToXML( file, SETTINGS_COMMENT );
             file.close();
         } catch ( FileNotFoundException e ) {
             LOG.error( "Could not open properties file.", e );

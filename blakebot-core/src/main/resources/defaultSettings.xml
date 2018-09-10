@@ -1,18 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
-<comment>Default values for bot properties.</comment>
-<entry key="Auto-save delay">60</entry> <!-- Delay between auto-saves -->
+<comment>Bot-default values for bot properties.</comment>
 <entry key="Console width">1000</entry> <!-- Console width in pixels -->
 <entry key="Console height">800</entry> <!-- Console height in pixels -->
-<entry key="Data path">data</entry> <!-- Path to store data in -->
 <entry key="Log uptimes">false</entry> <!-- Whether to log uptimes -->
 <entry key="Log downtimes">false</entry> <!-- Whether to log downtimes -->
 <entry key="Log connection events">false</entry> <!-- Whether to connection events -->
 <entry key="Prefix">b$</entry> <!-- Default prefix for all commands -->
-<entry key="Cache size">100</entry> <!-- Size of the database caches -->
-<entry key="Database Service">XML</entry> <!-- Database provider to use -->
-<entry key="Database Args">data</entry> <!-- Arguments to initialize the database with -->
 <entry key="EXP Cooldown">60</entry> <!-- Cooldown after a user being granted EXP, in seconds -->
 <entry key="Currency Symbol">$</entry> <!-- Symbol (prefix) used to represent currency -->
 <entry key="Daily currency amount">200</entry> <!-- Amount of currency to give as a daily -->

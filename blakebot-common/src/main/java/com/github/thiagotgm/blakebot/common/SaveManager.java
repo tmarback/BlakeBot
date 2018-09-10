@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 
 /**
- * Class that manages objects that save their state to disk. All registered listeners are =
+ * Class that manages objects that save their state to disk. All registered listeners are
  * auto-saved every time a certain time delay passes, and right before the program is terminated.
  *
  * @version 1.0
