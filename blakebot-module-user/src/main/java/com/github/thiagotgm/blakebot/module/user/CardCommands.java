@@ -98,6 +98,9 @@ public class CardCommands {
 	
 	private static final String BUY_SLOT_SUBCOMMAND = "Buy custom card slot";
 	
+	private static final String SET_FIELD_SUBCOMMAND = "Set custom card field";
+	private static final String REMOVE_FIELD_SUBCOMMAND = "Remove custom card field";
+	
 	private final CardManager manager = CardManager.getInstance();
 	
 	@MainCommand(
@@ -109,13 +112,14 @@ public class CardCommands {
 					+ "bot currency (up to " + UserCards.MAX_CARDS + " cards)!",
 			usage = "{}card <subcommand>",
 			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
-					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND },
+					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
+					        REMOVE_FIELD_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
 	public void cardCommand( CommandContext context ) {
 		
-		context.setHelper( getTarget( context ) ); // Parse target.
+		// Do nothing.
 		
 	}
 	
@@ -127,12 +131,11 @@ public class CardCommands {
 					+ "specified through either a mention or through the format "
 					+ "[name]#[discriminator].",
 			usage = "{}card get [user] <card name>",
-			executeParent = true,
 			failureHandler = FAILURE_HANDLER
 			)
 	public boolean getCardCommand( CommandContext context ) {
 		
-		IUser target = context.getHelper().isPresent() ? (IUser) context.getHelper().get() : null;
+		IUser target = getTarget( context ); // Parse target.
 		List<String> args = context.getArgs();
 		if ( target != null ) {
 			args.remove( 0 ); // Remove target arg.
@@ -167,7 +170,6 @@ public class CardCommands {
 					+ "your card slots. Also, the title must be limited to " + 
 					Card.MAX_TITLE_LENGTH + " characters.",
 			usage = "{}card add <card name>",
-			executeParent = false,
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
 			)
@@ -194,7 +196,6 @@ public class CardCommands {
 			aliases = { "remove", "rm" },
 			description = "Removes a custom card with the given name (title) from yourself.",
 			usage = "{}card remove|rm <card name>",
-			executeParent = false,
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
 			)
@@ -223,7 +224,6 @@ public class CardCommands {
 					+ "given new name. The new title must be limited to " + Card.MAX_TITLE_LENGTH
 					+ " characters.",
 			usage = "{}card changetitle|ct|settitle|st <current card name> <new card name>",
-			executeParent = false,
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
 			)
@@ -252,7 +252,6 @@ public class CardCommands {
 			description = "Buys an extra custom card slot for $" + UserCards.EXTRA_CARD_COST +
 					", with a maximum of " + UserCards.MAX_CARDS + " total slots.",
 			usage = "{}card buyslot|buy",
-			executeParent = false,
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
 			)
@@ -263,6 +262,64 @@ public class CardCommands {
 			return true;
 		} else {
 			context.setHelper( "You do not have enough funds to buy another slot!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = SET_FIELD_SUBCOMMAND,
+			aliases = { "setfield", "setf" },
+			description = "Sets the text of the field with the given name in the given card. "
+					+ "If the card does not have a field with the given name, and does not yet "
+					+ "have the maximum amount of fields, the field is created.",
+			usage = "{}card setfield|setf <card name> <field name> <field text>",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setFieldCommand( CommandContext context ) {
+		
+		if ( context.getArgs().size() < 3 ) {
+			context.setHelper( "Must specify the card name, the field name, and the field text!" );
+			return false;
+		}
+		String cardTitle = context.getArgs().get( 0 );
+		String fieldName = context.getArgs().get( 1 );
+		String fieldText = context.getArgs().get( 2 );
+		
+		if ( manager.setField( context.getAuthor(), cardTitle, fieldName, fieldText ) ) {
+			context.setHelper( "Set text of field '" + fieldName + "' to '" + fieldText + "'!" );
+			return true;
+		} else {
+			context.setHelper( "The card '" + cardTitle + "' already has the maximum amount of fields!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = REMOVE_FIELD_SUBCOMMAND,
+			aliases = { "removefield", "rmf" },
+			description = "Removes the field with the given name from the given card.",
+			usage = "{}card removefield|rmf <card name> <field name>",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean removeFieldCommand( CommandContext context ) {
+		
+		if ( context.getArgs().size() < 2 ) {
+			context.setHelper( "Must specify the card name and the field name!" );
+			return false;
+		}
+		String cardTitle = context.getArgs().get( 0 );
+		String fieldName = context.getArgs().get( 1 );
+		
+		if ( manager.setField( context.getAuthor(), cardTitle, fieldName, null ) ) {
+			context.setHelper( "Removed field '" + fieldName + "'!" );
+			return true;
+		} else {
+			context.setHelper( "The card '" + cardTitle + "' does not have a field named '"
+					+ fieldName + "'!" );
 			return false;
 		}
 		

@@ -297,7 +297,7 @@ public class CardManager {
 				
 			}).get();
 		} catch ( InterruptedException e ) {
-			LOG.error( "Interrupted while waiting for card remove.", e );
+			LOG.error( "Interrupted while waiting for card title set.", e );
 			return false;
 		} catch ( ExecutionException e ) {
 			if ( e.getCause() instanceof IllegalArgumentException ) {
@@ -311,6 +311,11 @@ public class CardManager {
 	
 	/**
 	 * Purchases an extra card slot for the given user, using his/hers bot currency.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
 	 * 
 	 * @param user The user to purchase a slot for.
 	 * @return <tt>true</tt> if the purchase was successful.
@@ -347,7 +352,80 @@ public class CardManager {
 				
 			}).get();
 		} catch ( InterruptedException e ) {
-			LOG.error( "Interrupted while waiting for card remove.", e );
+			LOG.error( "Interrupted while waiting for slot purchase.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
+		}
+		
+	}
+	
+	/**
+	 * Sets the text of a field in the given card owned by the given user.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param fieldName The name of the field. If there is no field with this name,
+	 *                  and <tt>fieldText</tt> is not <tt>null</tt>, one is created.
+	 * @param fieldText The text to set to the field. If <tt>null</tt>, the field
+	 *                  with the given name is deleted.
+	 * @return If <tt>fieldText</tt> is not <tt>null</tt>: <tt>true</tt> if the field
+	 *         set successfully, <tt>false</tt> if there was no field with the given
+	 *         name and this card already has the {@link #MAX_FIELDS maximum amount of fields}.<br>
+	 *         If <tt>fieldText</tt> is <tt>null</tt>: <tt>true</tt> if the field with
+	 *         the given name was deleted successfully, <tt>false</tt> if there was no
+	 *         field with the given name.
+	 * @throws NullPointerException if <tt>user</tt>, <tt>cardTitle</tt>, or <tt>fieldName</tt>
+	 *                              is <tt>null</tt>.
+	 * @throws IllegalArgumentException if there is no card with the given title for the user, or
+	 *                                  if <tt>fieldName</tt> or <tt>fieldText</tt> is an empty
+	 *                                  string, only contains white space, or exceeds the
+	 *                                  {@link #MAX_FIELD_NAME_LENGTH maximum name size} or
+	 *                                  {@link #MAX_FIELD_TEXT_LENGTH maximum text size},
+	 *                                  respectively.
+	 *                                  The exception's detail message will be an error message
+	 *                                  that indicates what the error was.
+	 *                                  
+	 */
+	public boolean setField( IUser user, String cardTitle, String fieldName, String fieldText )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( ( user == null ) || ( cardTitle == null ) || ( fieldName == null ) ) {
+			throw new NullPointerException( "User, card name, and card title cannot be null." );
+		}
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( userID, () -> {
+				
+				Card card = cardMap.get( userID, cardTitle );
+				if ( card == null ) {
+					throw new IllegalArgumentException( "You don't have a card with that title!" );
+				}
+				
+				if ( !card.setField( fieldName, fieldText ) ) {
+					return false;
+				}
+				cardMap.set( card, userID, cardTitle ); // Update card.
+				
+				UserCards cards = userMap.get( userID );
+				cards.updateCard( card );
+				userMap.put( userID, cards ); // Update user data.
+				
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card field set.", e );
 			return false;
 		} catch ( ExecutionException e ) {
 			if ( e.getCause() instanceof IllegalArgumentException ) {
