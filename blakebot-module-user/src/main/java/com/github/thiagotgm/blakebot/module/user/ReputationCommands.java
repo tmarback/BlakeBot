@@ -17,9 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.module.user.ReputationManager.Vote;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
@@ -43,8 +41,6 @@ public class ReputationCommands {
 	private static final String SUCCESS_HANDLER = "voteSuccess";
 	private static final String FAILURE_HANDLER = "voteFail";
 	
-	private static final Pattern USER_PATTERN = Pattern.compile( "(.+)#(\\d{4})" );
-	
 	/**
 	 * Gets the target specified in the first arg of the given context.
 	 * 
@@ -63,22 +59,7 @@ public class ReputationCommands {
 		if ( arg.getType() == Type.USER_MENTION ) { // A mention.
 			target = (IUser) arg.getArgument();
 		} else { // Try to parse as name#discriminator.
-			Matcher match = USER_PATTERN.matcher( arg.getText() );
-			if ( !match.matches() ) {
-				return null; // Did not match format.
-			}
-			
-			String name = match.group( 1 );
-			String discriminator = match.group( 2 );
-			for ( IUser option : context.getEvent().getClient().getUsersByName( name ) ) {
-				// Look for user with the right name and discriminator.
-				if ( option.getDiscriminator().matches( discriminator ) ) {
-					target = option; // Found user.
-					break;
-				}
-				
-			}
-			
+			target = Utils.getUser( arg.getText(), context.getEvent().getClient() );
 			if ( target == null ) {
 				return null; // Did not find user.
 			}

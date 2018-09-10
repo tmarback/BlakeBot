@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
@@ -46,6 +48,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLElement;
 import com.github.thiagotgm.blakebot.common.storage.xml.XMLTranslator;
+
+import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.handle.obj.ICategory;
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IEmoji;
@@ -570,6 +574,37 @@ public abstract class Utils {
     		
     	}
     	return list;
+    	
+    }
+    
+    private static final Pattern USER_PATTERN = Pattern.compile( "(.+)#(\\d{4})" );
+    
+    /**
+     * Parses a user from a string in the format <tt>[Name]#[Discriminator]</tt>.
+     * 
+     * @param str The string to parse.
+     * @param client The client to use.
+     * @return The user specified in <tt>str</tt>, or <tt>null</tt> if the
+     *         format of the string was invalid or no user was found with
+     *         that name and discriminator.
+     */
+    public static IUser getUser( String str, IDiscordClient client ) {
+    	
+    	Matcher match = USER_PATTERN.matcher( str );
+		if ( !match.matches() ) {
+			return null; // Did not match format.
+		}
+		
+		String name = match.group( 1 );
+		String discriminator = match.group( 2 );
+		for ( IUser option : client.getUsersByName( name ) ) {
+			// Look for user with the right name and discriminator.
+			if ( option.getDiscriminator().matches( discriminator ) ) {
+				return option; // Found user.
+			}
+			
+		}
+		return null; // Didn't find user.
     	
     }
     
