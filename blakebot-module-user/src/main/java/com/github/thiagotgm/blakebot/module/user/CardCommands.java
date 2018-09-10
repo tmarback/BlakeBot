@@ -106,6 +106,8 @@ public class CardCommands {
 	
 	private static final String SET_DESCRIPTION_SUBCOMMAND = "Set custom card description";
 	private static final String SET_URL_SUBCOMMAND = "Set custom card URL";
+	private static final String SET_FOOTER_SUBCOMMAND = "Set custom card footer";
+	private static final String SET_FOOTER_ICON_SUBCOMMAND = "Set custom card footer icon";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -120,7 +122,7 @@ public class CardCommands {
 			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
 					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
 					        REMOVE_FIELD_SUBCOMMAND, SET_DESCRIPTION_SUBCOMMAND,
-					        SET_URL_SUBCOMMAND },
+					        SET_URL_SUBCOMMAND, SET_FOOTER_SUBCOMMAND, SET_FOOTER_ICON_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -377,7 +379,8 @@ public class CardCommands {
 			name = SET_DESCRIPTION_SUBCOMMAND,
 			aliases = { "setdescription", "setd" },
 			description = "Sets the description of the given card. If no description is "
-					+ "given, the current description is deleted.",
+					+ "given, the current description is deleted.\nThe description is "
+					+ "limited to " + Card.MAX_DESCRIPTION_LENGTH + " characters.",
 			usage = "{}card setdescription|setd <card name> [description]",
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
@@ -393,7 +396,9 @@ public class CardCommands {
 			name = SET_URL_SUBCOMMAND,
 			aliases = { "seturl" },
 			description = "Sets the URL of the given card (the link in the card title). "
-					+ "If no URL is given, the current URL is deleted.",
+					+ "If no URL is given, the current URL is deleted.\nThe URL is not "
+					+ "checked for validity, but if it is invalid, the card will fail to "
+					+ "be shown until the URL is replaced with a valid URL (or removed).",
 			usage = "{}card seturl <card name> [URL]",
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
@@ -402,6 +407,42 @@ public class CardCommands {
 		
 		return setAttribute( context, "URL", ( title, url ) ->
 				manager.setUrl( context.getAuthor(), title, url ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_FOOTER_SUBCOMMAND,
+			aliases = { "setfooter", "setft" },
+			description = "Sets the footer of the given card. If no footer is "
+					+ "given, the current footer is deleted.\nThe footer is "
+					+ "limited to " + Card.MAX_FOOTER_LENGTH + " characters.",
+			usage = "{}card setfooter|setft <card name> [footer]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setFooterCommand( CommandContext context ) {
+		
+		return setAttribute( context, "footer", ( title, footer ) ->
+				manager.setFooter( context.getAuthor(), title, footer ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_FOOTER_ICON_SUBCOMMAND,
+			aliases = { "setfootericon", "setfti" },
+			description = "Sets the icon of the footer of the given card (the image next "
+					+ "to the footer). If no icon is given, the current icon is deleted."
+					+ "\nThe URL is not checked for validity, but if it is invalid, the "
+					+ "card will fail to be shown until the icon URL is replaced with a "
+					+ "valid URL (or removed).",
+			usage = "{}card seturl <card name> [icon URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setFooterIconCommand( CommandContext context ) {
+		
+		return setAttribute( context, "footer icon", ( title, iconUrl ) ->
+				manager.setFooterIcon( context.getAuthor(), title, iconUrl ) );
 		
 	}
 	

@@ -541,6 +541,56 @@ public class CardManager {
 	}
 	
 	/**
+	 * Sets the footer of the given card.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param description The footer to be set. If <tt>null</tt>, the current footer
+	 *                    is removed.
+	 * @return <tt>true</tt> if the footer was set.
+	 *         <tt>false</tt> if the given user does not have a card with the given title.
+	 * @throws NullPointerException if the user or card title is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the given footer is an empty
+	 *                                  string, only contains white space, or exceeds the
+	 *                                  {@link Card#MAX_FOOTER_LENGTH maximum footer size}.
+	 *                                  The exception's detail message will be an error message
+	 *                                  that indicates what the error was.
+	 */
+	public boolean setFooter( IUser user, String cardTitle, String footer )
+			throws NullPointerException, IllegalArgumentException {
+		
+		return setAttribute( user, cardTitle, card -> card.setFooter( footer ) );
+		
+	}
+	
+	/**
+	 * Sets the icon of the footer of the given card (shown next to the foooter).
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param iconUrl The URL of the icon to be set. If <tt>null</tt>, the current icon is removed.
+	 * @return <tt>true</tt> if the icon was set.
+	 *         <tt>false</tt> if the given user does not have a card with the given title.
+	 * @throws NullPointerException if the user or card title is <tt>null</tt>.
+	 */
+	public boolean setFooterIcon( IUser user, String cardTitle, String iconUrl )
+			throws NullPointerException {
+		
+		return setAttribute( user, cardTitle, card -> card.setFooterIcon( iconUrl ) );
+		
+	}
+	
+	/**
 	 * A custom card that can be set up by a user and displayed
 	 * as an embed.
 	 * 
