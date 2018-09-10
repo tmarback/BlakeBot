@@ -23,6 +23,9 @@ import java.util.Map;
 
 import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
+import com.github.thiagotgm.blakebot.module.user.CardManager.Card;
+import com.github.thiagotgm.blakebot.module.user.CardManager.CardEntry;
+import com.github.thiagotgm.blakebot.module.user.CardManager.UserCards;
 import com.github.thiagotgm.blakebot.module.user.LevelingManager.LevelState;
 import com.github.thiagotgm.blakebot.module.user.ReputationManager.Reputation;
 import com.github.thiagotgm.modular_commands.api.Argument;
@@ -130,6 +133,19 @@ public class ProfileCommand {
 		embed.appendField( "Reputation", String.format( "%+d", rep.getOverall() ), true );
 		embed.appendField( "Reputation Details", String.format( "%d votes, %.1f%% positive",
 				rep.getTotalVotes(), rep.getPositivePercentage() ), true );
+		
+		// Card info.
+		UserCards cards = CardManager.getInstance().getUserCards( user );
+		StringBuilder builder = new StringBuilder();
+		for ( CardEntry card : cards.getCards() ) {
+			
+			builder.append( String.format( "- %s (**%d** fields total, %d max.)\n", card.getTitle(),
+					card.getFieldCount(), Card.MAX_FIELDS ) );
+			
+		}
+		builder.append( String.format( "(**%d** cards total, %d max.)", cards.getCardCount(),
+				cards.getCardAllowance() ) );
+		embed.appendField( "Custom Cards", builder.toString(), false );
 		
 		context.getReplyBuilder().withEmbed( embed.build() ).build();
 		
