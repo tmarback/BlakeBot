@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.github.thiagotgm.blakebot.module.user.CardManager.Card;
+import com.github.thiagotgm.blakebot.module.user.CardManager.UserCards;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.FailureReason;
@@ -92,15 +93,19 @@ public class CardCommands {
 	
 	private static final String GET_SUBCOMMAND = "Get custom card";
 	private static final String ADD_CARD_SUBCOMMAND = "Add custom card";
+	private static final String REMOVE_CARD_SUBCOMMAND = "Remove custom card";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
 	@MainCommand(
 			name = "Card command",
 			aliases = "card",
-			description = "Commands that interact with custom cards that can be set up by users.",
+			description = "Cards that can be customized by the user to be shown in chat. "
+					+ "Each user starts off being able to have " + UserCards.STARTING_CARDS
+					+ " cards at the same time, and may purchase more card slots using the "
+					+ "bot currency (up to " + UserCards.MAX_CARDS + " cards)!",
 			usage = "{}card <subcommand>",
-			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND },
+			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -152,12 +157,12 @@ public class CardCommands {
 	
 	@SubCommand(
 			name = ADD_CARD_SUBCOMMAND,
-			aliases = { "addcard", "addc" },
+			aliases = { "add" },
 			description = "Adds a custom card with the given name (title) to yourself. "
 					+ "The card will only be added only if you aren't currently using all "
 					+ "your card slots. Also, the title must be limited to " + 
 					Card.MAX_TITLE_LENGTH + " characters.",
-			usage = "{}card addcard|addc <card name>",
+			usage = "{}card add <card name>",
 			executeParent = false,
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
@@ -175,6 +180,33 @@ public class CardCommands {
 			return true;
 		} else {
 			context.setHelper( "You are already using all of your card slots!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = REMOVE_CARD_SUBCOMMAND,
+			aliases = { "remove", "rm" },
+			description = "Removes a custom card with the given name (title) from yourself.",
+			usage = "{}card remove|rm <card name>",
+			executeParent = false,
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean removeCardCommand( CommandContext context ) {
+		
+		if ( context.getArgs().isEmpty() ) {
+			context.setHelper( "Must specify a card name!" );
+			return false;
+		}
+		String cardTitle = context.getArgs().get( 0 );
+		
+		if ( manager.removeCard( context.getAuthor(), cardTitle ) ) {
+			context.setHelper( "Removed card '" + cardTitle + "'!" );
+			return true;
+		} else {
+			context.setHelper( "You don't have a card titled '" + cardTitle + "'!" );
 			return false;
 		}
 		

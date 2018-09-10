@@ -194,7 +194,53 @@ public class CardManager {
 			} else {
 				return false;
 			}
-			
+		}
+		
+	}
+	
+	/**
+	 * Removes the card with the given title for the given user.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user to remove the card from.
+	 * @param cardTitle The card title.
+	 * @return <tt>true</tt> if removed successfully.
+	 *         <tt>false</tt> if the user does not have any cards with the given title.
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
+	 */
+	public boolean removeCard( IUser user, String cardTitle ) throws NullPointerException {
+		
+		if ( ( user == null ) || ( cardTitle == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( () -> {
+				
+				Card card = cardMap.remove( userID, cardTitle );
+				if ( card == null ) {
+					return false; // Card doesn't exist.
+				}
+				UserCards cards = userMap.get( userID );
+				cards.removeCard( card ); // Remove from list.
+				userMap.put( userID, cards );
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card remove.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
 		}
 		
 	}
@@ -745,13 +791,24 @@ public class CardManager {
 		}
 		
 		/**
+		 * Initializes an entry with the given title.
+		 * 
+		 * @param title The title.
+		 */
+		private CardEntry( String title ) {
+			
+			this.title = title;
+			
+		}
+		
+		/**
 		 * Initializes an entry for the given card.
 		 * 
 		 * @param card The card to make an entry for.
 		 */
 		public CardEntry( Card card ) {
 			
-			title = card.title;
+			this( card.title );
 			fieldCount = card.getFieldCount();
 			
 		}
@@ -929,6 +986,19 @@ public class CardManager {
 		public List<CardEntry> getCards() {
 			
 			return new ArrayList<>( cards );
+			
+		}
+		
+		/**
+		 * Determines whether this user has a card with the given title.
+		 * 
+		 * @param title The title of the card.
+		 * @return <tt>true</tt> if the user has a card with the given title.
+		 *         <tt>false</tt> otherwise.
+		 */
+		public boolean hasCard( String title ) {
+			
+			return cards.contains( new CardEntry( title ) );
 			
 		}
 		
