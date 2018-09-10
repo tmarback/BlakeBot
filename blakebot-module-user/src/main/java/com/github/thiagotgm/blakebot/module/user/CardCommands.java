@@ -91,6 +91,7 @@ public class CardCommands {
 	private static final String FAILURE_HANDLER = "failure";
 	
 	private static final String GET_SUBCOMMAND = "Get custom card";
+	private static final String ADD_CARD_SUBCOMMAND = "Add custom card";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -99,7 +100,9 @@ public class CardCommands {
 			aliases = "card",
 			description = "Commands that interact with custom cards that can be set up by users.",
 			usage = "{}card <subcommand>",
-			subCommands = { GET_SUBCOMMAND }
+			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND },
+			ignorePublic = true,
+			ignorePrivate = true
 			)
 	public void cardCommand( CommandContext context ) {
 		
@@ -144,6 +147,36 @@ public class CardCommands {
 		context.getReplyBuilder().withEmbed( card.getEmbed() ).build(); // Send card.
 		
 		return true;
+		
+	}
+	
+	@SubCommand(
+			name = ADD_CARD_SUBCOMMAND,
+			aliases = { "addcard", "addc" },
+			description = "Adds a custom card with the given name (title) to yourself. "
+					+ "The card will only be added only if you aren't currently using all "
+					+ "your card slots. Also, the title must be limited to " + 
+					Card.MAX_TITLE_LENGTH + " characters.",
+			usage = "{}card addcard|addc <card name>",
+			executeParent = false,
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean addCardCommand( CommandContext context ) {
+		
+		if ( context.getArgs().isEmpty() ) {
+			context.setHelper( "Must specify a card name!" );
+			return false;
+		}
+		String cardTitle = context.getArgs().get( 0 );
+		
+		if ( manager.addCard( context.getAuthor(), cardTitle ) ) {
+			context.setHelper( "Added card '" + cardTitle + "'!" );
+			return true;
+		} else {
+			context.setHelper( "You are already using all of your card slots!" );
+			return false;
+		}
 		
 	}
 	

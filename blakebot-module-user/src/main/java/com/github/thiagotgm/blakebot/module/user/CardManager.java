@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,7 +68,9 @@ public class CardManager {
 	protected static final KeyedExecutorService EXECUTOR =
 			AsyncTools.createKeyedThreadPool( THREADS, ( t, e ) -> {
 		
-		LOG.error( "Error while updating custom card.", e );
+		if ( !( e instanceof IllegalArgumentException ) ) {
+			LOG.error( "Error while updating custom card.", e );
+		}
 		
 	});
 	
@@ -136,6 +140,62 @@ public class CardManager {
 		}
 		UserCards cards = userMap.get( user.getStringID() );
 		return cards == null ? new UserCards() : cards;
+		
+	}
+	
+	/**
+	 * Adds a blank card with the given title for the given user.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user to add the card to.
+	 * @param cardTitle The card title.
+	 * @return <tt>true</tt> if added successfully.
+	 *         <tt>false</tt> if the user is already fully using his/hers
+	 *         current card allowance.
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the title is longer than the
+	 *               {@link Card#MAX_TITLE_LENGTH maximum title length},
+	 *                                  or if the user already has a card
+	 *                                  with the given name. The exception's
+	 *                                  detail message will be an error message
+	 *                                  that indicates the error.
+	 */
+	public boolean addCard( IUser user, String cardTitle )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( ( user == null ) || ( cardTitle == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( () -> {
+				
+				UserCards cards = getUserCards( user );
+				Card card = new Card( cardTitle );
+				if ( !cards.addCard( card ) ) {
+					return false; // Reached allowance.
+				}
+				cardMap.set( card, userID, cardTitle );
+				userMap.put( userID, cards );
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card add.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
+			
+		}
 		
 	}
 	
@@ -873,6 +933,20 @@ public class CardManager {
 		}
 		
 		/**
+		 * Determines whether this user has the given card (as in a
+		 * card with the same title).
+		 * 
+		 * @param card The card.
+		 * @return <tt>true</tt> if the user has the given card.
+		 *         <tt>false</tt> otherwise.
+		 */
+		public boolean hasCard( Card card ) {
+			
+			return cards.contains( new CardEntry( card ) );
+			
+		}
+		
+		/**
 		 * Registers a new card for this user, if the user has not yet
 		 * reached his card allowance.
 		 * 
@@ -880,11 +954,19 @@ public class CardManager {
 		 * @return <tt>true</tt> if added successfully.
 		 *         <tt>false</tt> if the user is already using his full
 		 *         card allowance.
+		 * @throws IllegalArgumentException if the user already has a card with the same
+		 *                                  title. The exception's detail message will
+		 *                                  indicate this.
 		 */
-		private boolean addCard( Card card ) {
+		private boolean addCard( Card card ) throws IllegalArgumentException {
+			
+			CardEntry c = new CardEntry( card );
+			if ( cards.contains( c ) ) {
+				throw new IllegalArgumentException( "A card with this title already exists!" );
+			}
 			
 			if ( getCardCount() < cardAllowance ) {
-				cards.add( new CardEntry( card ) );
+				cards.add( c );
 				return true;
 			} else {
 				return false; // Already have filled allowance.
