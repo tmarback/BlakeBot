@@ -108,6 +108,7 @@ public class CardCommands {
 	private static final String SET_URL_SUBCOMMAND = "Set custom card URL";
 	private static final String SET_FOOTER_SUBCOMMAND = "Set custom card footer";
 	private static final String SET_FOOTER_ICON_SUBCOMMAND = "Set custom card footer icon";
+	private static final String SET_IMAGE_SUBCOMMAND = "Set custom card image";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -122,7 +123,8 @@ public class CardCommands {
 			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
 					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
 					        REMOVE_FIELD_SUBCOMMAND, SET_DESCRIPTION_SUBCOMMAND,
-					        SET_URL_SUBCOMMAND, SET_FOOTER_SUBCOMMAND, SET_FOOTER_ICON_SUBCOMMAND },
+					        SET_URL_SUBCOMMAND, SET_FOOTER_SUBCOMMAND, SET_FOOTER_ICON_SUBCOMMAND,
+					        SET_IMAGE_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -435,7 +437,7 @@ public class CardCommands {
 					+ "\nThe URL is not checked for validity, but if it is invalid, the "
 					+ "card will fail to be shown until the icon URL is replaced with a "
 					+ "valid URL (or removed).",
-			usage = "{}card seturl <card name> [icon URL]",
+			usage = "{}card setfootericon|setfti <card name> [icon URL]",
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
 			)
@@ -443,6 +445,25 @@ public class CardCommands {
 		
 		return setAttribute( context, "footer icon", ( title, iconUrl ) ->
 				manager.setFooterIcon( context.getAuthor(), title, iconUrl ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_IMAGE_SUBCOMMAND,
+			aliases = { "setimage", "seti" },
+			description = "Sets the image of the given card (the big image in the bottom). "
+					+ "If no image is given, the current image is deleted."
+					+ "\nThe URL is not checked for validity, but if it is invalid, the "
+					+ "card will fail to be shown until the image URL is replaced with a "
+					+ "valid URL (or removed).",
+			usage = "{}card setimage|seti <card name> [image URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setImageCommand( CommandContext context ) {
+		
+		return setAttribute( context, "image", ( title, imageUrl ) ->
+				manager.setImage( context.getAuthor(), title, imageUrl ) );
 		
 	}
 	
