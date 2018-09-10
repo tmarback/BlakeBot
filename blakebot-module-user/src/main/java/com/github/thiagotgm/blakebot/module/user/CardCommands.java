@@ -94,6 +94,7 @@ public class CardCommands {
 	private static final String GET_SUBCOMMAND = "Get custom card";
 	private static final String ADD_CARD_SUBCOMMAND = "Add custom card";
 	private static final String REMOVE_CARD_SUBCOMMAND = "Remove custom card";
+	private static final String CHANGE_TITLE_SUBCOMMAND = "Change custom card title";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -105,7 +106,8 @@ public class CardCommands {
 					+ " cards at the same time, and may purchase more card slots using the "
 					+ "bot currency (up to " + UserCards.MAX_CARDS + " cards)!",
 			usage = "{}card <subcommand>",
-			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND },
+			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
+					        CHANGE_TITLE_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -207,6 +209,36 @@ public class CardCommands {
 			return true;
 		} else {
 			context.setHelper( "You don't have a card titled '" + cardTitle + "'!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = CHANGE_TITLE_SUBCOMMAND,
+			aliases = { "changetitle", "ct", "settitle", "st" },
+			description = "Changes the name (title) of the custom card with the given name to the "
+					+ "given new name. The new title must be limited to " + Card.MAX_TITLE_LENGTH
+					+ " characters.",
+			usage = "{}card changetitle|ct|settitle|st <current card name> <new card name>",
+			executeParent = false,
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean changeTitleCommand( CommandContext context ) {
+		
+		if ( context.getArgs().size() < 2 ) {
+			context.setHelper( "Must specify the current card name and the new card name!" );
+			return false;
+		}
+		String curTitle = context.getArgs().get( 0 );
+		String newTitle = context.getArgs().get( 1 );
+		
+		if ( manager.setCardTitle( context.getAuthor(), curTitle, newTitle ) ) {
+			context.setHelper( "Changed card name from '" + curTitle + "' to '" + newTitle + "'!" );
+			return true;
+		} else {
+			context.setHelper( "You don't have a card titled '" + curTitle + "'!" );
 			return false;
 		}
 		

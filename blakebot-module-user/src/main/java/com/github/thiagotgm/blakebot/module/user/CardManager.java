@@ -26,8 +26,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,7 +158,7 @@ public class CardManager {
 	 * @throws IllegalArgumentException if the title is longer than the
 	 *               {@link Card#MAX_TITLE_LENGTH maximum title length},
 	 *                                  or if the user already has a card
-	 *                                  with the given name. The exception's
+	 *                                  with the given title. The exception's
 	 *                                  detail message will be an error message
 	 *                                  that indicates the error.
 	 */
@@ -173,7 +171,7 @@ public class CardManager {
 		
 		String userID = user.getStringID();
 		try {
-			return EXECUTOR.submit( () -> {
+			return EXECUTOR.submit( userID, () -> {
 				
 				UserCards cards = getUserCards( user );
 				Card card = new Card( cardTitle );
@@ -220,7 +218,7 @@ public class CardManager {
 		
 		String userID = user.getStringID();
 		try {
-			return EXECUTOR.submit( () -> {
+			return EXECUTOR.submit( userID, () -> {
 				
 				Card card = cardMap.remove( userID, cardTitle );
 				if ( card == null ) {
@@ -229,6 +227,72 @@ public class CardManager {
 				UserCards cards = userMap.get( userID );
 				cards.removeCard( card ); // Remove from list.
 				userMap.put( userID, cards );
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card remove.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
+		}
+		
+	}
+	
+	/**
+	 * Changes the title of a card.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param curTitle The current title of the card.
+	 * @param newTitle The title to change the card to.
+	 * @return <tt>true</tt> if changed successfully.
+	 *         <tt>false</tt> if the user does not have any cards with the given title
+	 *         (<tt>curTitle</tt>).
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the new title is longer than the
+	 *               {@link Card#MAX_TITLE_LENGTH maximum title length},
+	 *                                  or if the user already has a card
+	 *                                  with the given new title. The exception's
+	 *                                  detail message will be an error message
+	 *                                  that indicates the error.
+	 */
+	public boolean setCardTitle( IUser user, String curTitle, String newTitle )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( ( user == null ) || ( curTitle == null ) || ( newTitle == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		new Card( newTitle ); // Check new title is valid.
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( userID, () -> {
+				
+				if ( cardMap.containsPath( userID, newTitle ) ) { // New title already taken.
+					throw new IllegalArgumentException( "A card with the new title already exists!" );
+				}
+				
+				Card card = cardMap.remove( userID, curTitle ); // Remove from old title key.
+				if ( card == null ) {
+					return false; // Card doesn't exist.
+				}
+				UserCards cards = userMap.get( userID );
+				cards.removeCard( card ); // Remove from list.
+				
+				card.setTitle( newTitle ); // Update title.
+				cardMap.add( card, userID, newTitle ); // Insert with new title key.
+				cards.addCard( card );
+				userMap.put( userID, cards ); // Update list.
 				return true;
 				
 			}).get();
