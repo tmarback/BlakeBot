@@ -17,9 +17,17 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+
+import com.github.thiagotgm.blakebot.common.storage.Data;
+import com.github.thiagotgm.blakebot.common.storage.Storable;
+import com.github.thiagotgm.blakebot.common.storage.Translator;
+import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
+import com.github.thiagotgm.blakebot.common.storage.translate.MapTranslator;
+import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
 import sx.blah.discord.util.EmbedBuilder;
@@ -41,7 +49,7 @@ public class CardManager {
 	 * @version 1.0
 	 * @since 2018-09-08
 	 */
-	public static class Card {
+	public static class Card implements Storable {
 		
 		/**
 		 * Maximum length of the {@link #setAuthor(String) author name}, in characters.
@@ -82,7 +90,7 @@ public class CardManager {
 		private String author;
 		private String authorURL;
 		private String authorIcon;
-		private SortedMap<String,String> fields;
+		private final SortedMap<String,String> fields;
 		
 		/**
 		 * Initializes a card with the given title, and no other attributes.
@@ -378,6 +386,156 @@ public class CardManager {
 		public int getFieldCount() {
 			
 			return fields.size();
+			
+		}
+		
+		private static final String DESCRIPTION_ATTRIBUTE = "description";
+		private static final String URL_ATTRIBUTE = "url";
+		private static final String FOOTER_ATTRIBUTE = "footer";
+		private static final String FOOTER_ICON_ATTRIBUTE = "footer_icon";
+		private static final String IMAGE_ATTRIBUTE = "image";
+		private static final String THUMBNAIL_ATTRIBUTE = "thumbnail";
+		private static final String AUTHOR_ATTRIBUTE = "author";
+		private static final String AUTHOR_URL_ATTRIBUTE = "author_url";
+		private static final String AUTHOR_ICON_ATTRIBUTE = "author_icon";
+		private static final String FIELDS_ATTRIBUTE = "fields";
+		
+		private static final Translator<Map<String,String>> FIELDS_TRANSLATOR =
+				new MapTranslator<>( new StringTranslator(), new StringTranslator() );
+
+		/**
+		 * Stores this card into a Data. The title is not included in the data.
+		 */
+		@Override
+		public Data toData() {
+			
+			Map<String,Data> map = new HashMap<>();
+			
+			if ( description != null ) {
+				map.put( DESCRIPTION_ATTRIBUTE, Data.stringData( description ) );
+			}
+			if ( url != null ) {
+				map.put( URL_ATTRIBUTE, Data.stringData( url ) );
+			}
+			if ( footer != null ) {
+				map.put( FOOTER_ATTRIBUTE, Data.stringData( footer ) );
+			}
+			if ( footerIcon != null ) {
+				map.put( FOOTER_ICON_ATTRIBUTE, Data.stringData( footerIcon ) );
+			}
+			if ( image != null ) {
+				map.put( IMAGE_ATTRIBUTE, Data.stringData( image ) );
+			}
+			if ( thumbnail != null ) {
+				map.put( THUMBNAIL_ATTRIBUTE, Data.stringData( thumbnail ) );
+			}
+			if ( author != null ) {
+				map.put( AUTHOR_ATTRIBUTE, Data.stringData( author ) );
+			}
+			if ( authorURL != null ) {
+				map.put( AUTHOR_URL_ATTRIBUTE, Data.stringData( authorURL ) );
+			}
+			if ( authorIcon != null ) {
+				map.put( AUTHOR_ICON_ATTRIBUTE, Data.stringData( authorIcon ) );
+			}
+			if ( !fields.isEmpty() ) {
+				map.put( FIELDS_ATTRIBUTE, FIELDS_TRANSLATOR.toData( fields ) );
+			}
+
+			return Data.mapData( map );
+			
+		}
+
+		/**
+		 * Loads the card from the given Data. Any current attributes are
+		 * replaced by the ones specified in the given data. The exception
+		 * is the title, which is not loaded from the data.
+		 */
+		@Override
+		public void fromData( Data data ) throws TranslationException {
+			
+			if ( !data.isMap() ) {
+				throw new TranslationException( "Given data is not a map." );
+			}
+			Map<String,Data> map = data.getMap();
+			
+			Data descriptionData = map.get( DESCRIPTION_ATTRIBUTE );
+			if ( descriptionData != null ) { // Has description.
+				if ( !descriptionData.isString() ) {
+					throw new TranslationException( "Description attribute is not a String." );
+				}
+				description = descriptionData.getString();
+			}
+			
+			Data urlData = map.get( URL_ATTRIBUTE );
+			if ( urlData != null ) { // Has URL.
+				if ( !urlData.isString() ) {
+					throw new TranslationException( "URL attribute is not a String." );
+				}
+				url = urlData.getString();
+			}
+			
+			Data footerData = map.get( FOOTER_ATTRIBUTE );
+			if ( footerData != null ) { // Has footer.
+				if ( !footerData.isString() ) {
+					throw new TranslationException( "Footer attribute is not a String." );
+				}
+				footer = footerData.getString();
+			}
+			
+			Data footerIconData = map.get( FOOTER_ICON_ATTRIBUTE );
+			if ( footerIconData != null ) { // Has footer icon.
+				if ( !footerIconData.isString() ) {
+					throw new TranslationException( "Footer icon attribute is not a String." );
+				}
+				footerIcon = footerIconData.getString();
+			}
+			
+			Data imageData = map.get( IMAGE_ATTRIBUTE );
+			if ( imageData != null ) { // Has image.
+				if ( !imageData.isString() ) {
+					throw new TranslationException( "Image attribute is not a String." );
+				}
+				image = imageData.getString();
+			}
+			
+			Data thumbnailData = map.get( THUMBNAIL_ATTRIBUTE );
+			if ( thumbnailData != null ) { // Has thumbnail.
+				if ( !thumbnailData.isString() ) {
+					throw new TranslationException( "Thumbnail attribute is not a String." );
+				}
+				thumbnail = thumbnailData.getString();
+			}
+			
+			Data authorData = map.get( AUTHOR_ATTRIBUTE );
+			if ( authorData != null ) { // Has author.
+				if ( !authorData.isString() ) {
+					throw new TranslationException( "Author attribute is not a String." );
+				}
+				author = authorData.getString();
+			}
+			
+			Data authorUrlData = map.get( AUTHOR_URL_ATTRIBUTE );
+			if ( authorUrlData != null ) { // Has author URL.
+				if ( !authorUrlData.isString() ) {
+					throw new TranslationException( "Author URL attribute is not a String." );
+				}
+				authorURL = authorUrlData.getString();
+			}
+			
+			Data authorIconData = map.get( AUTHOR_ICON_ATTRIBUTE );
+			if ( authorIconData != null ) { // Has author icon.
+				if ( !authorIconData.isString() ) {
+					throw new TranslationException( "Author icon attribute is not a String." );
+				}
+				authorIcon = authorIconData.getString();
+			}
+			
+			Data fieldsData = map.get( FIELDS_ATTRIBUTE );
+			if ( fieldsData != null ) { // Has fields.
+				fields.clear(); // Delete any current fields.
+				fields.putAll( FIELDS_TRANSLATOR.fromData( fieldsData ) );
+			}
 			
 		}
 		
