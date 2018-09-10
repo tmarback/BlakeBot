@@ -96,6 +96,8 @@ public class CardCommands {
 	private static final String REMOVE_CARD_SUBCOMMAND = "Remove custom card";
 	private static final String CHANGE_TITLE_SUBCOMMAND = "Change custom card title";
 	
+	private static final String BUY_SLOT_SUBCOMMAND = "Buy custom card slot";
+	
 	private final CardManager manager = CardManager.getInstance();
 	
 	@MainCommand(
@@ -107,7 +109,7 @@ public class CardCommands {
 					+ "bot currency (up to " + UserCards.MAX_CARDS + " cards)!",
 			usage = "{}card <subcommand>",
 			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
-					        CHANGE_TITLE_SUBCOMMAND },
+					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -239,6 +241,28 @@ public class CardCommands {
 			return true;
 		} else {
 			context.setHelper( "You don't have a card titled '" + curTitle + "'!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = BUY_SLOT_SUBCOMMAND,
+			aliases = { "buyslot", "buy" },
+			description = "Buys an extra custom card slot for $" + UserCards.EXTRA_CARD_COST +
+					", with a maximum of " + UserCards.MAX_CARDS + " total slots.",
+			usage = "{}card buyslot|buy",
+			executeParent = false,
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean buySlotCommand( CommandContext context ) {
+		
+		if ( manager.buySlot( context.getAuthor() ) ) {
+			context.setHelper( "You now have another card slot! :money_with_wings:" );
+			return true;
+		} else {
+			context.setHelper( "You do not have enough funds to buy another slot!" );
 			return false;
 		}
 		

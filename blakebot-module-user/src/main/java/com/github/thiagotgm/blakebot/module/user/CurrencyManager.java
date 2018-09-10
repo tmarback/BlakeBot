@@ -241,8 +241,8 @@ public class CurrencyManager {
 	 * 
 	 * @param user The user to subtract currency from.
 	 * @param amount The amount of currency to subtract.
-	 * @return The amount of currency held by the given user after adding the given amount.<br>
-	 *         If there was an error while adding, returns {@value #ERROR}.<br>
+	 * @return The amount of currency held by the given user after subtracting the given amount.<br>
+	 *         If there was an error while subtracting, returns {@value #ERROR}.<br>
 	 *         If the given amount is greater than what the given user currently holds, returns
 	 *         {@value #NOT_ENOUGH_FUNDS} (the amount held by the user is not changed).
 	 * @throws NullPointerException if the given user is <tt>null</tt>.

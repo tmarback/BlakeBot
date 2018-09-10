@@ -310,6 +310,56 @@ public class CardManager {
 	}
 	
 	/**
+	 * Purchases an extra card slot for the given user, using his/hers bot currency.
+	 * 
+	 * @param user The user to purchase a slot for.
+	 * @return <tt>true</tt> if the purchase was successful.
+	 *         <tt>false</tt> if the given user does not own enough currency to purchase an extra
+	 *         slot.
+	 * @throws NullPointerException if the user is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the user already has the maximum amount of card slots.
+	 *                                  The exception's detail message will be an error message
+	 *                                  that indicates the error.
+	 */
+	public boolean buySlot( IUser user ) throws NullPointerException, IllegalArgumentException {
+		
+		if ( user == null ) {
+			throw new NullPointerException( "User cannot be null." );
+		}
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( userID, () -> {
+				
+				UserCards cards = userMap.get( userID );
+				if ( !cards.canIncrementCardAllowance() ) { // Check that can increment.
+					throw new IllegalArgumentException( "You already have all card slots unlocked!" );
+				}
+				
+				if ( CurrencyManager.getInstance().withdraw( user, UserCards.EXTRA_CARD_COST ) < 0 ) {
+					return false; // Not enough funds (or currency error).
+				}
+				
+				cards.incrementCardAllowance();
+				userMap.put( userID, cards ); // Update user data.
+				
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card remove.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
+		}
+		
+	}
+	
+	/**
 	 * A custom card that can be set up by a user and displayed
 	 * as an embed.
 	 * 
@@ -1014,6 +1064,18 @@ public class CardManager {
 		}
 		
 		/**
+		 * Check if the user can still have his/her card allowance increased.
+		 * 
+		 * @return <tt>true</tt> if can still increase.
+		 *         <tt>false</tt> if the user already has the maximum allowance.
+		 */
+		public boolean canIncrementCardAllowance() {
+			
+			return cardAllowance < MAX_CARDS;
+			
+		}
+		
+		/**
 		 * Increments the card allowance by 1, if the user does not yet have the
 		 * {@link #MAX_CARDS maximum allowance}.
 		 * 
@@ -1022,7 +1084,7 @@ public class CardManager {
 		 */
 		private boolean incrementCardAllowance() {
 			
-			if ( cardAllowance < MAX_CARDS ) {
+			if ( canIncrementCardAllowance() ) {
 				cardAllowance++;
 				return true;
 			} else {
