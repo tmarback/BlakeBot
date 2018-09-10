@@ -109,6 +109,7 @@ public class CardCommands {
 	private static final String SET_FOOTER_SUBCOMMAND = "Set custom card footer";
 	private static final String SET_FOOTER_ICON_SUBCOMMAND = "Set custom card footer icon";
 	private static final String SET_IMAGE_SUBCOMMAND = "Set custom card image";
+	private static final String SET_THUMBNAIL_SUBCOMMAND = "Set custom card thumbnail";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -124,7 +125,7 @@ public class CardCommands {
 					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
 					        REMOVE_FIELD_SUBCOMMAND, SET_DESCRIPTION_SUBCOMMAND,
 					        SET_URL_SUBCOMMAND, SET_FOOTER_SUBCOMMAND, SET_FOOTER_ICON_SUBCOMMAND,
-					        SET_IMAGE_SUBCOMMAND },
+					        SET_IMAGE_SUBCOMMAND, SET_THUMBNAIL_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -234,7 +235,7 @@ public class CardCommands {
 	
 	@SubCommand(
 			name = CHANGE_TITLE_SUBCOMMAND,
-			aliases = { "changetitle", "ct", "settitle", "st" },
+			aliases = { "changetitle", "ct", "settitle", "sett" },
 			description = "Changes the name (title) of the custom card with the given name to the "
 					+ "given new name. The new title must be limited to " + Card.MAX_TITLE_LENGTH
 					+ " characters.",
@@ -464,6 +465,25 @@ public class CardCommands {
 		
 		return setAttribute( context, "image", ( title, imageUrl ) ->
 				manager.setImage( context.getAuthor(), title, imageUrl ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_THUMBNAIL_SUBCOMMAND,
+			aliases = { "setthumbnail", "setth" },
+			description = "Sets the thumbnail of the given card (the small image in the "
+					+ "top right). If no image is given, the current thumbnail is deleted."
+					+ "\nThe URL is not checked for validity, but if it is invalid, the "
+					+ "card will fail to be shown until the thumbnail URL is replaced with "
+					+ "a valid URL (or removed).",
+			usage = "{}card setthumbnail|setth <card name> [image URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setThumbnailCommand( CommandContext context ) {
+		
+		return setAttribute( context, "thumbnail", ( title, imageUrl ) ->
+				manager.setThumbnail( context.getAuthor(), title, imageUrl ) );
 		
 	}
 	
