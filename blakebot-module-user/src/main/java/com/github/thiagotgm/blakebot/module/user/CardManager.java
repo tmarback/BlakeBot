@@ -17,19 +17,34 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.github.thiagotgm.blakebot.common.storage.Data;
+import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
 import com.github.thiagotgm.blakebot.common.storage.Storable;
 import com.github.thiagotgm.blakebot.common.storage.Translator;
 import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
+import com.github.thiagotgm.blakebot.common.storage.translate.ListTranslator;
 import com.github.thiagotgm.blakebot.common.storage.translate.MapTranslator;
+import com.github.thiagotgm.blakebot.common.storage.translate.StorableTranslator;
 import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
+import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
+import com.github.thiagotgm.blakebot.common.utils.KeyedExecutorService;
+import com.github.thiagotgm.blakebot.common.utils.Tree;
+import com.github.thiagotgm.blakebot.common.utils.Utils;
 
 import sx.blah.discord.api.internal.json.objects.EmbedObject;
+import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.util.EmbedBuilder;
 
 /**
@@ -40,6 +55,89 @@ import sx.blah.discord.util.EmbedBuilder;
  * @since 2018-09-08
  */
 public class CardManager {
+	
+	private static final Logger LOG = LoggerFactory.getLogger( CardManager.class );
+	private static final ThreadGroup THREADS = new ThreadGroup( "Custom Card System" );
+	
+	/**
+	 * Executor used to perform card editing operations. Tasks are
+	 * keyed by the string ID of the user to avoid race conditions.
+	 */
+	protected static final KeyedExecutorService EXECUTOR =
+			AsyncTools.createKeyedThreadPool( THREADS, ( t, e ) -> {
+		
+		LOG.error( "Error while updating custom card.", e );
+		
+	});
+	
+	private static CardManager instance;
+	
+	/**
+	 * Retrieves the running instance of the manager.
+	 * 
+	 * @return The instance.
+	 */
+	public synchronized static CardManager getInstance() {
+		
+		if ( instance == null ) {
+			instance = new CardManager();
+		}
+		return instance;
+		
+	}
+	
+	private final Tree<String,Card> cardMap;
+	private final Map<String,UserCards> userMap;
+	
+	/**
+	 * Instantiates a manager.
+	 */
+	private CardManager() {
+		
+		cardMap = Utils.synchronizedTree( DatabaseManager.getDatabase()
+				.getDataTree( "CustomCards", new StringTranslator(),
+						new StorableTranslator<>( () -> new Card() ) ) );
+		userMap = Collections.synchronizedMap( DatabaseManager.getDatabase()
+				.getDataMap( "UserCustomCards", new StringTranslator(), 
+						new StorableTranslator<>( () -> new UserCards() ) ) );
+		
+	}
+	
+	/**
+	 * Retrieves the card owned by the given user with the given title.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param title The title of the card.
+	 * @return The card, or <tt>null</tt> if there is no card owned by
+	 *         the given user with the given title.
+	 * @throws NullPointerException if either argument is <tt>null</tt>.
+	 */
+	public Card getCard( IUser user, String title ) throws NullPointerException {
+		
+		if ( ( user == null ) || ( title == null ) ) {
+			throw new NullPointerException( "Arguments cannot be null." );
+		}
+		
+		return cardMap.get( user.getStringID(), title );
+		
+	}
+	
+	/**
+	 * Retrieves the given user's current custom card data.
+	 * 
+	 * @param user The user.
+	 * @return The user's cards and allowance.
+	 * @throws NullPointerException if the given user is <tt>null</tt>.
+	 */
+	public UserCards getUserCards( IUser user ) throws NullPointerException {
+		
+		if ( user == null ) {
+			throw new NullPointerException( "User cannot be null." );
+		}
+		UserCards cards = userMap.get( user.getStringID() );
+		return cards == null ? new UserCards() : cards;
+		
+	}
 	
 	/**
 	 * A custom card that can be set up by a user and displayed
@@ -93,6 +191,15 @@ public class CardManager {
 		private final SortedMap<String,String> fields;
 		
 		/**
+		 * Initializes a card with no attributes.
+		 */
+		private Card() {
+			
+			this.fields = new TreeMap<>();
+			
+		}
+		
+		/**
 		 * Initializes a card with the given title, and no other attributes.
 		 * 
 		 * @param title The title of the card.
@@ -105,8 +212,8 @@ public class CardManager {
 		 */
 		public Card( String title ) throws NullPointerException, IllegalArgumentException {
 			
+			this();
 			setTitle( title );
-			this.fields = new TreeMap<>();
 			
 		}
 		
@@ -389,6 +496,7 @@ public class CardManager {
 			
 		}
 		
+		private static final String TITLE_ATTRIBUTE = "title";
 		private static final String DESCRIPTION_ATTRIBUTE = "description";
 		private static final String URL_ATTRIBUTE = "url";
 		private static final String FOOTER_ATTRIBUTE = "footer";
@@ -404,13 +512,14 @@ public class CardManager {
 				new MapTranslator<>( new StringTranslator(), new StringTranslator() );
 
 		/**
-		 * Stores this card into a Data. The title is not included in the data.
+		 * Stores this card into a Data.
 		 */
 		@Override
 		public Data toData() {
 			
 			Map<String,Data> map = new HashMap<>();
 			
+			map.put( TITLE_ATTRIBUTE, Data.stringData( title ) );
 			if ( description != null ) {
 				map.put( DESCRIPTION_ATTRIBUTE, Data.stringData( description ) );
 			}
@@ -448,8 +557,9 @@ public class CardManager {
 
 		/**
 		 * Loads the card from the given Data. Any current attributes are
-		 * replaced by the ones specified in the given data. The exception
-		 * is the title, which is not loaded from the data.
+		 * replaced by the ones specified in the given data.
+		 * <p>
+		 * The loaded data is not checked for character limits.
 		 */
 		@Override
 		public void fromData( Data data ) throws TranslationException {
@@ -458,6 +568,15 @@ public class CardManager {
 				throw new TranslationException( "Given data is not a map." );
 			}
 			Map<String,Data> map = data.getMap();
+			
+			Data titleData = map.get( TITLE_ATTRIBUTE );
+			if ( titleData == null ) { // Missing title.
+				throw new TranslationException( "Missing title attribute." );
+			}
+			if ( !titleData.isString() ) {
+				throw new TranslationException( "Title attribute is not a String." );
+			}
+			title = titleData.getString();
 			
 			Data descriptionData = map.get( DESCRIPTION_ATTRIBUTE );
 			if ( descriptionData != null ) { // Has description.
@@ -536,6 +655,312 @@ public class CardManager {
 				fields.clear(); // Delete any current fields.
 				fields.putAll( FIELDS_TRANSLATOR.fromData( fieldsData ) );
 			}
+			
+		}
+		
+	} // End of class Card.
+	
+	/**
+	 * An entry that represents a card.
+	 * 
+	 * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-09
+	 */
+	public static class CardEntry implements Storable {
+		
+		private static final String TITLE_ATTRIBUTE = "title";
+		private static final String FIELD_COUNT_ATTRIBUTE = "fieldCount";
+		
+		private String title;
+		private int fieldCount;
+		
+		/**
+		 * Initializes a blank entry.
+		 */
+		private CardEntry() {
+			
+			// No initialization.
+			
+		}
+		
+		/**
+		 * Initializes an entry for the given card.
+		 * 
+		 * @param card The card to make an entry for.
+		 */
+		public CardEntry( Card card ) {
+			
+			title = card.title;
+			fieldCount = card.getFieldCount();
+			
+		}
+		
+		/**
+		 * Retrieves the title of the card that this entry represents.
+		 * 
+		 * @return The card title.
+		 */
+		public String getTitle() {
+			
+			return title;
+			
+		}
+		
+		/**
+		 * Retrieves the amount of fields in the card that this entry represents.
+		 * 
+		 * @return The amount of fields.
+		 */
+		public int getFieldCount() {
+			
+			return fieldCount;
+			
+		}
+
+		@Override
+		public Data toData() {
+
+			Map<String,Data> map = new HashMap<>();
+			map.put( TITLE_ATTRIBUTE, Data.stringData( title ) );
+			map.put( FIELD_COUNT_ATTRIBUTE, Data.numberData( fieldCount ) );
+			return Data.mapData( map );
+			
+		}
+
+		@Override
+		public void fromData( Data data ) throws TranslationException {
+
+			if ( !data.isMap() ) {
+				throw new TranslationException( "Given data is not a map." );
+			}
+			Map<String,Data> map = data.getMap();
+			
+			Data titleData = map.get( TITLE_ATTRIBUTE );
+			if ( titleData == null ) {
+				throw new TranslationException( "Missing title data." );
+			}
+			if ( !titleData.isString() ) {
+				throw new TranslationException( "Title data is not a string." );
+			}
+			title = titleData.getString();
+			
+			Data fieldCountData = map.get( FIELD_COUNT_ATTRIBUTE );
+			if ( fieldCountData == null ) {
+				throw new TranslationException( "Missing field count data." );
+			}
+			if ( !fieldCountData.isNumber() ) {
+				throw new TranslationException( "Field count data is not a number." );
+			}
+			fieldCount = (int) fieldCountData.getNumberInteger();
+			
+		}
+		
+		/**
+		 * Matches an entry with the same title. Having a different entry count
+		 * does not affect the match.
+		 */
+		@Override
+		public boolean equals( Object o ) {
+			
+			if ( !( o instanceof CardEntry ) ) {
+				return false; // Wrong type.
+			}
+			CardEntry other = (CardEntry) o;
+			
+			return title.equals( other.title );
+			
+		}
+		
+		@Override
+		public int hashCode() {
+			
+			return title.hashCode();
+			
+		}
+		
+	} // End of class CardEntry.
+	
+	/**
+	 * Represents a user's data in the card system.
+	 * 
+	 * @author ThiagoTGM
+	 * @version 1.0
+	 * @since 2018-09-09
+	 */
+	public static class UserCards implements Storable {
+		
+		/**
+		 * How many custom cards a user can have initially.
+		 */
+		public static final int STARTING_CARDS = 1;
+		/**
+		 * The maximum amount of custom cards that a user can have.
+		 */
+		public static final int MAX_CARDS = 5;
+		/**
+		 * How much currency a user must spend to expand the card allowance by 1.
+		 */
+		public static final long EXTRA_CARD_COST = 5000L;
+		
+		private static final Translator<List<CardEntry>> CARDS_TRANSLATOR =
+				new ListTranslator<>( new StorableTranslator<>( () -> new CardEntry() ) );
+		
+		private int cardAllowance;
+		private final List<CardEntry> cards;
+		
+		/**
+		 * Creates an instance with no cards and the 
+		 * {@link #STARTING_CARDS initial allowance} of cards.
+		 */
+		private UserCards() {
+			
+			cardAllowance = STARTING_CARDS;
+			cards = new LinkedList<>();
+			
+		}
+		
+		/**
+		 * Retrieves the user's card allowance (how many cards the user may have at
+		 * this time).
+		 * 
+		 * @return The card allowance.
+		 */
+		public int getCardAllowance() {
+			
+			return cardAllowance;
+			
+		}
+		
+		/**
+		 * Increments the card allowance by 1, if the user does not yet have the
+		 * {@link #MAX_CARDS maximum allowance}.
+		 * 
+		 * @return <tt>true</tt> if incremented successfully.
+		 *         <tt>false</tt> if the user already has the maximum allowance.
+		 */
+		private boolean incrementCardAllowance() {
+			
+			if ( cardAllowance < MAX_CARDS ) {
+				cardAllowance++;
+				return true;
+			} else {
+				return false;
+			}
+			
+		}
+		
+		/**
+		 * Retrieves the number of cards that the user currently has.
+		 * 
+		 * @return The card count.
+		 */
+		public int getCardCount() {
+			
+			return cards.size();
+			
+		}
+		
+		/**
+		 * Retrieves the user's cards.
+		 * 
+		 * @return The cards.
+		 */
+		public List<CardEntry> getCards() {
+			
+			return new ArrayList<>( cards );
+			
+		}
+		
+		/**
+		 * Registers a new card for this user, if the user has not yet
+		 * reached his card allowance.
+		 * 
+		 * @param card The card to add.
+		 * @return <tt>true</tt> if added successfully.
+		 *         <tt>false</tt> if the user is already using his full
+		 *         card allowance.
+		 */
+		private boolean addCard( Card card ) {
+			
+			if ( getCardCount() < cardAllowance ) {
+				cards.add( new CardEntry( card ) );
+				return true;
+			} else {
+				return false; // Already have filled allowance.
+			}
+			
+		}
+		
+		/**
+		 * Deregisters the given card from this user's list (as in a
+		 * card with the same title).
+		 * 
+		 * @param card The card to remove.
+		 * @return <tt>true</tt> if removed successfully.
+		 *         <tt>false</tt> if the user does not have the given
+		 *         card.
+		 */
+		private boolean removeCard( Card card ) {
+			
+			return cards.remove( new CardEntry( card ) );
+			
+		}
+		
+		/**
+		 * Updates the registration of the given card in this user's
+		 * list (e.g. updates the field count of the card with the same
+		 * title).
+		 * 
+		 * @param card The card to update.
+		 * @return <tt>true</tt> if updated successfully.
+		 *         <tt>false</tt> if the user does not have the given
+		 *         card.
+		 */
+		private boolean updateCard( Card card ) {
+			
+			CardEntry entry = new CardEntry( card );
+			return cards.remove( entry ) && cards.add( entry );
+			
+		}
+		
+		private static final String CARD_ALLOWANCE_ATTRIBUTE = "cardAllowance";
+		private static final String CARDS_ATTRIBUTE = "cards";
+
+		@Override
+		public Data toData() {
+
+			Map<String,Data> map = new HashMap<>();
+			map.put( CARD_ALLOWANCE_ATTRIBUTE, Data.numberData( cardAllowance ) );
+			map.put( CARDS_ATTRIBUTE, CARDS_TRANSLATOR.toData( cards ) );
+			return Data.mapData( map );
+			
+		}
+
+		@Override
+		public void fromData( Data data ) throws TranslationException {
+
+			if ( !data.isMap() ) {
+				throw new TranslationException( "Given data is not a map." );
+			}
+			Map<String,Data> map = data.getMap();
+			
+			Data allowanceData = map.get( CARD_ALLOWANCE_ATTRIBUTE );
+			if ( allowanceData == null ) {
+				throw new TranslationException( "Missing card allowance attribute." );
+			}
+			if ( !allowanceData.isNumber() ) {
+				throw new TranslationException( "Card allowance attribute is not a number." );
+			}
+			cardAllowance = (int) allowanceData.getNumberInteger();
+			
+			Data cardsData = map.get( CARDS_ATTRIBUTE );
+			if ( cardsData == null ) {
+				throw new TranslationException( "Missing cards attribute." );
+			}
+			List<CardEntry> cards = CARDS_TRANSLATOR.fromData( cardsData );
+			this.cards.clear();
+			this.cards.addAll( cards );
 			
 		}
 		
