@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -389,8 +391,8 @@ public class CardManager {
 	 * @throws IllegalArgumentException if there is no card with the given title for the user, or
 	 *                                  if <tt>fieldName</tt> or <tt>fieldText</tt> is an empty
 	 *                                  string, only contains white space, or exceeds the
-	 *                                  {@link #MAX_FIELD_NAME_LENGTH maximum name size} or
-	 *                                  {@link #MAX_FIELD_TEXT_LENGTH maximum text size},
+	 *                                  {@link Card#MAX_FIELD_NAME_LENGTH maximum name size} or
+	 *                                  {@link Card#MAX_FIELD_TEXT_LENGTH maximum text size},
 	 *                                  respectively.
 	 *                                  The exception's detail message will be an error message
 	 *                                  that indicates what the error was.
@@ -434,6 +436,107 @@ public class CardManager {
 				return false;
 			}
 		}
+		
+	}
+	
+	/**
+	 * Sets an attribute for the given card owned by the given user.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param setter The operation that sets the attribute.
+	 * @return <tt>true</tt> if the attribute was set.
+	 *         <tt>false</tt> if the given user does not have a card with the given title.
+	 * @throws NullPointerException if the user or card title is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the <tt>setter</tt> threw such an exception.
+	 */
+	private boolean setAttribute( IUser user, String cardTitle, Consumer<Card> setter )
+			throws NullPointerException, IllegalArgumentException {
+		
+		if ( ( user == null ) || ( cardTitle == null ) ) {
+			throw new NullPointerException( "User and card name cannot be null." );
+		}
+		
+		String userID = user.getStringID();
+		try {
+			return EXECUTOR.submit( userID, () -> {
+				
+				Card card = cardMap.get( userID, cardTitle );
+				if ( card == null ) {
+					return false;
+				}
+				
+				setter.accept( card );
+				cardMap.set( card, userID, cardTitle ); // Update card.
+				
+				return true;
+				
+			}).get();
+		} catch ( InterruptedException e ) {
+			LOG.error( "Interrupted while waiting for card field set.", e );
+			return false;
+		} catch ( ExecutionException e ) {
+			if ( e.getCause() instanceof IllegalArgumentException ) {
+				throw (IllegalArgumentException) e.getCause(); // Expected.
+			} else {
+				return false;
+			}
+		}
+		
+	}
+	
+	/**
+	 * Sets the description of the given card.
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param description The description to be set. If <tt>null</tt>, the current description
+	 *                    is removed.
+	 * @return <tt>true</tt> if the description was set.
+	 *         <tt>false</tt> if the given user does not have a card with the given title.
+	 * @throws NullPointerException if the user or card title is <tt>null</tt>.
+	 * @throws IllegalArgumentException if the given description is an empty
+	 *                                  string, only contains white space, or exceeds the
+	 *                                  {@link Card#MAX_DESCRIPTION_LENGTH maximum description size}.
+	 *                                  The exception's detail message will be an error message
+	 *                                  that indicates what the error was.
+	 */
+	public boolean setDescription( IUser user, String cardTitle, String description )
+			throws NullPointerException, IllegalArgumentException {
+		
+		return setAttribute( user, cardTitle, card -> card.setDescription( description ) );
+		
+	}
+	
+	/**
+	 * Sets the URL of the given card (that the description is a link to).
+	 * <p>
+	 * The operation is internally executed with the appropriate mechanisms
+	 * to ensure no race conditions occur for multiple calls on the same user across different
+	 * threads. If calls to this method are parallelized, is not necessary for the caller to
+	 * synchronize those calls.
+	 * 
+	 * @param user The user that owns the card.
+	 * @param cardTitle The title of the card to edit.
+	 * @param url The URL to be set. If <tt>null</tt>, the current URL is removed.
+	 * @return <tt>true</tt> if the URL was set.
+	 *         <tt>false</tt> if the given user does not have a card with the given title.
+	 * @throws NullPointerException if the user or card title is <tt>null</tt>.
+	 */
+	public boolean setUrl( IUser user, String cardTitle, String url )
+			throws NullPointerException {
+		
+		return setAttribute( user, cardTitle, card -> card.setUrl( url ) );
 		
 	}
 	

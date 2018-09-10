@@ -19,6 +19,7 @@ package com.github.thiagotgm.blakebot.module.user;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +35,7 @@ import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SuccessHandler;
 
 import sx.blah.discord.handle.obj.IUser;
+import sx.blah.discord.util.DiscordException;
 
 /**
  * Commands to interact with the card system.
@@ -102,6 +104,9 @@ public class CardCommands {
 	private static final String SET_FIELD_SUBCOMMAND = "Set custom card field";
 	private static final String REMOVE_FIELD_SUBCOMMAND = "Remove custom card field";
 	
+	private static final String SET_DESCRIPTION_SUBCOMMAND = "Set custom card description";
+	private static final String SET_URL_SUBCOMMAND = "Set custom card URL";
+	
 	private final CardManager manager = CardManager.getInstance();
 	
 	@MainCommand(
@@ -114,7 +119,8 @@ public class CardCommands {
 			usage = "{}card <subcommand>",
 			subCommands = { GET_SUBCOMMAND, ADD_CARD_SUBCOMMAND, REMOVE_CARD_SUBCOMMAND,
 					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
-					        REMOVE_FIELD_SUBCOMMAND },
+					        REMOVE_FIELD_SUBCOMMAND, SET_DESCRIPTION_SUBCOMMAND,
+					        SET_URL_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -156,8 +162,12 @@ public class CardCommands {
 					+ name + "'!" );
 			return false;
 		}
-		
+		try {
 		context.getReplyBuilder().withEmbed( card.getEmbed() ).build(); // Send card.
+		} catch ( DiscordException e ) {
+			context.setHelper( e ); // Store exception.
+			throw e;
+		}
 		
 		return true;
 		
@@ -328,6 +338,73 @@ public class CardCommands {
 		
 	}
 	
+	/**
+	 * Sets the value of a card attribute.
+	 * 
+	 * @param context The context of the command.
+	 * @param attributeName The name of the attribute (such as "description" or "URL").
+	 *                      Only used to make the error message if necessary.
+	 * @param setter The operation that takes the card title and the attribute value
+	 *               (value may be <tt>null</tt>), in this order, and returns whether
+	 *               the operation was successful.
+	 * @return <tt>true</tt> if set successfully.
+	 *         <tt>false</tt> if there was an error (the helper object of the context
+	 *         is set to the appropriate error message).
+	 * @throws IllegalArgumentException if the setter threw such exception.
+	 */
+	private boolean setAttribute( CommandContext context, String attributeName,
+			BiFunction<String,String,Boolean> setter ) throws IllegalArgumentException {
+		
+		List<String> args = context.getArgs();
+		if ( args.isEmpty() ) {
+			context.setHelper( "Must specify the card name!" );
+			return false;
+		}
+		String cardTitle = args.get( 0 );
+		String value = args.size() >= 2 ? args.get( 1 ) : null;
+		if ( setter.apply( cardTitle, value ) ) {
+			context.setHelper( ( value == null ? "Removed " : "Set " ) + attributeName 
+					+ " of card '" + cardTitle + "'!" );
+			return true;
+		} else {
+			context.setHelper( "You don't have a card titled '" + cardTitle + "'!" );
+			return false;
+		}
+		
+	}
+	
+	@SubCommand(
+			name = SET_DESCRIPTION_SUBCOMMAND,
+			aliases = { "setdescription", "setd" },
+			description = "Sets the description of the given card. If no description is "
+					+ "given, the current description is deleted.",
+			usage = "{}card setdescription|setd <card name> [description]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setDescriptionCommand( CommandContext context ) {
+		
+		return setAttribute( context, "description", ( title, description ) ->
+				manager.setDescription( context.getAuthor(), title, description ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_URL_SUBCOMMAND,
+			aliases = { "seturl" },
+			description = "Sets the URL of the given card (the link in the card title). "
+					+ "If no URL is given, the current URL is deleted.",
+			usage = "{}card seturl <card name> [URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setUrlCommand( CommandContext context ) {
+		
+		return setAttribute( context, "URL", ( title, url ) ->
+				manager.setUrl( context.getAuthor(), title, url ) );
+		
+	}
+	
 	@SuccessHandler( SUCCESS_HANDLER )
 	public void successHandler( CommandContext context ) {
 		
@@ -348,6 +425,16 @@ public class CardCommands {
 			case COMMAND_OPERATION_EXCEPTION:
 				message = ( (Exception) context.getHelper().get() ).getMessage();
 				break;
+				
+			case DISCORD_ERROR:
+				if ( context.getCommand().getName().equals( GET_SUBCOMMAND ) &&
+					 context.getHelper().isPresent() ) { // Error with card embed.
+					DiscordException e = (DiscordException) context.getHelper().get();
+					message = "Could not send card.\nError was `" + e.getErrorMessage()
+							+ "`.\nOne of the URLs on the card is invalid, maybe?";
+					context.getReplyBuilder().withEmbed( null ); // Remove problematic embed.
+					break;
+				}
 				
 			default:
 				message = "Sorry, I couldn't do that.";
