@@ -110,6 +110,9 @@ public class CardCommands {
 	private static final String SET_FOOTER_ICON_SUBCOMMAND = "Set custom card footer icon";
 	private static final String SET_IMAGE_SUBCOMMAND = "Set custom card image";
 	private static final String SET_THUMBNAIL_SUBCOMMAND = "Set custom card thumbnail";
+	private static final String SET_AUTHOR_SUBCOMMAND = "Set custom card author";
+	private static final String SET_AUTHOR_URL_SUBCOMMAND = "Set custom card author URL";
+	private static final String SET_AUTHOR_ICON_SUBCOMMAND = "Set custom card author icon";
 	
 	private final CardManager manager = CardManager.getInstance();
 	
@@ -125,7 +128,8 @@ public class CardCommands {
 					        CHANGE_TITLE_SUBCOMMAND, BUY_SLOT_SUBCOMMAND, SET_FIELD_SUBCOMMAND,
 					        REMOVE_FIELD_SUBCOMMAND, SET_DESCRIPTION_SUBCOMMAND,
 					        SET_URL_SUBCOMMAND, SET_FOOTER_SUBCOMMAND, SET_FOOTER_ICON_SUBCOMMAND,
-					        SET_IMAGE_SUBCOMMAND, SET_THUMBNAIL_SUBCOMMAND },
+					        SET_IMAGE_SUBCOMMAND, SET_THUMBNAIL_SUBCOMMAND, SET_AUTHOR_SUBCOMMAND,
+					        SET_AUTHOR_URL_SUBCOMMAND, SET_AUTHOR_ICON_SUBCOMMAND },
 			ignorePublic = true,
 			ignorePrivate = true
 			)
@@ -289,8 +293,10 @@ public class CardCommands {
 			description = "Sets the text of the field with the given name in the given card.\n"
 					+ "If the card does not have a field with the given name, and does not yet "
 					+ "have the maximum amount of fields (" + Card.MAX_FIELDS + "), the field "
-					+ "is created.\nNOTE: When displaying the card, the fields are ordered by "
-					+ "the title.",
+					+ "is created. There is also a limitation that the field name can only have "
+					+ "up to " + Card.MAX_FIELD_NAME_LENGTH + " characters, and the field text "
+					+ "can only have up to " + Card.MAX_FIELD_TEXT_LENGTH + " characters.\nNOTE: "
+					+ "When displaying the card, the fields are ordered by the title.",
 			usage = "{}card setfield|setf <card name> <field name> <field text>",
 			successHandler = SUCCESS_HANDLER,
 			failureHandler = FAILURE_HANDLER
@@ -484,6 +490,60 @@ public class CardCommands {
 		
 		return setAttribute( context, "thumbnail", ( title, imageUrl ) ->
 				manager.setThumbnail( context.getAuthor(), title, imageUrl ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_AUTHOR_SUBCOMMAND,
+			aliases = { "setauthor", "seta" },
+			description = "Sets the author of the given card (name shown above the title of "
+					+ "the card). If no name is given, the current author is deleted.\nThe "
+					+ "author name is limited to " + Card.MAX_AUTHOR_LENGTH + " characters.",
+			usage = "{}card setauthor|seta <card name> [author name]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setAuthorCommand( CommandContext context ) {
+		
+		return setAttribute( context, "author", ( title, footer ) ->
+				manager.setAuthor( context.getAuthor(), title, footer ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_AUTHOR_URL_SUBCOMMAND,
+			aliases = { "setauthorurl", "setaurl" },
+			description = "Sets the URL of the author of the given card (the link in the "
+					+ "author name). If no URL is given, the current URL is deleted.\nThe "
+					+ "URL is not checked for validity, but if it is invalid, the card will "
+					+ "fail to be shown until the URL is replaced with a valid URL (or removed).",
+			usage = "{}card setauthorurl|setaurl <card name> [URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setAuthorUrlCommand( CommandContext context ) {
+		
+		return setAttribute( context, "author URL", ( title, url ) ->
+				manager.setAuthorUrl( context.getAuthor(), title, url ) );
+		
+	}
+	
+	@SubCommand(
+			name = SET_AUTHOR_ICON_SUBCOMMAND,
+			aliases = { "setauthoricon", "setai" },
+			description = "Sets the icon of the author of the given card (the image next "
+					+ "to the author name). If no icon is given, the current icon is deleted."
+					+ "\nThe URL is not checked for validity, but if it is invalid, the "
+					+ "card will fail to be shown until the icon URL is replaced with a "
+					+ "valid URL (or removed).",
+			usage = "{}card setauthoricon|setai <card name> [icon URL]",
+			successHandler = SUCCESS_HANDLER,
+			failureHandler = FAILURE_HANDLER
+			)
+	public boolean setAuthorIconCommand( CommandContext context ) {
+		
+		return setAttribute( context, "author icon", ( title, iconUrl ) ->
+				manager.setAuthorIcon( context.getAuthor(), title, iconUrl ) );
 		
 	}
 	
