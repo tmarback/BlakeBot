@@ -20,8 +20,8 @@ package com.github.thiagotgm.blakebot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.LogoutManager;
-import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.bot_utils.LogoutManager;
+import com.github.thiagotgm.bot_utils.Settings;
 import com.github.thiagotgm.modular_commands.ModularCommandsModule;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 
@@ -152,6 +152,7 @@ public class Bot {
      * Logs in to Discord.
      * 
      * @throws DiscordException if the login failed.
+     * @throws RateLimitException if the request was rate-limited.
      */
     public void login() throws DiscordException, RateLimitException {
 

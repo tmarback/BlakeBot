@@ -30,9 +30,9 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.LogoutManager;
-import com.github.thiagotgm.blakebot.common.event.LogoutRequestedEvent;
-import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
+import com.github.thiagotgm.bot_utils.LogoutManager;
+import com.github.thiagotgm.bot_utils.event.LogoutRequestedEvent;
+import com.github.thiagotgm.bot_utils.utils.AsyncTools;
 import com.google.common.collect.ConcurrentHashMultiset;
 import com.google.common.collect.Multiset;
 

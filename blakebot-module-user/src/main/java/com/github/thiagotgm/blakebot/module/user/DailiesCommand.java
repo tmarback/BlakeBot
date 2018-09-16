@@ -27,13 +27,14 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.storage.Data;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.Translator;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
-import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
-import com.github.thiagotgm.blakebot.common.utils.KeyedExecutorService;
+import com.github.thiagotgm.bot_utils.Settings;
+import com.github.thiagotgm.bot_utils.storage.Data;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.TranslationException;
+import com.github.thiagotgm.bot_utils.storage.Translator;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
+import com.github.thiagotgm.bot_utils.utils.AsyncTools;
+import com.github.thiagotgm.bot_utils.utils.KeyedExecutorService;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 

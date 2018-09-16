@@ -17,7 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
-import com.github.thiagotgm.blakebot.common.LogoutManager;
+import com.github.thiagotgm.bot_utils.LogoutManager;
 import com.github.thiagotgm.modular_commands.api.CommandRegistry;
 import sx.blah.discord.api.IDiscordClient;
 import sx.blah.discord.api.events.EventDispatcher;

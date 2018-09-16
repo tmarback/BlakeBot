@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.bot_utils.Settings;
 
 /**
  * Class that processes information text from an input stream.

@@ -17,6 +17,7 @@
 
 package com.github.thiagotgm.blakebot.module.admin;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -27,15 +28,15 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.storage.Data;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.Storable;
-import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
-import com.github.thiagotgm.blakebot.common.storage.translate.SetTranslator;
-import com.github.thiagotgm.blakebot.common.storage.translate.StorableTranslator;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
-import com.github.thiagotgm.blakebot.common.utils.Tree;
-import com.github.thiagotgm.blakebot.common.utils.Utils;
+import com.github.thiagotgm.bot_utils.storage.Data;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.Storable;
+import com.github.thiagotgm.bot_utils.storage.TranslationException;
+import com.github.thiagotgm.bot_utils.storage.translate.SetTranslator;
+import com.github.thiagotgm.bot_utils.storage.translate.StorableTranslator;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
+import com.github.thiagotgm.bot_utils.utils.Utils;
+import com.github.thiagotgm.bot_utils.utils.graph.Tree;
 
 import sx.blah.discord.handle.obj.IChannel;
 import sx.blah.discord.handle.obj.IGuild;
@@ -98,7 +99,7 @@ public class Blacklist {
      */
     protected Set<Restriction> get( IIDLinkedObject... path ) {
         
-    	Set<Restriction> restrictions = blacklist.get( Utils.idString( path ) );
+    	Set<Restriction> restrictions = blacklist.get( (Object[]) Utils.idString( path ) );
     	if ( restrictions == null ) {
     		return new HashSet<>();
     	} else {
@@ -227,13 +228,13 @@ public class Blacklist {
      */
     protected synchronized boolean add( Restriction restriction, IIDLinkedObject... path ) {
         
-    	String[] strPath = Utils.idString( path );
+    	List<String> strPath = Arrays.asList( Utils.idString( path ) );
         Set<Restriction> restrictions = blacklist.get( strPath );
         if ( restrictions == null ) {
             restrictions = new HashSet<>();
         }
         if ( restrictions.add( restriction ) ) {
-        	blacklist.set( restrictions, strPath );
+        	blacklist.put( strPath, restrictions );
         	return true;
         } else {
         	return false;
@@ -341,10 +342,10 @@ public class Blacklist {
      */
     protected synchronized boolean remove( Restriction restriction, IIDLinkedObject... path ) {
         
-    	String[] thePath = Utils.idString( path );
+    	List<String> thePath = Arrays.asList( Utils.idString( path ) );
         Set<Restriction> restrictions = blacklist.get( thePath );
         if ( ( restrictions != null ) && restrictions.remove( restriction ) ) {
-        	blacklist.set( restrictions, thePath );
+        	blacklist.put( thePath, restrictions );
         	return true;
         } else {
         	return false;

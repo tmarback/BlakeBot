@@ -41,10 +41,10 @@ import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.Bot;
 import com.github.thiagotgm.blakebot.ConnectionStatusListener;
-import com.github.thiagotgm.blakebot.common.ExitManager;
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.event.LogoutFailureEvent;
-import com.github.thiagotgm.blakebot.common.event.LogoutSuccessEvent;
+import com.github.thiagotgm.bot_utils.ExitManager;
+import com.github.thiagotgm.bot_utils.Settings;
+import com.github.thiagotgm.bot_utils.event.LogoutFailureEvent;
+import com.github.thiagotgm.bot_utils.event.LogoutSuccessEvent;
 
 import sx.blah.discord.api.events.EventDispatcher;
 import sx.blah.discord.api.events.EventSubscriber;

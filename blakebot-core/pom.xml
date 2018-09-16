@@ -17,7 +17,8 @@
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
@@ -41,43 +42,33 @@
         </license>
 
     </licenses>
-    
-    <dependencies>
-    
-        <dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        
-    </dependencies>
 
     <build>
     
         <!-- Include info files -->
         <resources>
-        
+
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                
+
                     <include>bot.info</include>
                     <include>module.info</include>
-                    
+
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                
+
                     <exclude>bot.info</exclude>
                     <exclude>module.info</exclude>
-                
+
                 </excludes>
             </resource>
-        
+
         </resources>
 
         <plugins>
@@ -101,9 +92,9 @@
                             </transformers>
                             <artifactSet>
                                 <includes>
-                                
+
                                     <include>*:*</include>
-                                
+
                                 </includes>
                             </artifactSet>
                         </configuration>

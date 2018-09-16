@@ -16,30 +16,30 @@
   ~     You should have received a copy of the GNU Lesser General Public License
   ~     along with BlakeBot.  If not, see <http://www.gnu.org/licenses/>.
   -->
-  
+
 <project
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
     xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    
+
     <parent>
         <groupId>com.github.thiagotgm</groupId>
         <artifactId>blakebot</artifactId>
         <version>0.3.0</version>
     </parent>
-    
+
     <artifactId>blakebot-module-info</artifactId>
     <version>1.0.0</version>
-    
+
     <name>blakebot-module-info</name>
     <description>Module that provides information about commands and modules.</description>
-    
+
     <properties>
-    
+
         <module.class>com.github.thiagotgm.blakebot.module.info.InfoModule</module.class>
-    
+
     </properties>
-    
+
     <licenses>
 
         <license>
@@ -49,41 +49,31 @@
         </license>
 
     </licenses>
-    
-    <dependencies>
-    
-        <dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-    
-    </dependencies>
-    
+
     <build>
     
         <!-- Include info file -->
         <resources>
-        
+
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
                 <includes>
-                
+
                     <include>module.info</include>
-                    
+
                 </includes>
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>false</filtering>
                 <excludes>
-                
+
                     <exclude>module.info</exclude>
-                
+
                 </excludes>
             </resource>
-        
+
         </resources>
 
         <plugins>

@@ -32,8 +32,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.ExitManager;
-import com.github.thiagotgm.blakebot.common.Settings;
+import com.github.thiagotgm.bot_utils.ExitManager;
+import com.github.thiagotgm.bot_utils.Settings;
 
 import sx.blah.discord.api.events.Event;
 import sx.blah.discord.api.events.EventSubscriber;

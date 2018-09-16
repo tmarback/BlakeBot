@@ -17,8 +17,8 @@
 
 package com.github.thiagotgm.blakebot.module.user;
 
-import com.github.thiagotgm.blakebot.common.utils.Utils;
 import com.github.thiagotgm.blakebot.module.user.ReputationManager.Vote;
+import com.github.thiagotgm.bot_utils.utils.Utils;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;

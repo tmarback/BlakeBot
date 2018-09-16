@@ -22,8 +22,8 @@ import java.util.concurrent.Executor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
 import com.github.thiagotgm.blakebot.module.admin.Blacklist.Restriction;
+import com.github.thiagotgm.bot_utils.utils.AsyncTools;
 
 import sx.blah.discord.api.events.EventSubscriber;
 import sx.blah.discord.handle.impl.events.guild.channel.message.MessageReceivedEvent;

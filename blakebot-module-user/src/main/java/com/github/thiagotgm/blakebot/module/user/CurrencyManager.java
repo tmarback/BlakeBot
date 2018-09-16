@@ -24,12 +24,12 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.translate.LongTranslator;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
-import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
-import com.github.thiagotgm.blakebot.common.utils.KeyedExecutorService;
+import com.github.thiagotgm.bot_utils.Settings;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.translate.LongTranslator;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
+import com.github.thiagotgm.bot_utils.utils.AsyncTools;
+import com.github.thiagotgm.bot_utils.utils.KeyedExecutorService;
 
 import sx.blah.discord.handle.obj.IUser;
 

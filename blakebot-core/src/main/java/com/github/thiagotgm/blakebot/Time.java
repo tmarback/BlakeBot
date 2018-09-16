@@ -145,7 +145,7 @@ public class Time {
     /**
      * Sets whether to include seconds in the string value.
      * 
-     * @param trim Whether to include seconds.
+     * @param include Whether to include seconds.
      * @see #toString( boolean )
      */
     public void includeSeconds( boolean include ) {
@@ -159,7 +159,7 @@ public class Time {
      * OBS: If seconds are set to not be included, milliseconds will not
      * be included either.
      * 
-     * @param trim Whether to include milliseconds.
+     * @param include Whether to include milliseconds.
      * @see #toString( boolean )
      */
     public void includeMillis( boolean include ) {

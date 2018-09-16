@@ -21,13 +21,13 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
 import com.github.thiagotgm.blakebot.module.user.CardManager.Card;
 import com.github.thiagotgm.blakebot.module.user.CardManager.CardEntry;
 import com.github.thiagotgm.blakebot.module.user.CardManager.UserCards;
 import com.github.thiagotgm.blakebot.module.user.LevelingManager.LevelState;
 import com.github.thiagotgm.blakebot.module.user.ReputationManager.Reputation;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;

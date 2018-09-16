@@ -18,49 +18,39 @@
   -->
 
 <project
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<modelVersion>4.0.0</modelVersion>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>com.github.thiagotgm</groupId>
-		<artifactId>blakebot</artifactId>
-		<version>0.3.0</version>
-	</parent>
+    <parent>
+        <groupId>com.github.thiagotgm</groupId>
+        <artifactId>blakebot</artifactId>
+        <version>0.3.0</version>
+    </parent>
 
-	<artifactId>blakebot-module-user</artifactId>
-	<version>0.1.0</version>
+    <artifactId>blakebot-module-user</artifactId>
+    <version>0.1.0</version>
 
-	<name>blakebot-module-user</name>
-	<description>Module that tracks user data.</description>
+    <name>blakebot-module-user</name>
+    <description>Module that tracks user data.</description>
 
-	<properties>
+    <properties>
 
-		<module.class>com.github.thiagotgm.blakebot.module.user.UserModule</module.class>
+        <module.class>com.github.thiagotgm.blakebot.module.user.UserModule</module.class>
 
-	</properties>
+    </properties>
 
-	<licenses>
+    <licenses>
 
-		<license>
-			<name>GNU LGPLv3 License</name>
-			<url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
-			<distribution>repo</distribution>
-		</license>
+        <license>
+            <name>GNU LGPLv3 License</name>
+            <url>https://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
 
-	</licenses>
+    </licenses>
 
-	<dependencies>
-	
-		<dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-		
-	</dependencies>
-	
-	<build>
+    <build>
 
         <plugins>
 
@@ -94,5 +84,5 @@
         </plugins>
 
     </build>
-	
+
 </project>

@@ -21,8 +21,8 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
 
 import sx.blah.discord.handle.obj.IGuild;
 import sx.blah.discord.handle.obj.IRole;

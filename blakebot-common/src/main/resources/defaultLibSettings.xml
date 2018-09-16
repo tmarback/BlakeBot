@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
-<properties>
-<comment>Library-default values for bot properties.</comment>
-<entry key="Auto-save delay">60</entry> <!-- Delay between auto-saves -->
-<entry key="Cache size">100</entry> <!-- Size of the database caches -->
-<entry key="Database Service">XML</entry> <!-- Database provider to use -->
-<entry key="Database Args">data</entry> <!-- Arguments to initialize the database with -->
-</properties>

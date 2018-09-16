@@ -33,11 +33,11 @@
 
     <name>blakebot-module-admin</name>
     <description>Module that provides tools for server mods/admins.</description>
-    
+
     <properties>
-    
+
         <module.class>com.github.thiagotgm.blakebot.module.admin.AdminModule</module.class>
-    
+
     </properties>
 
     <licenses>
@@ -51,13 +51,7 @@
     </licenses>
 
     <dependencies>
-    
-        <dependency>
-            <groupId>com.github.thiagotgm</groupId>
-            <artifactId>blakebot-common</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        
+
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

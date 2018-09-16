@@ -38,10 +38,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.thiagotgm.blakebot.Bot;
-import com.github.thiagotgm.blakebot.common.Settings;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager.DatabaseType;
-import com.github.thiagotgm.blakebot.common.storage.impl.AbstractDatabase;
+import com.github.thiagotgm.bot_utils.Settings;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager.DatabaseType;
+import com.github.thiagotgm.bot_utils.storage.impl.AbstractDatabase;
 
 /**
  * Panel that provides a way to change bot settings.

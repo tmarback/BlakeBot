@@ -24,17 +24,17 @@ import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.thiagotgm.blakebot.common.storage.Data;
-import com.github.thiagotgm.blakebot.common.storage.DatabaseManager;
-import com.github.thiagotgm.blakebot.common.storage.Storable;
-import com.github.thiagotgm.blakebot.common.storage.Translator;
-import com.github.thiagotgm.blakebot.common.storage.Translator.TranslationException;
-import com.github.thiagotgm.blakebot.common.storage.translate.StorableTranslator;
-import com.github.thiagotgm.blakebot.common.storage.translate.StringTranslator;
-import com.github.thiagotgm.blakebot.common.utils.AsyncTools;
-import com.github.thiagotgm.blakebot.common.utils.KeyedExecutorService;
-import com.github.thiagotgm.blakebot.common.utils.Tree;
-import com.github.thiagotgm.blakebot.common.utils.Utils;
+import com.github.thiagotgm.bot_utils.storage.Data;
+import com.github.thiagotgm.bot_utils.storage.DatabaseManager;
+import com.github.thiagotgm.bot_utils.storage.Storable;
+import com.github.thiagotgm.bot_utils.storage.TranslationException;
+import com.github.thiagotgm.bot_utils.storage.Translator;
+import com.github.thiagotgm.bot_utils.storage.translate.StorableTranslator;
+import com.github.thiagotgm.bot_utils.storage.translate.StringTranslator;
+import com.github.thiagotgm.bot_utils.utils.AsyncTools;
+import com.github.thiagotgm.bot_utils.utils.KeyedExecutorService;
+import com.github.thiagotgm.bot_utils.utils.graph.Graphs;
+import com.github.thiagotgm.bot_utils.utils.graph.Tree;
 
 import sx.blah.discord.handle.obj.IUser;
 
@@ -97,7 +97,7 @@ public class ReputationManager {
 		reputationMap = Collections.synchronizedMap( DatabaseManager.getDatabase().getDataMap(
 				"ReputationSystem", new StringTranslator(),
 				new StorableTranslator<>( () -> new Reputation() ) ) );
-		voteMap = Utils.synchronizedTree( DatabaseManager.getDatabase().getDataTree(
+		voteMap = Graphs.synchronizedTree( DatabaseManager.getDatabase().getDataTree(
 				"ReputationVotes", new StringTranslator(), new VoteTranslator() ) );
 		
 	}
@@ -185,7 +185,7 @@ public class ReputationManager {
 				if ( vote == Vote.NO_VOTE ) { // Just remove the vote.
 					voteMap.remove( voterID, targetID );
 				} else { // Update the vote.
-					voteMap.set( vote, voterID, targetID );
+					voteMap.put( vote, voterID, targetID );
 				}
 				return true;
 				

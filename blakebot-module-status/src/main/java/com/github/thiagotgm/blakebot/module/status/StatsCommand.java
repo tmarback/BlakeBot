@@ -20,7 +20,7 @@ package com.github.thiagotgm.blakebot.module.status;
 import java.awt.Color;
 import java.util.concurrent.TimeUnit;
 
-import com.github.thiagotgm.blakebot.common.storage.DatabaseStats;
+import com.github.thiagotgm.bot_utils.storage.DatabaseStats;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.CommandStats;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
