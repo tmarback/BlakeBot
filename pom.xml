@@ -49,7 +49,7 @@
         <maven.compiler.testSource>1.8</maven.compiler.testSource>
         <discord4J.version>2.10.1</discord4J.version> <!-- Version of Discord4J being used -->
         <modularCommands.version>1.2.0</modularCommands.version> <!-- Version of ModularCommands being used -->
-        <botUtils.version>1.0.0</botUtils.version> <!-- Version of BotUtils being used -->
+        <botUtils.version>develop-SNAPSHOT</botUtils.version> <!-- Version of BotUtils being used -->
 
     </properties>
 
