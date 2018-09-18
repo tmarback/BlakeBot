@@ -63,6 +63,7 @@ public class FunModule implements IModule {
         registry.registerAnnotatedCommands( new SquareCommand() );
         registry.registerAnnotatedCommands( new ForTheGloryCommand() );
         registry.registerAnnotatedCommands( new GetSomeHelpCommand() );
+        registry.registerAnnotatedCommands( new PoliceCommand() );
         
     }
 
