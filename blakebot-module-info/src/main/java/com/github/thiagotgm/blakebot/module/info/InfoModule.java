@@ -37,7 +37,7 @@ public class InfoModule implements IModule {
     @Override
     public void disable() {
 
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
+        CommandRegistry.getRegistry( client ).removeSubRegistry( InfoModule.class );
         client = null;
 
     }
@@ -48,7 +48,7 @@ public class InfoModule implements IModule {
         client = arg0;
         
         CommandRegistry registry;
-        registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( InfoModule.class );
         registerCommands( registry );
 
         return true;

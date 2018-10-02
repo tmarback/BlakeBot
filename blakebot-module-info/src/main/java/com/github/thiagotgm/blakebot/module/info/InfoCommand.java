@@ -41,6 +41,7 @@ import sx.blah.discord.handle.obj.IMessage;
  * @author ThiagoTGM
  * @since 2017-09-16
  */
+@SuppressWarnings( "javadoc" )
 public class InfoCommand {
     
     /**
@@ -81,7 +82,7 @@ public class InfoCommand {
             name = "Bot information",
             aliases = "info",
             description = "Shows information about the bot.",
-            usage = "{}info [here]",
+            usage = "{signature} [here]",
             replyPrivately = true,
             subCommands = HERE_MODIFIER
             )
@@ -96,7 +97,7 @@ public class InfoCommand {
             aliases = "here",
             description = "Sends the information to the channel where the command was called, "
                     + "instead of always sending a private message.",
-            usage = "{}info here",
+            usage = "{signature}",
             executeParent = true
             )
     public void modifier( CommandContext context ) {}

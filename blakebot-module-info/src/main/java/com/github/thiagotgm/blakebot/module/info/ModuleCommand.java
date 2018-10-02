@@ -39,32 +39,31 @@ import sx.blah.discord.util.RequestBuilder;
  * @author ThiagoTGM
  * @since 2017-09-15
  */
+@SuppressWarnings( "javadoc" )
 public class ModuleCommand {
-    
+
     private static final String HERE_MODIFIER = "Local Module Command";
     private static final String FAILURE_HANDLER = "failure";
-    
+
     private static final String BLOCK_FORMAT = "```\n%s\n```";
-    private static final int LIST_BLOCK_MAX =
-            IMessage.MAX_MESSAGE_LENGTH - String.format( BLOCK_FORMAT, "" ).length();
+    private static final int LIST_BLOCK_MAX = IMessage.MAX_MESSAGE_LENGTH - String.format( BLOCK_FORMAT, "" ).length();
     private static final String LIST_HEADER = "===[MODULE LIST]===\nTo display the information of a "
             + "specific module, use this command followed by the module name.";
     private static final String LIST_ITEM = "[%s]\n(version %s)\n%s";
     private static final String INFO_HEADER = "[%s]\n%s\nVersion %s\n\n%s";
-    
+
     @MainCommand(
             name = "Module Command",
             aliases = "module",
-            description = "Shows the modules installed on this bot. If a module is specified "
-                    + "as an argument (using the name shown in the module list), shows the "
-                    + "information of that module.",
-            usage = "{}module [module]",
+            description = "Shows the modules installed on this bot.\n"
+                    + "If a module is specified as an argument (using the name shown in the module list), "
+                    + "shows the information of that module.",
+            usage = "{signature} [module]",
             replyPrivately = true,
             subCommands = HERE_MODIFIER,
-            failureHandler = FAILURE_HANDLER
-            )
+            failureHandler = FAILURE_HANDLER )
     public boolean module( CommandContext context ) {
-        
+
         List<String> blocks;
         if ( context.getArgs().isEmpty() ) { // No args.
             blocks = formatList( ModuleInfoManager.getInfos() ); // Show module list.
@@ -75,42 +74,47 @@ public class ModuleCommand {
             }
             blocks = formatInfoLong( info ); // Show module info.
         }
-        
+
         MessageBuilder reply = context.getReplyBuilder();
         RequestBuilder request = new RequestBuilder( context.getEvent().getClient() ).setAsync( false )
-                .shouldBufferRequests( true ).doAction( () -> { return true; } );
+                .shouldBufferRequests( true ).doAction( () -> {
+                    return true;
+                } );
         blocks.stream().forEachOrdered( ( block ) -> {
-            
-            request.andThen( () -> {  // Add block to execution queue.
-                
+
+            request.andThen( () -> { // Add block to execution queue.
+
                 reply.withContent( block ).build();
                 return true;
-                
-            });
-            
-        });
+
+            } );
+
+        } );
         request.execute(); // Send all blocks in order.
         return true;
-        
+
     }
-    
+
     /**
-     * Formats a collection of information instances, in short format, for sending in Discord messages.
+     * Formats a collection of information instances, in short format, for sending
+     * in Discord messages.
      * <p>
      * Each block is to be sent in a separate message.
      * 
-     * @param infos The colletion of information instances to be formatted.
-     * @return The list of blocks containing the short-format of the given informations.
+     * @param infos
+     *            The colletion of information instances to be formatted.
+     * @return The list of blocks containing the short-format of the given
+     *         informations.
      */
     private static List<String> formatList( Collection<ModuleInfo> infos ) {
-        
+
         List<String> blocks = new LinkedList<>(); // Create header.
         blocks.add( String.format( BLOCK_FORMAT, LIST_HEADER ) );
-        
+
         Iterator<ModuleInfo> iter = infos.iterator(); // First block starts with first info.
         StringBuilder builder = new StringBuilder( formatInfoShort( iter.next() ) );
         while ( iter.hasNext() ) {
-            
+
             String next = formatInfoShort( iter.next() );
             if ( builder.length() + 2 + next.length() > LIST_BLOCK_MAX ) { // Finished block.
                 blocks.add( String.format( BLOCK_FORMAT, builder.toString() ) );
@@ -119,70 +123,71 @@ public class ModuleCommand {
                 builder.append( "\n\n" );
                 builder.append( next );
             }
-            
+
         }
         blocks.add( String.format( BLOCK_FORMAT, builder.toString() ) );
-        
+
         return blocks;
-        
+
     }
-    
+
     /**
      * Formats the short version of a module information.
      * <p>
      * Includes only alias, version, and description.
      * 
-     * @param info The information to be formatted.
+     * @param info
+     *            The information to be formatted.
      * @return The short format of the information.
      */
     private static String formatInfoShort( ModuleInfo info ) {
-        
+
         return String.format( LIST_ITEM, info.getAlias(), info.getVersion(), info.getDescription() );
-        
+
     }
-    
+
     /**
      * Formats the long version of a module information.
      * <p>
-     * Includes alias, name, version, description, and info blocks, using the info's specified
-     * syntax highlighting (if any) for the info blocks.
+     * Includes alias, name, version, description, and info blocks, using the info's
+     * specified syntax highlighting (if any) for the info blocks.
      * <p>
      * Each block returned should be sent in a separate message.
      * 
-     * @param info The information to format.
+     * @param info
+     *            The information to format.
      * @return The full information, in blocks.
      */
     private static List<String> formatInfoLong( ModuleInfo info ) {
-        
+
         List<String> blocks = new LinkedList<>();
-        String header = String.format( INFO_HEADER, info.getAlias(), info.getName(),
-                info.getVersion(), info.getDescription() ); // Create header.
+        String header = String.format( INFO_HEADER, info.getAlias(), info.getName(), info.getVersion(),
+                info.getDescription() ); // Create header.
         blocks.add( String.format( BLOCK_FORMAT, header ) );
-        
+
         blocks.addAll( info.getInfo() ); // Add each info block.
-        
+
         return blocks;
-        
+
     }
-    
+
     @SubCommand(
             name = HERE_MODIFIER,
             aliases = "here",
             description = "Sends the requested information to the channel where "
                     + "the command was called, instead of always sending a private message.",
-            usage = "{}module here [module]",
+            usage = "{signature} [module]",
             executeParent = true,
-            failureHandler = FAILURE_HANDLER
-            )
+            failureHandler = FAILURE_HANDLER )
     public void modifier( CommandContext context ) {}
-    
+
     @FailureHandler( FAILURE_HANDLER )
     public void failure( CommandContext context, FailureReason reason ) {
-        
+
         if ( reason == FailureReason.COMMAND_OPERATION_FAILED ) {
             context.getReplyBuilder().withContent( "Sorry, I don't recognize that module." ).build();
         }
-        
+
     }
 
 }
