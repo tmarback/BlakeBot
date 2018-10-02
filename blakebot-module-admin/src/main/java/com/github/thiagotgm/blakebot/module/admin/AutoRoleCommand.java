@@ -21,180 +21,141 @@ import java.util.List;
 
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
-import com.github.thiagotgm.modular_commands.api.FailureReason;
-import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
+import com.github.thiagotgm.modular_commands.api.ICommand;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
-import com.github.thiagotgm.modular_commands.command.annotation.SuccessHandler;
-
 import sx.blah.discord.handle.obj.IRole;
 import sx.blah.discord.handle.obj.Permissions;
 
 /**
- * Command set that allows joined guilds to specify a role to automatically assign
- * to new users.
+ * Command set that allows joined guilds to specify a role to automatically
+ * assign to new users.
  *
  * @version 1.0
  * @author ThiagoTGM
  * @since 2017-03-21
  */
+@SuppressWarnings( "javadoc" )
 public class AutoRoleCommand {
-    
+
     private static final String NAME = "Auto Role";
     private static final String SET = "Set Auto Role";
     private static final String CHECK = "Check Auto Role";
     private static final String REMOVE = "Remove Auto Role";
-    private static final String SUCCESS_HANDLER = "success";
-    private static final String FAILURE_HANDLER = "failure";
-    
+
     private final AutoRoleManager manager;
-    
+
     /**
      * Creates a new instance of this class.
      */
     public AutoRoleCommand() {
-        
+
         manager = AutoRoleManager.getInstance();
-        
+
     }
-    
+
     @MainCommand(
             name = NAME,
             aliases = { "autorole", "ar" },
             description = "Automatically assigns new users to a certain role.",
-            usage = "{}autorole|ar <subcommand>",
+            usage = "{signature} <subcommand>",
             subCommands = { SET, CHECK, REMOVE },
             ignorePrivate = true,
             ignorePublic = true,
-            requiredGuildPermissions = Permissions.MANAGE_ROLES
-    )
+            requiredGuildPermissions = Permissions.MANAGE_ROLES )
     public void autoRoleCommand( CommandContext context ) {
-    
+
         // Do nothing.
-        
+
     }
-    
+
     @SubCommand(
             name = SET,
             aliases = "set",
-            description = "Sets the role that new users should be assigned. The role "
-            		+ "argument can be either a mention to the target role or its name, "
-            		+ "but in the latter case, if the name of the role is not unique (there "
-            		+ "are other roles with the same name), the command will fail.",
-            usage = "{}autorole|ar set <role>",
-            successHandler = SUCCESS_HANDLER,
-            failureHandler = FAILURE_HANDLER,
-            ignorePrivate = true
-    )
+            description = "Sets the role that new users should be assigned.\n"
+                    + "The role argument can be either a mention to the target role or its name, "
+                    + "but in the latter case, if the name of the role is not unique (there "
+                    + "are other roles with the same name), the command will fail.",
+            usage = "{signature} <role>",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            requiresParentPermissions = true,
+            ignorePrivate = true )
     public boolean setRoleCommand( CommandContext context ) {
-        
+
         List<Argument> args = context.getArguments();
         if ( args.isEmpty() ) {
             context.setHelper( "Please specify a role." );
             return false;
         }
-        
+
         IRole role;
         switch ( args.get( 0 ).getType() ) {
-        
-        	case ROLE_MENTION: // Argument is already role.
-        		role = (IRole) args.get( 0 ).getArgument();
-        		break;
-        	
-     		default: // Check if argument is role name.
-     			List<IRole> roles = context.getGuild().getRolesByName( args.get( 0 ).getText() );
-     			if ( roles.size() == 1 ) {
-     				role = roles.get( 0 );
-     			} else {
-     				if ( roles.size() == 0 ) {
-     					context.setHelper( "Argument is not a role or role name." );
-     				} else {
-     					context.setHelper( "Argument is ambiguous: multiple roles with that name." );
-     				}
-         			return false;
-     			}
-     			
+
+            case ROLE_MENTION: // Argument is already role.
+                role = (IRole) args.get( 0 ).getArgument();
+                break;
+
+            default: // Check if argument is role name.
+                List<IRole> roles = context.getGuild().getRolesByName( args.get( 0 ).getText() );
+                if ( roles.size() == 1 ) {
+                    role = roles.get( 0 );
+                } else {
+                    if ( roles.size() == 0 ) {
+                        context.setHelper( "Argument is not a role or role name." );
+                    } else {
+                        context.setHelper( "Argument is ambiguous: multiple roles with that name." );
+                    }
+                    return false;
+                }
+
         }
-        
+
         // Register role for server.
         manager.set( context.getGuild(), role );
-        context.setHelper( String.format( "New users will be set to the role **%s**.",
-                role.getName() ) );
+        context.setHelper( String.format( "New users will be set to the role **%s**.", role.getName() ) );
         return true;
-        
+
     }
-    
+
     @SubCommand(
             name = CHECK,
             aliases = "check",
             description = "Checks what role new users are being assigned.",
-            usage = "{}autorole|ar check <role>",
-            successHandler = SUCCESS_HANDLER,
+            usage = "{signature}",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
             ignorePrivate = true,
-            requiresParentPermissions = false
-    )
+            requiresParentPermissions = false )
     public void checkRoleCommand( CommandContext context ) {
 
         IRole targetRole = manager.get( context.getGuild() );
-        if ( targetRole != null ) {    
-            context.setHelper( String.format( "New users are being assigned the role **%s**.",
-                    targetRole.getName() ) );
+        if ( targetRole != null ) {
+            context.setHelper( String.format( "New users are being assigned the role **%s**.", targetRole.getName() ) );
         } else {
             context.setHelper( "No role set for new users." );
         }
-        
+
     }
-    
+
     @SubCommand(
             name = REMOVE,
             aliases = "remove",
             description = "Stops adding new users to a role.",
-            usage = "{}autorole|ar remove",
-            successHandler = SUCCESS_HANDLER,
-            failureHandler = FAILURE_HANDLER,
-            ignorePrivate = true
-    )
+            usage = "{signature} remove",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            requiresParentPermissions = true,
+            ignorePrivate = true )
     public boolean removeRoleCommand( CommandContext context ) {
-        
-        if ( manager.remove( context.getGuild() ) ) {    
+
+        if ( manager.remove( context.getGuild() ) ) {
             context.setHelper( "Disabled automatic role assigning." );
             return true;
         } else {
             context.setHelper( "Automatic role assigning not enabled." );
             return false;
         }
-        
-    }
-    
-    /**
-     * Sends the reply set in the given context's helper object.
-     *
-     * @param context The context of the command.
-     */
-    @SuccessHandler( SUCCESS_HANDLER )
-    public void sendReply( CommandContext context ) {
-        
-        context.getReplyBuilder().withContent( (String) context.getHelper().orElse( "" ) ).build();
-        
-    }
-    
-    @FailureHandler( FAILURE_HANDLER )
-    public void failure( CommandContext context, FailureReason reason ) {
-        
-        switch ( reason ) {
-            
-            case USER_MISSING_GUILD_PERMISSIONS:
-                context.setHelper( "You do not have the required permissions." );
-                
-            case COMMAND_OPERATION_FAILED:
-                sendReply( context );
-                break;
-                
-            default:
-                break;
-        
-        }
-        
+
     }
 
 }

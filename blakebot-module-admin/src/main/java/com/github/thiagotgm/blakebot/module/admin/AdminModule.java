@@ -50,7 +50,7 @@ public class AdminModule implements IModule {
         LogoutManager.getManager( client ).unregisterListener( controller );
         controller.terminate(); // Ensure timeouts are reverted.
         
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
+        CommandRegistry.getRegistry( client ).removeSubRegistry( AdminModule.class ); // Remove commands.
         client = null; // Remove client.
 
     }
@@ -60,7 +60,7 @@ public class AdminModule implements IModule {
 
         client = arg0; // Store client.
         
-        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( AdminModule.class );
         registerCommands( registry ); // Register commands.
         
         EventDispatcher dispatcher = client.getDispatcher();

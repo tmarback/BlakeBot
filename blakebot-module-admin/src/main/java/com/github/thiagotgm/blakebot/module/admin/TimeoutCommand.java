@@ -25,115 +25,116 @@ import java.util.regex.Pattern;
 
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
+import com.github.thiagotgm.modular_commands.api.ICommand;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.command.annotation.SubCommand;
 
 import sx.blah.discord.handle.obj.IUser;
 import sx.blah.discord.handle.obj.Permissions;
-import sx.blah.discord.util.MessageBuilder;
 
 /**
- * Class with commands that timeout a user from a channel or guild, or reverse that
- * timeout.
+ * Class with commands that timeout a user from a channel or guild, or reverse
+ * that timeout.
  *
  * @version 0.1
  * @author ThiagoTGM
  * @since 2017-03-07
  */
+@SuppressWarnings( "javadoc" )
 public class TimeoutCommand {
-    
+
     private static final String TIMEOUT_NAME = "Timeout";
     private static final String UNTIMEOUT_NAME = "Untimeout";
     private static final String SERVER_MODIFIER = "Un/Timeout Server";
     private static final String CHECK_NAME = "Check Timeout";
-    
+
     private static final Pattern TIME_PATTERN = Pattern.compile( "(\\d+)([smh])" );
     private static final String NOT_USER_ERROR = "Argument \"%s\" not an user.";
-    
+
     private final TimeoutController controller;
-    
+
     /**
      * Creates a new instance of this class.
      */
     public TimeoutCommand() {
-        
+
         controller = TimeoutController.getInstance();
-        
+
     }
-    
+
     @MainCommand(
             name = TIMEOUT_NAME,
             aliases = { "timeout", "to" },
-            description = "Times out the given users for the specified time.\nThe time should be in "
-                    + "the format #u, where # is a positive nonzero integer number, and 'u' is the "
-                    + "unit of time, where the unit of time can be 's' (seconds), 'm' (minutes), "
-                    + "or 'h' (hours). Timeout is channel-wide unless the \"server\" modifier is used.",
-            usage = "{}timeout|to [server] <time> <user> [user]...",
+            description = "Times out the given users for the specified time.\n"
+                    + "The time should be in the format `#u`, where `#` is a positive nonzero integer number, "
+                    + "and `u` is the unit of time, where the unit of time can be `s` (seconds), `m` (minutes), "
+                    + "or `h` (hours).\n" + "Timeout is channel-wide unless the `server` modifier is used.",
+            usage = "{signature} [server] <time> <user> [user]...",
             subCommands = SERVER_MODIFIER,
             requiredPermissions = Permissions.MANAGE_MESSAGES,
-            ignorePrivate = true
-    )
-    public void timeoutCommand( CommandContext context ) {
-        
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            ignorePrivate = true )
+    public boolean timeoutCommand( CommandContext context ) {
+
         List<Argument> args = context.getArguments();
-        MessageBuilder reply = context.getReplyBuilder();
-        
+
         if ( args.size() < 2 ) { // Checks minimum amount of arguments.
-            reply.withContent( "Please specify a time and the user(s) to be timed out." ).build();
-            return;
+            context.setHelper( "Please specify a time and the user(s) to be timed out." );
+            return false;
         }
-        
+
         /* Parse time */
-        
+
         Matcher matcher = TIME_PATTERN.matcher( args.get( 0 ).getText() );
         if ( !matcher.matches() ) {
-            reply.withContent( "Invalid time argument." ).build();
-            return;
+            context.setHelper( "Invalid time argument." );
+            return false;
         }
-        
+
         long timeout;
         try { // Obtain time amount.
             timeout = Long.parseLong( matcher.group( 1 ) );
         } catch ( NumberFormatException e1 ) {
-            reply.withContent( "Invalid time amount." ).build();
-            return;
+            context.setHelper( "Invalid time amount." );
+            return false;
         }
         if ( timeout <= 0 ) {
-            reply.withContent( "Time must be larger than 0." ).build();
-            return;
+            context.setHelper( "Time must be larger than 0." );
+            return false;
         }
-        
+
         TimeUnit unit; // Obtain time unit.
         switch ( matcher.group( 2 ).charAt( 0 ) ) {
-            
+
             case 's':
                 unit = TimeUnit.SECONDS;
                 break;
-                
+
             case 'm':
                 unit = TimeUnit.MINUTES;
                 break;
-                
+
             case 'h':
                 unit = TimeUnit.HOURS;
                 break;
-                
+
             default:
-                reply.withContent( "Invalid time unit." ).build();
-                return;
-            
+                context.setHelper( "Invalid time unit." );
+                return false;
+
         }
-        
+
         timeout = unit.toMillis( timeout ); // Convert to milliseconds.
-        
+
         /* Apply timeout to each user */
-        
+
         boolean serverScope = context.getCommand().getName().equals( SERVER_MODIFIER );
         String scope = serverScope ? "server" : "channel";
         List<String> replies = new LinkedList<>();
-        
+
         for ( Argument arg : args.subList( 1, args.size() ) ) {
-            
+
             String message;
             if ( arg.getType() == Argument.Type.USER_MENTION ) {
                 IUser user = (IUser) arg.getArgument();
@@ -149,41 +150,42 @@ public class TimeoutCommand {
                 message = String.format( NOT_USER_ERROR, arg.getText() );
             }
             replies.add( message );
-            
+
         }
-        
-        reply.withContent( String.join( "\n", replies ) ).build();
-        
+
+        context.setHelper( String.join( "\n", replies ) );
+        return true;
+
     }
-    
+
     @MainCommand(
             name = UNTIMEOUT_NAME,
             aliases = { "untimeout", "uto" },
-            description = "Lifts the timeout placed on the given users.\nRemoves channel-wide timeouts "
-                    + "unless the \"server\" modifier is used.",
-            usage = "{}untimeout|uto [server] <user> [user]...",
+            description = "Lifts the timeout placed on the given users.\n"
+                    + "Removes channel-wide timeouts unless the `server` modifier is used.",
+            usage = "{signature} [server] <user> [user]...",
             subCommands = SERVER_MODIFIER,
             requiredPermissions = Permissions.MANAGE_MESSAGES,
-            ignorePrivate = true
-    )
-    public void untimeoutCommand( CommandContext context ) {
-        
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            ignorePrivate = true )
+    public boolean untimeoutCommand( CommandContext context ) {
+
         List<Argument> args = context.getArguments();
-        MessageBuilder reply = context.getReplyBuilder();
-        
+
         if ( args.size() < 1 ) { // Checks minimum amount of arguments.
-            reply.withContent( "Please specify the user(s) to be un-timed out." ).build();
-            return;
+            context.setHelper( "Please specify the user(s) to be un-timed out." );
+            return false;
         }
-        
+
         /* Lift timeout from each user */
-        
+
         boolean serverScope = context.getCommand().getName().equals( SERVER_MODIFIER );
         String scope = serverScope ? "server" : "channel";
         List<String> replies = new LinkedList<>();
-        
+
         for ( Argument arg : args ) {
-            
+
             String message;
             if ( arg.getType() == Argument.Type.USER_MENTION ) {
                 IUser user = (IUser) arg.getArgument();
@@ -193,48 +195,48 @@ public class TimeoutCommand {
                 } else { // Apply on channel-scope.
                     success = controller.untimeout( user, context.getChannel() );
                 }
-                String format = success ? "Lifted timeout for %s in this %s." :
-                                          "%s is not timed out in this %s.";
+                String format = success ? "Lifted timeout for %s in this %s." : "%s is not timed out in this %s.";
                 message = String.format( format, user.mention(), scope );
             } else { // Argument not a user mention.
                 message = String.format( NOT_USER_ERROR, arg.getText() );
             }
             replies.add( message );
-            
+
         }
-        
-        reply.withContent( String.join( "\n", replies ) ).build();
-        
+
+        context.setHelper( String.join( "\n", replies ) );
+        return true;
+
     }
-    
+
     @SubCommand(
             name = SERVER_MODIFIER,
             aliases = "server",
             description = "Performs the command on a server-wide scope instead of channel-wide.",
-            usage = "{}timeout|to|untimeout|uto server <user> [user]...",
+            usage = "{signature} <user> [user]...",
             requiredGuildPermissions = Permissions.MANAGE_MESSAGES,
             requiresParentPermissions = false,
             executeParent = true,
-            ignorePrivate = true
-    )
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            ignorePrivate = true )
     public void serverSubCommand( CommandContext context ) {}
-    
+
     @MainCommand(
             name = CHECK_NAME,
             aliases = { "istimedout", "isto" },
-            description = "Checks if the given users are timed out on the current channel "
-                    + "and/or server.",
-            usage = "{}istimeout|isto <user> [user]...",
-            ignorePrivate = true
-    )
-    public void checkCommand( CommandContext context ) {
+            description = "Checks if the given users are timed out on the current channel and/or server.",
+            usage = "{signature} <user> [user]...",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER,
+            ignorePrivate = true )
+    public boolean checkCommand( CommandContext context ) {
 
         List<Argument> args = context.getArguments();
-        MessageBuilder reply = context.getReplyBuilder();
 
         if ( args.size() < 1 ) { // Checks minimum amount of arguments.
-            reply.withContent( "Please specify the user(s) to be checked." ).build();
-            return;
+            context.setHelper( "Please specify the user(s) to be checked." );
+            return false;
         }
 
         /* Check timeout for each user */
@@ -256,7 +258,8 @@ public class TimeoutCommand {
 
         }
 
-        reply.withContent( String.join( "\n", replies ) ).build();
+        context.setHelper( String.join( "\n", replies ) );
+        return true;
 
     }
 
