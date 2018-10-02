@@ -36,6 +36,7 @@ import sx.blah.discord.util.EmbedBuilder;
  * @version 2.1
  * @since 2017-01-11
  */
+@SuppressWarnings( "javadoc" )
 public class StatsCommand {
     
     private static final String NAME = "Bot Statistics";
@@ -45,7 +46,7 @@ public class StatsCommand {
             name = NAME,
             aliases = "stats",
             description = "Retrieves bot statistics.",
-            usage = "{}stats",
+            usage = "{signature}",
             subCommands = DATABASE_NAME
     )
     public void statsCommand( CommandContext context ) {
@@ -90,7 +91,7 @@ public class StatsCommand {
             name = DATABASE_NAME,
             aliases = { "database", "db" },
             description = "Retrieves statistics about the bot's database.",
-            usage = "{}stats database|db"
+            usage = "{signature}"
     )
     public void advancedStatsCommand( CommandContext context ) {
     	

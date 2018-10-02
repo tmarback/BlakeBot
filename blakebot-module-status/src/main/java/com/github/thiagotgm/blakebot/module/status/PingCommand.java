@@ -27,6 +27,7 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  * @version 1.0
  * @since 2016-12-31
  */
+@SuppressWarnings( "javadoc" )
 public class PingCommand {
     
     private static final String NAME = "Ping Command";
@@ -35,7 +36,7 @@ public class PingCommand {
             name = NAME,
             aliases = "ping",
             description = "Pings the bot, and gets a pong response",
-            usage = "{}ping"
+            usage = "{signature}"
     )
     public void pingCommand( CommandContext context ) {
         

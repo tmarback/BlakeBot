@@ -33,6 +33,7 @@ import sx.blah.discord.util.EmbedBuilder;
  * @version 1.2
  * @since 2017-01-01
  */
+@SuppressWarnings( "javadoc" )
 public class UptimeCommand {
     
     private static final String NAME = "Uptime";
@@ -70,7 +71,7 @@ public class UptimeCommand {
             name = NAME,
             aliases = { "uptime", "up" },
             description = "Displays how long the bot has been up.",
-            usage = "{}uptime|up",
+            usage = "{signature}",
             subCommands = SUB_1_NAME
     )
     public void uptimeCommand( CommandContext context ) {
@@ -106,7 +107,7 @@ public class UptimeCommand {
             name = SUB_1_NAME,
             aliases = { "stats" },
             description = "Displays some statistics about bot uptime.",
-            usage = "{}uptime|up stats",
+            usage = "{signature}",
             requiresOwner = true,
             subCommands = SUB_2_NAME
     )
@@ -144,7 +145,7 @@ public class UptimeCommand {
             name = SUB_2_NAME,
             aliases = { "full" },
             description = "Displays full statistics about bot uptime and downtime.",
-            usage = "{}uptime|up stats full",
+            usage = "{signature}",
             requiresOwner = true
     )
     public void fullCommand( CommandContext context ) {

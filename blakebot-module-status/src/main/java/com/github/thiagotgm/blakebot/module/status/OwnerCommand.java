@@ -20,6 +20,7 @@ package com.github.thiagotgm.blakebot.module.status;
 import java.awt.Color;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
 import com.github.thiagotgm.modular_commands.api.FailureReason;
+import com.github.thiagotgm.modular_commands.api.ICommand;
 import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 
@@ -33,20 +34,20 @@ import sx.blah.discord.util.EmbedBuilder;
  * @version 1.1
  * @since 2017-01-01
  */
+@SuppressWarnings( "javadoc" )
 public class OwnerCommand {
-    
+
     private static final String NAME = "Owner";
     private static final String FAILURE_HANDLER = "handler";
-    
+
     @MainCommand(
             name = NAME,
             aliases = "owner",
             description = "Displays the information of the owner of this bot account.",
-            usage = "{}owner",
-            failureHandler = FAILURE_HANDLER
-    )
+            usage = "{signature}",
+            failureHandler = FAILURE_HANDLER )
     public void ownerCommand( CommandContext context ) {
-        
+
         IUser owner = context.getEvent().getClient().getApplicationOwner();
         EmbedBuilder embedBuilder = new EmbedBuilder();
         embedBuilder.withThumbnail( owner.getAvatarURL() );
@@ -61,14 +62,17 @@ public class OwnerCommand {
         context.getReplyBuilder().withEmbed( embedBuilder.build() ).build();
 
     }
-    
+
     @FailureHandler( FAILURE_HANDLER )
     public void handler( CommandContext context, FailureReason reason ) {
-        
+
         if ( reason == FailureReason.DISCORD_ERROR ) {
-            context.getReplyBuilder().withContent( "\u200BSorry, I could not retrieve my owner's data." );
+            context.getReplyBuilder()
+                    .withContent( ICommand.ZERO_WIDTH_SPACE + "Sorry, I could not retrieve my owner's data." );
+        } else {
+            ICommand.standardOnFailure( context, reason );
         }
-        
+
     }
 
 }

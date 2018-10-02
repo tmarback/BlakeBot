@@ -38,7 +38,7 @@ public class StatusModule implements IModule {
     @Override
     public void disable() {
         
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
+        CommandRegistry.getRegistry( client ).removeSubRegistry( StatusModule.class );
         EventDispatcher dispatcher = client.getDispatcher();
         dispatcher.unregisterListener( UptimeTracker.getInstance() );
         dispatcher.unregisterListener( MessageStats.class );
@@ -56,7 +56,7 @@ public class StatusModule implements IModule {
         dispatcher.registerListener( MessageStats.class );
         
         CommandRegistry registry;
-        registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( StatusModule.class );
         registerCommands( registry );
         
         return true;
