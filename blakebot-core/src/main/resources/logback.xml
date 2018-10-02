@@ -9,7 +9,9 @@
     <!-- Configure Discord4J logger level -->
     <logger name="sx.blah.discord.Discord4J" level="DEBUG"/>
     <!-- Configure database logger level -->
-    <logger name="com.github.thiagotgm.blakebot.common.storage" level="DEBUG"/>
+    <logger name="com.github.thiagotgm.bot_utils.storage" level="DEBUG"/>
+    <!-- Configure console logger level -->
+    <logger name="com.github.thiagotgm.blakebot.console" level="TRACE"/>
 
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

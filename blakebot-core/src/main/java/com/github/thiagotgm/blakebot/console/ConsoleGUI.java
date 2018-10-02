@@ -108,13 +108,15 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
                 LOG.debug( "Closing console." );
                 if ( bot.isConnected() ) { // Needs to logout first.
+                    LOG.trace( "Requesting logout." );
                     final EventDispatcher dispatcher = bot.getClient().getDispatcher();
-                    dispatcher.registerListener( new Object() {
+                    dispatcher.registerTemporaryListener( new Object() {
 
                         @EventSubscriber
                         public void logoutSuccess( LogoutSuccessEvent event ) {
 
                             /* Logout succeeded. Shutdown now */
+                            LOG.trace( "Logout successful, closing window." );
                             ConsoleGUI.this.setVisible( false );
                             ConsoleGUI.this.dispose();
 
@@ -125,13 +127,13 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
                             /* Logout failed. Just remove this listener and do nothing */
                             LOG.error( "Could not close console due to bot not logging out." );
-                            dispatcher.unregisterListener( this );
 
                         }
 
                     } );
                     bot.logout(); // Attempt to logout.
                 } else { // Just shut down.
+                    LOG.trace( "Logout not needed, closing window." );
                     ConsoleGUI.this.setVisible( false );
                     ConsoleGUI.this.dispose();
                 }
@@ -152,19 +154,24 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         connectionButton = new JButton( "Connect" );
         connectionButton.addActionListener( ( e ) -> {
 
+            LOG.trace( "Connection change requested." );
             connectionButton.setEnabled( false );
             if ( bot.isConnected() ) {
                 // Disconnects the bot.
                 try {
+                    LOG.trace( "Attempting to log out." );
                     bot.logout();
                 } catch ( DiscordException ex ) {
+                    LOG.warn( "Could not log out.", ex );
                     connectionButton.setEnabled( true );
                 }
             } else {
                 // Connects the bot.
                 try {
+                    LOG.trace( "Attempting to log in." );
                     bot.login();
                 } catch ( DiscordException | RateLimitException ex ) {
+                    LOG.warn( "Could not log in.", ex );
                     connectionButton.setEnabled( true );
                 }
             }
@@ -173,6 +180,8 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         nameButton = new JButton( "Change username" );
         nameButton.addActionListener( ( e ) -> {
 
+            LOG.trace( "Username change requested." );
+            
             /* Changes name of the bot. */
             String newName = (String) JOptionPane.showInputDialog( ConsoleGUI.this, "Please input a new username.",
                     "New Username", JOptionPane.QUESTION_MESSAGE );
@@ -184,6 +193,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
             }
             if ( ( newName != null ) && ( newName.length() > 0 ) ) {
+                LOG.trace( "Requesting username \"{}\".", newName );
                 bot.setUsername( newName );
             } else {
                 LOG.debug( "Name change cancelled." );
@@ -193,6 +203,8 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         statusButton = new JButton( "Change status" );
         statusButton.addActionListener( ( e ) -> {
 
+            LOG.trace( "Status change requested." );
+            
             /* Changes status of the bot */
             String newStatus = (String) JOptionPane.showInputDialog( ConsoleGUI.this, "Please input a new status.",
                     "New Status", JOptionPane.QUESTION_MESSAGE );
@@ -204,6 +216,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
             }
             if ( ( newStatus != null ) && !newStatus.isEmpty() ) {
+                LOG.trace( "Requesting status \"{}\".", newStatus );
                 bot.setPlayingText( newStatus );
             } else {
                 LOG.debug( "Status change cancelled." );
@@ -212,16 +225,21 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         } );
         presenceButton = new JButton( "Change presence" );
         presenceButton.addActionListener( ( e ) -> {
+            
+            LOG.trace( "Presence change requested." );
 
             /* Changes presence of the bot */
             String[] options = { "Online", "Idle", "Streaming" };
             int choice = JOptionPane.showOptionDialog( ConsoleGUI.this, "Please choose a presence.", "Presence Picker",
                     JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0] );
             if ( choice == JOptionPane.YES_OPTION ) {
+                LOG.trace( "Requesting online presence." );
                 bot.setOnline();
             } else if ( choice == JOptionPane.NO_OPTION ) {
+                LOG.trace( "Requesting idle presence." );
                 bot.setIdle();
             } else if ( choice == JOptionPane.CANCEL_OPTION ) {
+                LOG.trace( "Requesting streaming presence." );
                 /* Get streaming text */
                 String text = (String) JOptionPane.showInputDialog( ConsoleGUI.this,
                         "Please input a \"streaming\" text.", "Streaming Text", JOptionPane.QUESTION_MESSAGE );
@@ -239,6 +257,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
                 }
 
                 /* Change presence */
+                LOG.trace( "Streaming text \"{}\" with URL {}.", text, url );
                 bot.setStreaming( text, url );
             } else {
                 LOG.debug( "Presence change cancelled." );
@@ -247,6 +266,8 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         } );
         imageButton = new JButton( "Change profile image" );
         imageButton.addActionListener( ( e ) -> {
+            
+            LOG.trace( "Image change requested." );
 
             /* Changes image of the bot */
             String[] options = { "Local File", "URL" };
@@ -254,21 +275,28 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
                     "Please choose where the image should be taken from.", "Origin Picker", JOptionPane.YES_NO_OPTION,
                     JOptionPane.QUESTION_MESSAGE, null, options, options[0] );
             if ( choice == JOptionPane.YES_OPTION ) {
+                LOG.trace( "Using local file." );
                 // Image from local file.
                 String path = (String) JOptionPane.showInputDialog( ConsoleGUI.this, "Please input a file path.",
                         "File Input", JOptionPane.QUESTION_MESSAGE );
                 if ( ( path != null ) && ( path.length() > 0 ) ) {
+                    LOG.trace( "Requested file {}.", path );
                     bot.setImage( new File( path ) );
+                    LOG.trace( "Changed image." );
                     return;
                 }
             } else if ( choice == JOptionPane.NO_OPTION ) {
+                LOG.trace( "Using URL." );
                 // Image from URL.
                 String url = (String) JOptionPane.showInputDialog( ConsoleGUI.this, "Please input a URL.", "URL Input",
                         JOptionPane.QUESTION_MESSAGE );
                 if ( ( url != null ) && ( url.length() > 0 ) ) {
+                    LOG.trace( "Requested URL {}.", url );
                     try {
                         bot.setImage( url );
+                        LOG.trace( "Changed image." );
                     } catch ( IllegalArgumentException ex ) {
+                        LOG.trace( "Could not change image." );
                         // Do nothing.
                     }
                     return;
@@ -280,6 +308,7 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
         JButton settingsButton = new JButton( "Settings" );
         settingsButton.addActionListener( ( e ) -> {
 
+            LOG.trace( "Opening settings dialog." );
             new SettingsDialog( ConsoleGUI.this ).requestFocus();
 
         } );
@@ -400,8 +429,10 @@ public class ConsoleGUI extends JFrame implements ConnectionStatusListener {
 
         setButtonsEnabled( isConnected );
         if ( isConnected ) {
+            LOG.trace( "Detected bot was connected." );
             connectionButton.setText( "Disconnect" );
         } else {
+            LOG.trace( "Detected bot was disconnected." );
             connectionButton.setText( "Connect" );
         }
         connectionButton.setEnabled( true );
