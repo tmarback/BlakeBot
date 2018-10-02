@@ -22,11 +22,8 @@ import com.github.thiagotgm.bot_utils.utils.Utils;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
-import com.github.thiagotgm.modular_commands.api.FailureReason;
-import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
+import com.github.thiagotgm.modular_commands.api.ICommand;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
-import com.github.thiagotgm.modular_commands.command.annotation.SuccessHandler;
-
 import sx.blah.discord.handle.obj.IUser;
 
 /**
@@ -36,146 +33,124 @@ import sx.blah.discord.handle.obj.IUser;
  * @version 1.0
  * @since 2018-09-07
  */
+@SuppressWarnings( "javadoc" )
 public class ReputationCommands {
-	
-	private static final String SUCCESS_HANDLER = "voteSuccess";
-	private static final String FAILURE_HANDLER = "voteFail";
-	
-	/**
-	 * Gets the target specified in the first arg of the given context.
-	 * 
-	 * @param context The context of the command.
-	 * @return The target, or <tt>null</tt> if the first argument did
-	 *         not specify a valid user.
-	 */
-	private IUser getTarget( CommandContext context ) {
-		
-		if ( context.getArguments().isEmpty() ) {
-			return null;
-		}
-		
-		Argument arg = context.getArguments().get( 0 );
-		IUser target = null;
-		if ( arg.getType() == Type.USER_MENTION ) { // A mention.
-			target = (IUser) arg.getArgument();
-		} else { // Try to parse as name#discriminator.
-			target = Utils.getUser( arg.getText(), context.getEvent().getClient() );
-			if ( target == null ) {
-				return null; // Did not find user.
-			}
-		}
-		context.setHelper( target ); // Store target.
-		return target;
-		
-	}
-	
-	@MainCommand(
-			name = "Upvote command",
-			aliases = { "upvote", "upv" },
-			description = "Places a positive vote towards a user's reputation. "
-					+ "If the caller has already voted on the target user, the "
-					+ "previous vote is erased.\nThe target user may be specified "
-					+ "either by mentioning him/her, or by giving their name (not "
-					+ "nickname) and discriminator in the form [name]#[discriminator] "
-					+ "(the same way that appears on their Discord profile).",
-			usage = "{}upvote|upv <target>",
-			successHandler = SUCCESS_HANDLER,
-			failureHandler = FAILURE_HANDLER
-			)
-	public boolean upvoteCommand( CommandContext context ) {
-		
-		IUser target = getTarget( context );
-		if ( target == null ) {
-			return false; // Target not found.
-		}
-		
-		return ReputationManager.getInstance().vote( context.getAuthor(), target, Vote.UPVOTE );
-		
-	}
-	
-	@MainCommand(
-			name = "Downvote command",
-			aliases = { "downvote", "downv" },
-			description = "Places a negative vote towards a user's reputation. "
-					+ "If the caller has already voted on the target user, the "
-					+ "previous vote is erased.\nThe target user may be specified "
-					+ "either by mentioning him/her, or by giving their name (not "
-					+ "nickname) and discriminator in the form [name]#[discriminator] "
-					+ "(the same way that appears on their Discord profile).",
-			usage = "{}downvote|downv <target>",
-			successHandler = SUCCESS_HANDLER,
-			failureHandler = FAILURE_HANDLER
-			)
-	public boolean downvoteCommand( CommandContext context ) {
-		
-		IUser target = getTarget( context );
-		if ( target == null ) {
-			return false; // Target not found.
-		}
-		
-		return ReputationManager.getInstance().vote( context.getAuthor(), target, Vote.DOWNVOTE );
-		
-	}
-	
-	@MainCommand(
-			name = "Clear vote command",
-			aliases = { "clearvote", "clrv" },
-			description = "Clears the vote towards a user's reputation. E.g., "
-					+ "if the caller has already voted on the target user, the "
-					+ "previous vote is erased.\nThe target user may be specified "
-					+ "either by mentioning him/her, or by giving their name (not "
-					+ "nickname) and discriminator in the form [name]#[discriminator] "
-					+ "(the same way that appears on their Discord profile).",
-			usage = "{}clearvote|clrv <target>",
-			successHandler = SUCCESS_HANDLER,
-			failureHandler = FAILURE_HANDLER
-			)
-	public boolean clearVoteCommand( CommandContext context ) {
-		
-		IUser target = getTarget( context );
-		if ( target == null ) {
-			return false; // Target not found.
-		}
-		
-		return ReputationManager.getInstance().vote( context.getAuthor(), target, Vote.NO_VOTE );
-		
-	}
-	
-	@SuccessHandler( SUCCESS_HANDLER )
-	public void success( CommandContext context ) {
-		
-		IUser target = (IUser) context.getHelper().get();
-		context.getReplyBuilder().withContent( "Successfully registered your vote towards **"
-				+ target.getName() + "**!"  ).build();
-		
-	}
-	
-	@FailureHandler( FAILURE_HANDLER )
-	public void failure( CommandContext context, FailureReason reason ) {
-		
-		String message;
-		switch ( reason ) {
-		
-			case COMMAND_OPERATION_FAILED:
-				if ( context.getHelper().isPresent() ) {
-					message = "You already had this vote for **" +
-							context.getHelper().get() + "**!";
-				} else {
-					message = "Must give a valid user (mention or [Name]#[Discriminator]) "
-							+ "as an argument!";
-				}
-				break;
-				
-			case COMMAND_OPERATION_EXCEPTION:
-				message = "You can't vote on yourself!";
-				break;
-				
-			default:
-				return;
-		
-		}
-		context.getReplyBuilder().withContent( message ).build();
-		
-	}
+
+    /**
+     * Gets the target specified in the first arg of the given context.
+     * 
+     * @param context
+     *            The context of the command.
+     * @return The target, or <tt>null</tt> if the first argument did not specify a
+     *         valid user.
+     */
+    private IUser getTarget( CommandContext context ) {
+
+        if ( context.getArguments().isEmpty() ) {
+            return null;
+        }
+
+        Argument arg = context.getArguments().get( 0 );
+        IUser target = null;
+        if ( arg.getType() == Type.USER_MENTION ) { // A mention.
+            target = (IUser) arg.getArgument();
+        } else { // Try to parse as name#discriminator.
+            target = Utils.getUser( arg.getText(), context.getEvent().getClient() );
+            if ( target == null ) {
+                return null; // Did not find user.
+            }
+        }
+        return target;
+
+    }
+
+    /**
+     * Applies a vote from a user to another user, both specified in the arguments
+     * of the given context.
+     *
+     * @param context
+     *            The context of execution.
+     * @param vote
+     *            The vote to apply.
+     * @return <tt>true</tt> if successful.
+     */
+    private boolean vote( CommandContext context, Vote vote ) {
+
+        IUser target = getTarget( context );
+        if ( target == null ) {
+            context.setHelper( "Must give a valid user (mention or [Name]#[Discriminator]) as an argument!" );
+            return false; // Target not found.
+        }
+
+        if ( target.getStringID().equals( context.getAuthor().getStringID() ) ) {
+            context.setHelper( "You can't vote on yourself!" );
+            return false;
+        }
+
+        if ( ReputationManager.getInstance().vote( context.getAuthor(), target, vote ) ) {
+            context.setHelper( "Successfully registered your vote towards **" + target.getName() + "**!" );
+            return true;
+        } else {
+            context.setHelper( "You already had this vote for **" + context.getHelper().get() + "**!" );
+            return false;
+        }
+
+    }
+
+    @MainCommand(
+            name = "Upvote command",
+            aliases = { "upvote", "upv" },
+            description = "Places a positive vote towards a user's reputation.\n"
+                    + "If the caller has already voted on the target user, the previous vote is erased.\n"
+                    + "The target user may be specified either by mentioning him/her, or by giving their "
+                    + "name (not nickname) and discriminator in the form `[name]#[discriminator]` (the "
+                    + "same way that appears on their Discord profile).",
+            usage = "{signature} <target>",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER )
+    public boolean upvoteCommand( CommandContext context ) {
+
+        IUser target = getTarget( context );
+        if ( target == null ) {
+            return false; // Target not found.
+        }
+
+        return vote( context, Vote.UPVOTE );
+
+    }
+
+    @MainCommand(
+            name = "Downvote command",
+            aliases = { "downvote", "downv" },
+            description = "Places a negative vote towards a user's reputation.\n"
+                    + "If the caller has already voted on the target user, the previous vote is erased.\n"
+                    + "The target user may be specified either by mentioning him/her, or by giving their \n"
+                    + "name (not nickname) and discriminator in the form `[name]#[discriminator]` (the "
+                    + "same way that appears on their Discord profile).",
+            usage = "{signature} <target>",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER )
+    public boolean downvoteCommand( CommandContext context ) {
+
+        return vote( context, Vote.DOWNVOTE );
+
+    }
+
+    @MainCommand(
+            name = "Clear vote command",
+            aliases = { "clearvote", "clrv" },
+            description = "Clears the vote towards a user's reputation.\n"
+                    + "E.g., if the caller has already voted on the target user, the previous vote is erased.\n"
+                    + "The target user may be specified either by mentioning him/her, or by giving their "
+                    + "name (not nickname) and discriminator in the form `[name]#[discriminator]` (the "
+                    + "same way that appears on their Discord profile).",
+            usage = "{signature} <target>",
+            successHandler = ICommand.STANDARD_SUCCESS_HANDLER,
+            failureHandler = ICommand.STANDARD_FAILURE_HANDLER )
+    public boolean clearVoteCommand( CommandContext context ) {
+
+        return vote( context, Vote.NO_VOTE );
+
+    }
 
 }

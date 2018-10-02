@@ -20,8 +20,7 @@ package com.github.thiagotgm.blakebot.module.user;
 import com.github.thiagotgm.bot_utils.utils.Utils;
 import com.github.thiagotgm.modular_commands.api.Argument;
 import com.github.thiagotgm.modular_commands.api.CommandContext;
-import com.github.thiagotgm.modular_commands.api.FailureReason;
-import com.github.thiagotgm.modular_commands.command.annotation.FailureHandler;
+import com.github.thiagotgm.modular_commands.api.ICommand;
 import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
 import com.github.thiagotgm.modular_commands.api.Argument.Type;
 
@@ -34,9 +33,8 @@ import sx.blah.discord.handle.obj.IUser;
  * @version 1.0
  * @since 2018-09-10
  */
+@SuppressWarnings( "javadoc" )
 public class GiftCommand {
-	
-	private static final String FAILURE_HANDLER = "failure";
 	
 	/**
 	 * Gets the target specified in the first arg of the given context.
@@ -70,8 +68,8 @@ public class GiftCommand {
 			name = "Currency gift",
 			aliases = { "gift", "giveto" },
 			description = "Gifts the specified amount of money to the specified user.",
-			usage = "{}gift|giveto <user> <amount>",
-			failureHandler = FAILURE_HANDLER
+			usage = "{signature} <user> <amount>",
+			failureHandler = ICommand.STANDARD_FAILURE_HANDLER
 			)
 	public boolean giftCommand( CommandContext context ) {
 		
@@ -114,24 +112,6 @@ public class GiftCommand {
 				CurrencyManager.format( amount ), target.getName() ) ).build();
 		
 		return true;
-		
-	}
-	
-	@FailureHandler( FAILURE_HANDLER )
-	public void failureHandler( CommandContext context, FailureReason reason ) {
-		
-		String message;
-		switch ( reason ) {
-		
-			case COMMAND_OPERATION_FAILED:
-				message = (String) context.getHelper().get();
-				break;
-				
-			default:
-				message = "Sorry, I couldn't do that.";
-		
-		}
-		context.getReplyBuilder().withContent( message ).build();
 		
 	}
 

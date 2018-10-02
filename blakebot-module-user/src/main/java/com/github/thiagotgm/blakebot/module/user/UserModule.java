@@ -33,6 +33,9 @@ import sx.blah.discord.modules.IModule;
 public class UserModule implements IModule {
 
     private static final String MODULE_NAME = "User";
+    /**
+     * Command that gives currency to users once a day.
+     */
     protected static final DailiesCommand DAILIES = new DailiesCommand();
     
     /**
@@ -48,7 +51,7 @@ public class UserModule implements IModule {
     	
     	client.getDispatcher().unregisterListener( levelManager );
         
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this ); // Remove commands.
+        CommandRegistry.getRegistry( client ).removeSubRegistry( UserModule.class ); // Remove commands.
         client = null; // Remove client.
 
     }
@@ -60,7 +63,7 @@ public class UserModule implements IModule {
         
         client.getDispatcher().registerListener( levelManager );
         
-        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( UserModule.class );
         registerCommands( registry ); // Register commands.
         
         return true;

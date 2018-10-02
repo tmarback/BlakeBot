@@ -48,127 +48,130 @@ import sx.blah.discord.util.EmbedBuilder;
  * @version 1.0
  * @since 2018-09-06
  */
+@SuppressWarnings( "javadoc" )
 public class DailiesCommand {
-	
-	private static final Logger LOG = LoggerFactory.getLogger( DailiesCommand.class );
-	private static final ThreadGroup THREADS = new ThreadGroup( "Daily Currency" );
-	
-	/**
-	 * Executor used to perform currency-changing operations. Tasks are
-	 * keyed by the string ID of the user to avoid race conditions.
-	 */
-	protected static final KeyedExecutorService EXECUTOR =
-			AsyncTools.createKeyedThreadPool( THREADS, ( t, e ) -> {
-		
-		LOG.error( "Error while giving daily currency.", e );
-		
-	});
-	
-	/**
-	 * Setting that defines {@link #DAILY_AMOUNT}.
-	 */
-	public static final String DAILY_AMOUNT_SETTING = "Daily currency amount";
-	/**
-	 * How much currency a user gets in a daily.
-	 */
-	public static final long DAILY_AMOUNT = Settings.getLongSetting( DAILY_AMOUNT_SETTING );
-	
-	private final Map<String,ZonedDateTime> cooldownMap;
-	
-	/**
-	 * Creates a new instance.
-	 */
-	public DailiesCommand() {
-		
-		cooldownMap = Collections.synchronizedMap( DatabaseManager.getDatabase().getDataMap(
-				"DailyCurrency", new StringTranslator(), new ZonedDateTimeTranslator() ) );
-		
-	}
-	
-	/**
-	 * Determines whether the given user is ready to obtain his daily money.
-	 * 
-	 * @param user The user.
-	 * @return <tt>true</tt> if the user has not yet obtained his daily currency today.
-	 *         <tt>false</tt> if already obtained.
-	 * @throws NullPointerException if the given user is <tt>null</tt>.
-	 */
-	protected boolean isAvailable( IUser user ) throws NullPointerException {
-		
-		if ( user == null ) {
-			throw new NullPointerException( "User cannot be null." );
-		}
-		
-		ZonedDateTime time = cooldownMap.get( user.getStringID() );
-		
-		return time == null ? true : LocalDate.now().isAfter(
-				time.withZoneSameInstant( ZoneId.systemDefault() ).toLocalDate() );
-		
-	}
-	
-	@MainCommand(
-			name = "Daily Currency",
-			aliases = { "dailies", "daily", "gib" },
-			description = "Gets free currency. Can only be called once per day!",
-			usage = "{}dailies|daily|gib"
-			)
-	public void dailiesCommand( CommandContext context ) {
-		
-		final IUser user = context.getAuthor();
-		
-		EXECUTOR.execute( user.getStringID(), () -> {
-			
-			if ( !isAvailable( user ) ) { // Was already called today.
-				context.getReplyBuilder().withContent( "You already got you dailies today, " + user.getName() +
-						"!\nTry again tomorrow." ).build();
-				return;
-			}
-			
-			long newValue = CurrencyManager.getInstance().deposit( user, DAILY_AMOUNT );
-			cooldownMap.put( user.getStringID(), ZonedDateTime.now() ); // Register time called.
-			context.getReplyBuilder().withEmbed( new EmbedBuilder().withTitle( "Dailies :moneybag:" )
-					.withColor( UserModule.EMBED_COLOR ).withDesc(
-					user.getName() + ", you got **" + CurrencyManager.format( DAILY_AMOUNT ) +
-					"** from your daily!\nYou now have: **" + CurrencyManager.format( newValue ) + "**" )
-					.build() ).build();
-		
-		});
-		
-	}
 
-	/* Translator for the timestamp */
-	
-	/**
-	 * Translator for the ZonedDateTime class.
-	 * 
-	 * @author ThiagoTGM
-	 * @version 1.0
-	 * @since 2018-09-06
-	 */
-	private class ZonedDateTimeTranslator implements Translator<ZonedDateTime> {
+    private static final Logger LOG = LoggerFactory.getLogger( DailiesCommand.class );
+    private static final ThreadGroup THREADS = new ThreadGroup( "Daily Currency" );
 
-		@Override
-		public Data toData( ZonedDateTime obj ) throws TranslationException {
+    /**
+     * Executor used to perform currency-changing operations. Tasks are keyed by the
+     * string ID of the user to avoid race conditions.
+     */
+    protected static final KeyedExecutorService EXECUTOR = AsyncTools.createKeyedThreadPool( THREADS, ( t, e ) -> {
 
-			return Data.stringData( obj.toString() );
-			
-		}
+        LOG.error( "Error while giving daily currency.", e );
 
-		@Override
-		public ZonedDateTime fromData( Data data ) throws TranslationException {
+    } );
 
-			if ( !data.isString() ) {
-				throw new TranslationException( "Given data is not a string." );
-			}
-			
-			try {
-				return ZonedDateTime.parse( data.getString() );
-			} catch ( DateTimeParseException e ) {
-				throw new TranslationException( "Could not parse timestamp." );
-			}
-			
-		}
-		
-	}
-	
+    /**
+     * Setting that defines {@link #DAILY_AMOUNT}.
+     */
+    public static final String DAILY_AMOUNT_SETTING = "Daily currency amount";
+    /**
+     * How much currency a user gets in a daily.
+     */
+    public static final long DAILY_AMOUNT = Settings.getLongSetting( DAILY_AMOUNT_SETTING );
+
+    private final Map<String, ZonedDateTime> cooldownMap;
+
+    /**
+     * Creates a new instance.
+     */
+    public DailiesCommand() {
+
+        cooldownMap = Collections.synchronizedMap( DatabaseManager.getDatabase().getDataMap( "DailyCurrency",
+                new StringTranslator(), new ZonedDateTimeTranslator() ) );
+
+    }
+
+    /**
+     * Determines whether the given user is ready to obtain his daily money.
+     * 
+     * @param user
+     *            The user.
+     * @return <tt>true</tt> if the user has not yet obtained his daily currency
+     *         today. <tt>false</tt> if already obtained.
+     * @throws NullPointerException
+     *             if the given user is <tt>null</tt>.
+     */
+    protected boolean isAvailable( IUser user ) throws NullPointerException {
+
+        if ( user == null ) {
+            throw new NullPointerException( "User cannot be null." );
+        }
+
+        ZonedDateTime time = cooldownMap.get( user.getStringID() );
+
+        return time == null ? true
+                : LocalDate.now().isAfter( time.withZoneSameInstant( ZoneId.systemDefault() ).toLocalDate() );
+
+    }
+
+    @MainCommand(
+            name = "Daily Currency",
+            aliases = { "dailies", "daily", "gib" },
+            description = "Gets free currency. Can only be called once per day!",
+            usage = "{signature}" )
+    public void dailiesCommand( CommandContext context ) {
+
+        final IUser user = context.getAuthor();
+
+        EXECUTOR.execute( user.getStringID(), () -> {
+
+            if ( !isAvailable( user ) ) { // Was already called today.
+                context.getReplyBuilder()
+                        .withContent(
+                                "You already got you dailies today, " + user.getName() + "!\nTry again tomorrow." )
+                        .build();
+                return;
+            }
+
+            long newValue = CurrencyManager.getInstance().deposit( user, DAILY_AMOUNT );
+            cooldownMap.put( user.getStringID(), ZonedDateTime.now() ); // Register time called.
+            context.getReplyBuilder().withEmbed( new EmbedBuilder().withTitle( "Dailies :moneybag:" )
+                    .withColor( UserModule.EMBED_COLOR )
+                    .withDesc( user.getName() + ", you got **" + CurrencyManager.format( DAILY_AMOUNT )
+                            + "** from your daily!\nYou now have: **" + CurrencyManager.format( newValue ) + "**" )
+                    .build() ).build();
+
+        } );
+
+    }
+
+    /* Translator for the timestamp */
+
+    /**
+     * Translator for the ZonedDateTime class.
+     * 
+     * @author ThiagoTGM
+     * @version 1.0
+     * @since 2018-09-06
+     */
+    private class ZonedDateTimeTranslator implements Translator<ZonedDateTime> {
+
+        @Override
+        public Data toData( ZonedDateTime obj ) throws TranslationException {
+
+            return Data.stringData( obj.toString() );
+
+        }
+
+        @Override
+        public ZonedDateTime fromData( Data data ) throws TranslationException {
+
+            if ( !data.isString() ) {
+                throw new TranslationException( "Given data is not a string." );
+            }
+
+            try {
+                return ZonedDateTime.parse( data.getString() );
+            } catch ( DateTimeParseException e ) {
+                throw new TranslationException( "Could not parse timestamp." );
+            }
+
+        }
+
+    }
+
 }
