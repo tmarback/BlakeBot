@@ -27,6 +27,7 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  * @version 1.0
  * @since 2017-02-04
  */
+@SuppressWarnings( "javadoc" )
 public class LennysCommand {
     
     private static final String NAME_1 = "Lenny";
@@ -40,7 +41,7 @@ public class LennysCommand {
             name = NAME_1,
             aliases = "lenny",
             description = "Calls Lenny.",
-            usage = "{}lenny"
+            usage = "{signature}"
     )
     public void lennyCommand( CommandContext context ) {
         
@@ -52,7 +53,7 @@ public class LennysCommand {
             name = NAME_2,
             aliases = "sneakylenny",
             description = "Calls Lenny's sneaky cousin.",
-            usage = "{}sneakylenny"
+            usage = "{signature}"
     )
     public void sneakyLennyCommand( CommandContext context ) {
         
@@ -64,7 +65,7 @@ public class LennysCommand {
             name = NAME_3,
             aliases = "senseilenny",
             description = "Calls Lenny's wise cousin.",
-            usage = "{}senseilenny"
+            usage = "{signature}"
     )
     public void senseiLennyCommand( CommandContext context ) {
         
@@ -76,7 +77,7 @@ public class LennysCommand {
             name = NAME_4,
             aliases = "lennyarmy",
             description = "Calls Lenny's family.",
-            usage = "{}lennyarmy"
+            usage = "{signature}"
     )
     public void lennyArmyCommand( CommandContext context ) {
         
@@ -88,7 +89,7 @@ public class LennysCommand {
             name = NAME_5,
             aliases = "noseylenny",
             description = "Calls Lenny's nosey cousin.",
-            usage = "{}noseylenny"
+            usage = "{signature}"
     )
     public void noseyLennyCommand( CommandContext context ) {
         
@@ -100,7 +101,7 @@ public class LennysCommand {
             name = NAME_6,
             aliases = "brawlerlenny",
             description = "Calls Lenny's brawler cousin.",
-            usage = "{}brawlerlenny"
+            usage = "{signature}"
     )
     public void brawlerLennyCommand( CommandContext context ) {
         

@@ -29,13 +29,14 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  * @author ThiagoTGM
  * @since 2017-09-14
  */
+@SuppressWarnings( "javadoc" )
 public class GetSomeHelpCommand {
 
     @MainCommand(
             name = "Stop it. Get some help.",
             aliases = "getHelp",
             description = "Lets someone know they went too far.",
-            usage = "{}getHelp"
+            usage = "{signature}"
             )
     public void getSomeHelp( CommandContext context ) {
         

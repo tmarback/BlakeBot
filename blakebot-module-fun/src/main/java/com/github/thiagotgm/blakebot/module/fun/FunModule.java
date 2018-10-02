@@ -37,7 +37,7 @@ public class FunModule implements IModule {
     @Override
     public void disable() {
         
-        CommandRegistry.getRegistry( client ).removeSubRegistry( this );
+        CommandRegistry.getRegistry( client ).removeSubRegistry( FunModule.class );
         client = null;
 
     }
@@ -46,7 +46,7 @@ public class FunModule implements IModule {
     public boolean enable( IDiscordClient arg0 ) {
 
         client = arg0;
-        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( this );
+        CommandRegistry registry = CommandRegistry.getRegistry( arg0 ).getSubRegistry( FunModule.class );
         registerCommands( registry );
         return true;
         

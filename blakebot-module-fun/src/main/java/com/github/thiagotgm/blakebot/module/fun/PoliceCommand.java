@@ -29,13 +29,14 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  * @author ThiagoTGM
  * @since 2018-09-18
  */
+@SuppressWarnings( "javadoc" )
 public class PoliceCommand {
 
     @MainCommand(
             name = "Calling the police",
             aliases = { "police", "imcallingthepolice", "iamcallingthepolice", "911" },
             description = "Calls the police.",
-            usage = "{}police|imcallingthepolice|iamcallingthepolice|911" )
+            usage = "{signature}" )
     public void forTheGlory( CommandContext context ) {
 
         InputStream imageStream = getClass().getResourceAsStream( "/images/PoliceCar.jpg" );

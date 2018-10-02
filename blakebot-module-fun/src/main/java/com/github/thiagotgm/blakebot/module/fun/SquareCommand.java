@@ -34,6 +34,7 @@ import sx.blah.discord.util.MessageBuilder;
  * @author ThiagoTGM
  * @since 2017-02-05
  */
+@SuppressWarnings( "javadoc" )
 public class SquareCommand {
     
     private static final String NAME = "Square";
@@ -44,7 +45,7 @@ public class SquareCommand {
             name = NAME,
             aliases = "square",
             description = "Makes a square with a given message.",
-            usage = "{}square <message>",
+            usage = "{signature} <message>",
             failureHandler = FAILURE_HANDLER
     )
     public boolean squareCommand( CommandContext context ) {

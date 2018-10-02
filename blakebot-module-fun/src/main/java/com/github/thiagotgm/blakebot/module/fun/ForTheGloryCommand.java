@@ -29,13 +29,14 @@ import com.github.thiagotgm.modular_commands.command.annotation.MainCommand;
  * @author ThiagoTGM
  * @since 2017-09-14
  */
+@SuppressWarnings( "javadoc" )
 public class ForTheGloryCommand {
 
     @MainCommand(
             name = "Why? For the glory of Satan, of course!",
             aliases = "why",
             description = "Shows the best reason to do anything.",
-            usage = "{}why"
+            usage = "{signature}"
             )
     public void forTheGlory( CommandContext context ) {
         
